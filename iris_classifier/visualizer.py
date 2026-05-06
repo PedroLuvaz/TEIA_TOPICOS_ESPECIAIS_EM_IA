@@ -73,7 +73,51 @@ def plotar_dispersao_todas_classes(dados, indices_atributos, prototipos=None, ca
     plt.title("Iris Dataset - Distribuição das Classes")
     plt.legend()
     plt.grid(True, linestyle=':', alpha=0.6)
-    
+
+    if caminho_salvar:
+        plt.savefig(caminho_salvar)
+        print(f"Gráfico salvo em: {caminho_salvar}")
+    plt.close()
+
+def plotar_matriz_confusao(mc, classes, caminho_salvar=None):
+    """
+    Plota um heatmap da matriz de confusão usando matplotlib puro.
+    Linhas = Classe Real, Colunas = Classe Predita.
+    """
+    n = len(classes)
+    valores = [[mc[real][pred] for pred in classes] for real in classes]
+    valor_max = max(v for linha in valores for v in linha) or 1
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+
+    for i in range(n):
+        for j in range(n):
+            intensidade = valores[i][j] / valor_max
+            if i == j:
+                cor_fundo = (1 - intensidade * 0.8, 1 - intensidade * 0.8, 1.0)
+            else:
+                cor_fundo = (1.0, 1 - intensidade * 0.8, 1 - intensidade * 0.8)
+            ax.add_patch(plt.Rectangle((j, n - 1 - i), 1, 1, color=cor_fundo))
+            cor_texto = 'black' if intensidade < 0.6 else 'white'
+            ax.text(j + 0.5, n - 1 - i + 0.5, str(valores[i][j]),
+                    ha='center', va='center', fontsize=14, fontweight='bold', color=cor_texto)
+
+    ax.set_xlim(0, n)
+    ax.set_ylim(0, n)
+    ax.set_xticks([i + 0.5 for i in range(n)])
+    ax.set_xticklabels(classes, fontsize=11)
+    ax.set_yticks([i + 0.5 for i in range(n)])
+    ax.set_yticklabels(list(reversed(classes)), fontsize=11)
+    ax.set_xlabel('Predito', fontsize=12)
+    ax.set_ylabel('Real', fontsize=12)
+    ax.set_title('Matriz de Confusão', fontsize=14, fontweight='bold')
+    ax.grid(False)
+
+    for i in range(n + 1):
+        ax.axhline(i, color='gray', linewidth=0.5)
+        ax.axvline(i, color='gray', linewidth=0.5)
+
+    plt.tight_layout()
     if caminho_salvar:
         plt.savefig(caminho_salvar)
         print(f"Gráfico salvo em: {caminho_salvar}")

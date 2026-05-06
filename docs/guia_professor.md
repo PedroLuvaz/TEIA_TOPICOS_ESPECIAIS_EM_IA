@@ -83,3 +83,53 @@ $$ x_2 = \frac{-w_1 \cdot x_1 - b}{w_2} $$
 - **Atributos Utilizados:** O código está configurado para usar os índices `[2, 3]`, que correspondem ao **Comprimento da Pétala** e **Largura da Pétala**.
 - **Acurácia:** O modelo atinge **100% de acurácia**.
 - **Por quê?** Como visível nos gráficos gerados na pasta `outputs/`, o conjunto de dados Iris, quando analisado apenas pelas pétalas, é **linearmente separável** (especialmente a Setosa em relação às outras). O Classificador de Distância Mínima é um classificador linear perfeito para este cenário, posicionando a fronteira de decisão de forma equidistante entre os protótipos.
+
+---
+
+## 6. Métricas Avançadas: Precisão, Revocação e F1-Score
+
+**Onde encontrar no código:** `evaluator.py` (funções `precisao_por_classe`, `revocacao_por_classe`, `f1_por_classe`, `imprimir_metricas_por_classe`)
+
+Além da acurácia geral, o código calcula três métricas por classe que permitem uma análise mais granular do desempenho do classificador.
+
+### Precisão (Precision)
+> "Das amostras que o modelo disse ser da classe X, quantas **realmente eram** da classe X?"
+
+$$\text{Precisão}_j = \frac{TP_j}{TP_j + FP_j}$$
+
+- **TP** (Verdadeiro Positivo): modelo acertou para a classe j
+- **FP** (Falso Positivo): modelo disse "classe j" mas era outra
+
+### Revocação (Recall / Sensibilidade)
+> "Das amostras que **realmente eram** da classe X, quantas o modelo identificou corretamente?"
+
+$$\text{Revocação}_j = \frac{TP_j}{TP_j + FN_j}$$
+
+- **FN** (Falso Negativo): a amostra era da classe j mas o modelo disse outra
+
+### F1-Score
+> Média harmônica entre Precisão e Revocação. Penaliza quando uma das duas é baixa.
+
+$$F1_j = \frac{2 \cdot \text{Precisão}_j \cdot \text{Revocação}_j}{\text{Precisão}_j + \text{Revocação}_j}$$
+
+**Como ler a saída:** Como o modelo atinge 100% de acurácia nas pétalas, todas as métricas serão 1.0000. Para ver diferenças, compare com o experimento usando sépalas.
+
+---
+
+## 7. Experimento Comparativo: Sépalas vs Pétalas
+
+**Onde encontrar no código:** última seção do `main.py` — "EXPERIMENTO COMPARATIVO"
+
+Este experimento demonstra que a **escolha dos atributos (features)** impacta diretamente a capacidade de separação linear do classificador.
+
+| Atributos | Índices | Acurácia Esperada |
+|---|---|---|
+| Comprimento + Largura da **Pétala** | [2, 3] | **100%** |
+| Comprimento + Largura da **Sépala** | [0, 1] | **~80%** |
+
+**Por que a diferença?**
+- As pétalas de Setosa são muito menores que as das outras duas classes — separação perfeita.
+- As sépalas de Versicolor e Virginica se **sobrepõem** consideravelmente no espaço de features: nenhuma reta consegue separá-las perfeitamente.
+- Um classificador de distância mínima é um **classificador linear** — sua fronteira é sempre uma reta (em 2D) ou hiperplano. Ele só funciona com 100% de acurácia quando os dados são **linearmente separáveis**.
+
+**Como apresentar ao professor:** Este experimento prova que o aluno entende a relação entre separabilidade linear, escolha de features e a limitação do classificador implementado — não apenas que ele "rodou e deu 100%".

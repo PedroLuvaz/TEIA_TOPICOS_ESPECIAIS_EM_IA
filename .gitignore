@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+.env
+
+# Outputs gerados (imagens criadas ao rodar main.py)
+outputs/
+
+# IDEs
+.vscode/
+.idea/
+*.code-workspace
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Distribuição / build
+dist/
+build/
+*.egg-info/
