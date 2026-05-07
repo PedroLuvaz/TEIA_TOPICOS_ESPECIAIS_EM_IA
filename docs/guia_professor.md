@@ -43,14 +43,16 @@ $$ m_j = \frac{1}{N_j} \sum_{x \in \omega_j} x $$
 
 No código (`calcular_media`), simplesmente somamos os valores de todas as características (Comprimento e Largura da Pétala) das amostras de treino de uma classe e dividimos pela quantidade de amostras.
 
-### Passo B: Função Discriminante
-Para classificar uma nova amostra de teste $x$ (Experimento ii), não calculamos a distância euclidiana pura, mas sim a **Função Discriminante Linear**, que é matematicamente equivalente e computacionalmente mais eficiente, conforme ensinado em aula.
+### Passo B: Classificação por Distância Euclidiana
 
-Fórmula exata implementada (`discriminante`):
-$$ d_j(x) = x^T \cdot m_j - \frac{1}{2} m_j^T \cdot m_j $$
+Para classificar uma nova amostra de teste $x$ (Experimento ii), calculamos a **distância euclidiana** de $x$ até cada protótipo e escolhemos o mais próximo:
+
+$$\|x - m_j\| = \sqrt{\sum_{k} (x_k - m_{j,k})^2}$$
 
 **Como decidimos?**
-Calculamos $d_{setosa}(x)$, $d_{versicolor}(x)$ e $d_{virginica}(x)$. A classe escolhida é aquela que apresentar o **maior valor numérico** (Regra do Máximo). Isso é visível na tabela impressa no terminal.
+Calculamos $\|x - m_{setosa}\|$, $\|x - m_{versicolor}\|$ e $\|x - m_{virginica}\|$. A classe escolhida é aquela com a **menor distância** (Regra do Mínimo). Isso é visível na tabela impressa no terminal — a coluna `dist_*` com menor valor define a predição.
+
+> **Nota técnica:** Existe uma forma equivalente chamada **Função Discriminante**, $d_j(x) = x^T m_j - \frac{1}{2}\|m_j\|^2$, que produz a mesma classificação sem calcular a raiz quadrada. No código, usamos a distância euclidiana diretamente (`distancia_euclidiana` em `math_utils.py`) para manter clareza conceitual. A função discriminante permanece em `math_utils.py` para o cálculo das superfícies de decisão.
 
 ---
 
