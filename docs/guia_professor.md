@@ -88,37 +88,7 @@ $$ x_2 = \frac{-w_1 \cdot x_1 - b}{w_2} $$
 
 ---
 
-## 6. Métricas Avançadas: Precisão, Revocação e F1-Score
-
-**Onde encontrar no código:** `evaluator.py` (funções `precisao_por_classe`, `revocacao_por_classe`, `f1_por_classe`, `imprimir_metricas_por_classe`)
-
-Além da acurácia geral, o código calcula três métricas por classe que permitem uma análise mais granular do desempenho do classificador.
-
-### Precisão (Precision)
-> "Das amostras que o modelo disse ser da classe X, quantas **realmente eram** da classe X?"
-
-$$\text{Precisão}_j = \frac{TP_j}{TP_j + FP_j}$$
-
-- **TP** (Verdadeiro Positivo): modelo acertou para a classe j
-- **FP** (Falso Positivo): modelo disse "classe j" mas era outra
-
-### Revocação (Recall / Sensibilidade)
-> "Das amostras que **realmente eram** da classe X, quantas o modelo identificou corretamente?"
-
-$$\text{Revocação}_j = \frac{TP_j}{TP_j + FN_j}$$
-
-- **FN** (Falso Negativo): a amostra era da classe j mas o modelo disse outra
-
-### F1-Score
-> Média harmônica entre Precisão e Revocação. Penaliza quando uma das duas é baixa.
-
-$$F1_j = \frac{2 \cdot \text{Precisão}_j \cdot \text{Revocação}_j}{\text{Precisão}_j + \text{Revocação}_j}$$
-
-**Como ler a saída:** Como o modelo atinge 100% de acurácia nas pétalas, todas as métricas serão 1.0000. Para ver diferenças, compare com o experimento usando sépalas.
-
----
-
-## 7. Experimento Comparativo: Sépalas vs Pétalas
+## 6. Experimento Comparativo: Sépalas vs Pétalas
 
 **Onde encontrar no código:** última seção do `main.py` — "EXPERIMENTO COMPARATIVO"
 
@@ -127,7 +97,7 @@ Este experimento demonstra que a **escolha dos atributos (features)** impacta di
 | Atributos | Índices | Acurácia Esperada |
 |---|---|---|
 | Comprimento + Largura da **Pétala** | [2, 3] | **100%** |
-| Comprimento + Largura da **Sépala** | [0, 1] | **~80%** |
+| Comprimento + Largura da **Sépala** | [0, 1] | **~82%** |
 
 **Por que a diferença?**
 - As pétalas de Setosa são muito menores que as das outras duas classes — separação perfeita.
@@ -135,3 +105,37 @@ Este experimento demonstra que a **escolha dos atributos (features)** impacta di
 - Um classificador de distância mínima é um **classificador linear** — sua fronteira é sempre uma reta (em 2D) ou hiperplano. Ele só funciona com 100% de acurácia quando os dados são **linearmente separáveis**.
 
 **Como apresentar ao professor:** Este experimento prova que o aluno entende a relação entre separabilidade linear, escolha de features e a limitação do classificador implementado — não apenas que ele "rodou e deu 100%".
+
+---
+
+## 7. Estrutura Modular e Responsabilidade de Cada Arquivo
+
+| Arquivo | Responsabilidade | Matemática central |
+|---|---|---|
+| `math_utils.py` | Toda a álgebra linear em Python puro | `produto_escalar`, `distancia_euclidiana`, `discriminante`, `coeficientes_superficie_decisao` |
+| `data_loader.py` | Leitura do XLS + split estratificado | Agrupamento por classe, shuffle com `seed=42` |
+| `classifier.py` | Treinamento e predição | `treinar` → protótipos; `predizer_todas_classes` → argmax $d_j(x)$; `predizer_binario` → argmin distância |
+| `evaluator.py` | Métrica de avaliação | Acurácia |
+| `visualizer.py` | Gráficos matplotlib | Dispersão, superfícies de decisão, heatmap de confusão |
+| `main.py` | Orquestrador | Executa experimentos i, ii, iii + comparativo + interativo |
+
+**Ponto importante:** `math_utils.py` não conhece nada de Iris — é uma biblioteca de álgebra genérica. Isso é uma boa prática de separação de responsabilidades.
+
+---
+
+## 8. Futura Migração para Bibliotecas (NumPy / Scikit-learn)
+
+O projeto foi intencionalmente construído sem bibliotecas de ML para demonstrar domínio matemático. Em uma versão futura, cada função pura tem um equivalente direto:
+
+| Função Pura (`math_utils.py`) | Equivalente NumPy/Sklearn |
+|---|---|
+| `produto_escalar(a, b)` | `np.dot(a, b)` |
+| `distancia_euclidiana(a, b)` | `np.linalg.norm(np.array(a) - np.array(b))` |
+| `calcular_media(vetores)` | `np.mean(X, axis=0)` |
+| `discriminante(x, mj)` | `np.dot(x, mj) - 0.5 * np.dot(mj, mj)` |
+| `treinar(dados, indices)` | `sklearn.neighbors.NearestCentroid().fit(X, y)` |
+| `predizer_todas_classes(...)` | `NearestCentroid().predict(x)` |
+
+**Como apresentar ao professor:** "A estrutura modular foi pensada para facilitar a migração. O `math_utils.py` pode ser trocado por NumPy sem mudar nada no restante do código — basta substituir as funções uma a uma."
+
+A mesma separação de responsabilidades (`data_loader → classifier → evaluator → visualizer`) continuará válida mesmo com bibliotecas.

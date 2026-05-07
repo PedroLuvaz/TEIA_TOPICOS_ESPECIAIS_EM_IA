@@ -1,23 +1,53 @@
+"""
+Algebra linear em Python puro para o Classificador de Distancia Minima.
+
+Todas as operacoes sao implementadas com listas nativas e lacos for —
+sem numpy, scipy ou qualquer biblioteca de algebra.
+
+Formulas centrais:
+  Prototipo:      m_j = (1/N_j) * sum(x  para x em omega_j)
+  Discriminante:  d_j(x) = x^T * m_j  -  (1/2) * m_j^T * m_j
+  Fronteira:      w = m_i - m_j,   b = -(1/2)*(||m_i||^2 - ||m_j||^2)
+"""
+
 import math
 
+
 def produto_escalar(a, b):
-    """Calcula o produto escalar de dois vetores."""
+    """
+    a^T * b = sum( a_i * b_i )
+    Operacao base para o discriminante e para o calculo do bias da fronteira.
+    """
     return sum(x * y for x, y in zip(a, b))
 
+
 def subtrair_vetores(a, b):
-    """Calcula a subtração de dois vetores (a - b)."""
+    """
+    a - b  (componente a componente)
+    Usado para calcular w = m_i - m_j (vetor normal a fronteira de decisao).
+    """
     return [x - y for x, y in zip(a, b)]
 
+
 def multiplicar_escalar(s, v):
-    """Multiplica um vetor v por um escalar s."""
+    """s * v  (escalar por vetor)"""
     return [s * x for x in v]
 
+
 def distancia_euclidiana(a, b):
-    """Calcula a distância euclidiana entre dois vetores."""
+    """
+    ||a - b|| = sqrt( sum( (a_i - b_i)^2 ) )
+    Regra de decisao: argmin_j ||x - m_j||  (menor distancia = classe predita).
+    Matematicamente equivalente a argmax_j d_j(x).
+    """
     return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b)))
 
+
 def calcular_media(vetores):
-    """Calcula o vetor médio (protótipo) de uma lista de vetores."""
+    """
+    m = (1/N) * sum(v  para v em vetores)
+    Calcula o prototipo (centroide) de uma classe a partir de suas amostras de treino.
+    """
     if not vetores:
         return []
     n = len(vetores)
@@ -28,21 +58,36 @@ def calcular_media(vetores):
             media[i] += v[i]
     return [x / n for x in media]
 
+
 def discriminante(x, mj):
     """
-    Calcula dj(x) = x^t * mj - 0.5 * mj^t * mj
-    Esta é a função discriminante para o Classificador de Distância Mínima.
+    Funcao Discriminante Linear:
+        d_j(x) = x^T * m_j  -  (1/2) * m_j^T * m_j
+
+    Derivacao: minimizar ||x - m_j||^2 expande para x^Tx - 2*x^T*m_j + m_j^T*m_j.
+    Como x^Tx e constante (nao depende de j), minimizar a distancia equivale a
+    maximizar  x^T*m_j - (1/2)*m_j^T*m_j  =  d_j(x).
+
+    Regra de decisao: argmax_j d_j(x)  <==>  argmin_j ||x - m_j||
     """
-    termo1 = produto_escalar(x, mj)
-    termo2 = 0.5 * produto_escalar(mj, mj)
-    return termo1 - termo2
+    return produto_escalar(x, mj) - 0.5 * produto_escalar(mj, mj)
+
 
 def coeficientes_superficie_decisao(mi, mj):
     """
-    Calcula os coeficientes para a superfície de decisão dij(x) = 0
-    dij(x) = (mi - mj)^t * x - 0.5 * (mi^t * mi - mj^t * mj) = 0
-    Retorna: (w, b) onde w é o vetor de pesos e b é a constante de viés (bias).
-    Equação: w * x + b = 0
+    Fronteira entre classes i e j: d_i(x) = d_j(x)  =>  w^T * x + b = 0
+
+    Derivacao:
+        d_i(x) - d_j(x) = 0
+        (m_i - m_j)^T * x  -  (1/2)*(||m_i||^2 - ||m_j||^2)  =  0
+
+    Coeficientes:
+        w = m_i - m_j
+        b = -(1/2) * (||m_i||^2 - ||m_j||^2)
+
+    Para plotar a reta em 2D: x2 = (-w1*x1 - b) / w2
+
+    Retorna: (w, b)
     """
     w = subtrair_vetores(mi, mj)
     b = -0.5 * (produto_escalar(mi, mi) - produto_escalar(mj, mj))

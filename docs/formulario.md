@@ -33,7 +33,8 @@ Vetor médio de todas as amostras de treino da classe $j$.
 
 $$\boxed{\|a - b\| = \sqrt{\sum_{i=1}^{n} (a_i - b_i)^2}}$$
 
-Nunca usada diretamente no código (usamos a forma equivalente abaixo), mas é a base conceitual.
+Usada diretamente na classificação binária (Exp. iii) e no modo interativo.
+A Função Discriminante (abaixo) é matematicamente equivalente e evita a raiz quadrada.
 
 ---
 
@@ -144,3 +145,15 @@ Real  Setosa    [ TP_s   FP_s→v   FP_s→vi ]
 | Semente aleatória | `random.seed(42)` |
 | Atributos padrão | índices [2, 3] — pétalas |
 | Classes | setosa, versicolor, virginica |
+
+---
+
+## Equivalências NumPy (versão futura)
+
+| Python puro | NumPy |
+|---|---|
+| `produto_escalar(a, b)` | `np.dot(a, b)` |
+| `distancia_euclidiana(a, b)` | `np.linalg.norm(a - b)` |
+| `calcular_media(vetores)` | `np.mean(X, axis=0)` |
+| `discriminante(x, mj)` | `np.dot(x, mj) - 0.5*np.dot(mj, mj)` |
+| `treinar(...)` | `NearestCentroid().fit(X, y)` |

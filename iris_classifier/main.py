@@ -1,3 +1,15 @@
+"""
+Classificador de Distancia Minima — Iris Dataset
+=================================================
+Experimentos obrigatorios:
+  i.   Prototipos: m_j = (1/N_j) * sum(x)  para cada classe j
+  ii.  Discriminante: d_j(x) = x^T*m_j - (1/2)*m_j^T*m_j  =>  argmax_j d_j(x)
+       Equivalencia: argmax d_j(x) == argmin ||x - m_j||  (prova em runtime)
+  iii. Fronteira: w = m_i - m_j,  b = -(1/2)*(||m_i||^2 - ||m_j||^2)
+
+Implementacao em Python puro (sem numpy/scipy/sklearn/pandas).
+"""
+
 import os
 import sys
 
@@ -5,8 +17,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from data_loader import carregar_dados_iris, split_estratificado, filtrar_por_classes
 from classifier import treinar, predizer_todas_classes, predizer_binario
-from evaluator import acuracia, matriz_confusao, imprimir_matriz_confusao, imprimir_metricas_por_classe
-from visualizer import plotar_superficie_decisao, plotar_dispersao_todas_classes, plotar_matriz_confusao
+from evaluator import acuracia
+from visualizer import plotar_superficie_decisao, plotar_dispersao_todas_classes
 from math_utils import coeficientes_superficie_decisao, distancia_euclidiana
 
 RAIZ_PROJETO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -82,14 +94,13 @@ def experimento_multiclasse(dados_treino, dados_teste, dados_todos):
     acc = acuracia(predicoes_dist, gabarito)
     print(f"Acuracia Geral: {acc:.2%}")
 
-    mc = matriz_confusao(predicoes_dist, gabarito, CLASSES)
-    imprimir_matriz_confusao(mc, CLASSES)
-    imprimir_metricas_por_classe(mc, CLASSES)
-
-    plotar_dispersao_todas_classes(dados_todos, INDICES_PETALA, prototipos,
-                                   caminho_salvar=_output("iris_dispersao_geral.png"))
-    plotar_matriz_confusao(mc, CLASSES,
-                           caminho_salvar=_output("matriz_confusao.png"))
+    plotar_dispersao_todas_classes(
+        dados_todos, INDICES_PETALA, prototipos,
+        dados_treino=dados_treino,
+        dados_teste=dados_teste,
+        titulo="Iris Dataset — Distribuicao Completa (Teste Destacado)",
+        caminho_salvar=_output("iris_dispersao_geral.png"),
+    )
 
     return prototipos
 
@@ -123,17 +134,23 @@ def experimento_superficies(dados_treino, dados_teste, dados_todos):
         acc_par   = acuracia(preds_par, gab_par)
         print(f"  Acuracia do Par (teste): {acc_par:.2%}")
 
-        # Prototipos recalculados dos 50+50 completos para o plot:
-        # a fronteira fica centrada nos dados que serao exibidos.
-        todos_par  = filtrar_por_classes(dados_todos, [classe_i, classe_j])
-        proto_vis  = treinar(todos_par, INDICES_PETALA)
+        todos_par = filtrar_por_classes(dados_todos, [classe_i, classe_j])
+        preds_todos = [predizer_binario(a['atributos'], pi, pj, classe_i, classe_j, INDICES_PETALA)
+                       for a in todos_par]
+        gab_todos = [a['classe'] for a in todos_par]
+        acc_todos = acuracia(preds_todos, gab_todos)
+        print(f"  Acuracia do Par (base completa): {acc_todos:.2%}")
 
+        # O grafico mostra a base completa, mas a fronteira vem do treino.
+        # Pontos de treino ficam suaves; pontos de teste ficam destacados.
         plotar_superficie_decisao(
-            proto_vis[classe_i], proto_vis[classe_j],
+            pi, pj,
             [d for d in todos_par if d['classe'] == classe_i],
             [d for d in todos_par if d['classe'] == classe_j],
             classe_i, classe_j, INDICES_PETALA,
-            titulo=f"Superficie: {classe_i} vs {classe_j}",
+            dados_treino=treino_par,
+            dados_teste=teste_par,
+            titulo=f"Superficie: {classe_i} vs {classe_j} (base completa)",
             caminho_salvar=_output(f"superficie_{classe_i}_{classe_j}.png"),
         )
 
@@ -199,12 +216,16 @@ def modo_interativo(prototipos):
         dists     = {c: distancia_euclidiana(x_sel, prototipos[c]) for c in CLASSES}
         pred_dist = min(dists, key=dists.get)
 
-        print(f"\n  Resultado: {pred_dist.upper()}")
+        print(f"\n  Resultado final: {pred_dist.upper()}")
+        print("  A classe escolhida e a que tem a menor distancia ao prototipo.")
 
-        
+        print("\n  Funcao discriminante d_j(x)  [maior valor vence]:")
+
         for c in sorted(scores_disc, key=scores_disc.get, reverse=True):
             marcador = " <-- predito" if c == pred_disc else ""
             print(f"    {c:12}: {scores_disc[c]:8.4f}{marcador}")
+
+        print("\n  Distancia euclidiana ate cada prototipo  [menor valor vence]:")
 
         for c in sorted(dists, key=dists.get):
             marcador = " <-- predito" if c == pred_dist else ""
