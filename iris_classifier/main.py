@@ -17,8 +17,17 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from data_loader import carregar_dados_iris, split_estratificado, filtrar_por_classes
 from classifier import treinar, predizer_todas_classes, predizer_binario
-from evaluator import acuracia
-from visualizer import plotar_superficie_decisao, plotar_dispersao_todas_classes
+from evaluator import (
+    acuracia,
+    matriz_confusao,
+    imprimir_matriz_confusao,
+    imprimir_metricas_por_classe,
+)
+from visualizer import (
+    plotar_superficie_decisao,
+    plotar_dispersao_todas_classes,
+    plotar_matriz_confusao,
+)
 from math_utils import coeficientes_superficie_decisao, distancia_euclidiana
 
 RAIZ_PROJETO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -90,16 +99,36 @@ def experimento_multiclasse(dados_treino, dados_teste, dados_todos):
     concordam = sum(d == e for d, e in zip(predicoes_disc, predicoes_dist))
     print(f"\nEquivalencia matematica: {concordam}/{len(gabarito)} predicoes identicas entre os dois metodos.")
 
-    # --- Avaliação ---
+    # --- Avaliação Global ---
     acc = acuracia(predicoes_dist, gabarito)
-    print(f"Acuracia Geral: {acc:.2%}")
+    print(f"\nAcuracia Geral: {acc:.2%}")
 
+    # --- Matriz de Confusao ---
+    print("\n--- Matriz de Confusao (Linhas = Real, Colunas = Predito) ---")
+    matriz = matriz_confusao(predicoes_dist, gabarito, CLASSES)
+    imprimir_matriz_confusao(matriz, CLASSES)
+
+    # --- Metricas por Classe (Precisao, Revocacao, F1) ---
+    print("\n--- Metricas por Classe ---")
+    print("  Precisao(j)  = VP / (VP + FP)   — qualidade das predicoes da classe")
+    print("  Revocacao(j) = VP / (VP + FN)   — cobertura das amostras reais da classe")
+    print("  F1(j)        = 2*P*R / (P + R)  — media harmonica\n")
+    imprimir_metricas_por_classe(matriz, CLASSES)
+
+    # --- Graficos ---
     plotar_dispersao_todas_classes(
         dados_todos, INDICES_PETALA, prototipos,
         dados_treino=dados_treino,
         dados_teste=dados_teste,
+        nomes_atributos=NOMES_ATRIBUTOS,
         titulo="Iris Dataset — Distribuicao Completa (Teste Destacado)",
         caminho_salvar=_output("iris_dispersao_geral.png"),
+    )
+
+    plotar_matriz_confusao(
+        matriz, CLASSES,
+        titulo="Matriz de Confusao — Petalas (Conjunto de Teste)",
+        caminho_salvar=_output("matriz_confusao.png"),
     )
 
     return prototipos
@@ -150,6 +179,7 @@ def experimento_superficies(dados_treino, dados_teste, dados_todos):
             classe_i, classe_j, INDICES_PETALA,
             dados_treino=treino_par,
             dados_teste=teste_par,
+            nomes_atributos=NOMES_ATRIBUTOS,
             titulo=f"Superficie: {classe_i} vs {classe_j} (base completa)",
             caminho_salvar=_output(f"superficie_{classe_i}_{classe_j}.png"),
         )

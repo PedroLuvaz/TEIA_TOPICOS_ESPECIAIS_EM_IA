@@ -124,7 +124,7 @@ class App(tk.Tk):
                  bg=T.BG_PANEL, fg=T.FG_MUTED,
                  font=T.FONT_SUBTITLE).pack(side='left', padx=20, pady=5)
         tk.Label(rod,
-                 text='UFRR  ·  Topicos Especiais em IA  ·  2026',
+                 text='UEPB  ·  Topicos Especiais em IA  ·  2026',
                  bg=T.BG_PANEL, fg=T.FG_DIM,
                  font=T.FONT_SUBTITLE).pack(side='right', padx=20, pady=5)
 
