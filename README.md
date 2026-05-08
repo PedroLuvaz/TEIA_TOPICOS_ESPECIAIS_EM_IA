@@ -14,9 +14,15 @@ Este projeto implementa um **Classificador de Distância Mínima** a partir do z
 │   ├── classifier.py             # Lógica de treinamento e predição
 │   ├── data_loader.py            # Leitura do Excel e separação estratificada dos dados
 │   ├── evaluator.py              # Cálculo de acurácia e matriz de confusão
-│   ├── main.py                   # Ponto de entrada (orquestra os experimentos)
+│   ├── main.py                   # Ponto de entrada CLI (orquestra os experimentos)
 │   ├── math_utils.py             # Operações matemáticas puras (vetores, médias, etc)
-│   └── visualizer.py             # Geração de gráficos (Matplotlib)
+│   ├── visualizer.py             # Geração de gráficos (Matplotlib)
+│   ├── run_gui.py                # Ponto de entrada da interface gráfica (Tkinter)
+│   └── gui/                      # Pacote da GUI — preparado para novas abas
+│       ├── app.py                # Janela principal (cabeçalho + notebook + rodapé)
+│       ├── theme.py              # Paleta editorial escura, tipografia, estilos ttk
+│       ├── widgets.py            # Cartões e blocos de métrica reutilizáveis
+│       └── tab_distancia_minima.py  # Aba do Classificador de Distância Mínima
 ├── outputs/                      # Pasta onde os gráficos são salvos automaticamente
 ├── README.md                     # Este arquivo
 └── requirements.txt              # Dependências do projeto
@@ -52,11 +58,25 @@ pip install -r requirements.txt
 
 ## 🚀 Como Executar
 
-Para rodar todos os experimentos e gerar os gráficos, execute o arquivo principal:
+### Modo CLI (terminal)
+
+Para rodar todos os experimentos e gerar os gráficos no terminal:
 
 ```bash
 python iris_classifier/main.py
 ```
+
+### Modo GUI (interface gráfica — Tkinter)
+
+Para abrir a interface visual com tema escuro, métricas em tempo real, gráficos interativos e classificação manual:
+
+```bash
+python iris_classifier/run_gui.py
+```
+
+A janela já está estruturada com **abas** prontas para receber implementações futuras (Aba 2, Aba 3, Aba 4). A aba **Distância Mínima** continua usando exclusivamente Python puro.
+
+**Grupo:** Erick Nathan · Laura Barbosa · Pedro Lucas
 
 ## 🔄 Fluxo de Execução (`main.py`)
 
