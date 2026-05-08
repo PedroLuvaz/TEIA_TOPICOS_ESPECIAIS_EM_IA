@@ -110,20 +110,135 @@ Este experimento demonstra que a **escolha dos atributos (features)** impacta di
 
 ## 7. Estrutura Modular e Responsabilidade de Cada Arquivo
 
+### Núcleo (Python puro — sem bibliotecas de ML)
+
 | Arquivo | Responsabilidade | Matemática central |
 |---|---|---|
 | `math_utils.py` | Toda a álgebra linear em Python puro | `produto_escalar`, `distancia_euclidiana`, `discriminante`, `coeficientes_superficie_decisao` |
 | `data_loader.py` | Leitura do XLS + split estratificado | Agrupamento por classe, shuffle com `seed=42` |
 | `classifier.py` | Treinamento e predição | `treinar` → protótipos; `predizer_todas_classes` → argmax $d_j(x)$; `predizer_binario` → argmin distância |
 | `evaluator.py` | Métrica de avaliação | Acurácia |
-| `visualizer.py` | Gráficos matplotlib | Dispersão, superfícies de decisão, heatmap de confusão |
-| `main.py` | Orquestrador | Executa experimentos i, ii, iii + comparativo + interativo |
+| `visualizer.py` | Gráficos matplotlib (saída em `outputs/`) | Dispersão, superfícies de decisão, heatmap de confusão |
+| `main.py` | Orquestrador CLI | Executa experimentos i, ii, iii + comparativo + interativo |
 
-**Ponto importante:** `math_utils.py` não conhece nada de Iris — é uma biblioteca de álgebra genérica. Isso é uma boa prática de separação de responsabilidades.
+### Camada de apresentação (GUI Tkinter)
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `run_gui.py` | Ponto de entrada da interface (`python iris_classifier/run_gui.py`) |
+| `gui/app.py` | Janela principal (cabeçalho + notebook de 4 abas + rodapé) |
+| `gui/theme.py` | Paleta editorial escura, tipografia (Cambria/Segoe/Consolas), estilos `ttk` |
+| `gui/widgets.py` | Componentes reutilizáveis (`Card`, `MetricBlock`) |
+| `gui/tab_distancia_minima.py` | Aba ativa — controles, gráfico embarcado, métricas dinâmicas, análise textual |
+| `gui/janela_calculos.py` | **Janela de Memória de Cálculo** (fórmulas LaTeX renderizadas via mathtext + substituição numérica passo a passo) |
+
+**Ponto importante:** `math_utils.py` não conhece nada de Iris — é uma biblioteca de álgebra genérica. A camada GUI **não duplica** matemática: ela importa e chama os módulos puros. Isso é separação de responsabilidades.
 
 ---
 
-## 8. Futura Migração para Bibliotecas (NumPy / Scikit-learn)
+## 8. Demonstração Interativa: Interface Gráfica
+
+Além do modo CLI (`python iris_classifier/main.py`), o projeto inclui uma interface gráfica completa em **Tkinter + matplotlib**, executada com:
+
+```bash
+python iris_classifier/run_gui.py
+```
+
+### O que a interface oferece
+
+A janela principal usa um **notebook de abas** preparado para receber implementações futuras do projeto. A aba ativa, **Distância Mínima**, mostra:
+
+| Painel | Conteúdo |
+|---|---|
+| **Atributos do Modelo** | Toggle entre Pétalas `[2,3]` e Sépalas `[0,1]` — ao trocar, o modelo é re-treinado e todos os painéis atualizam |
+| **Visualização** | Toggle entre dispersão geral e fronteira de cada par (3 pares de classes) |
+| **Classificar Amostra** | Entrada manual de valores `(x₁, x₂)` para classificar uma nova amostra |
+| **Predição** | Resultado destacado com a classe vencedora, valor de `d_max` e scores das outras classes |
+| **Memória de Cálculo** | Botão que abre janela secundária com fórmulas matemáticas e substituição numérica |
+| **Acurácia teste** | Cor dinâmica: verde (≥95%), âmbar (≥80%), vermelho (<80%) |
+| **Erros base completa** | Mostra erros do modelo nas 150 amostras (treino + teste) — revela o overlap real |
+| **Análise** | Texto explicativo gerado dinamicamente sobre separabilidade vs sobreposição |
+
+### Pontos didáticos para apresentação
+
+1. **Mostre a alternância Pétalas ↔ Sépalas:**
+   - Pétalas: 100% de acurácia no teste, 5 erros na base completa (todos versicolor↔virginica)
+   - Sépalas: 82.22% no teste, 27 erros na base completa
+   - O texto da Análise muda automaticamente explicando o porquê.
+
+2. **Mostre as fronteiras dos pares:**
+   - `Setosa × Versicolor` e `Setosa × Virginica` — fronteira clara, regiões bem separadas
+   - `Versicolor × Virginica` — pontos atravessam a linha (são os erros do modelo)
+
+3. **Classifique uma amostra de borda:**
+   - Com pétalas: `(5.0, 1.7)` é caso ambíguo — ver os 3 scores discriminantes lado a lado.
+
+---
+
+## 9. Janela de Memória de Cálculo
+
+**Onde encontrar no código:** `iris_classifier/gui/janela_calculos.py`
+
+Este é o painel mais importante para defender o domínio matemático ao professor: ele mostra as **fórmulas em LaTeX renderizadas** (via `matplotlib.mathtext`) e logo abaixo a **substituição numérica** com os valores reais do modelo treinado.
+
+### Estrutura das 4 seções
+
+**Seção 1 — Protótipos (Vetores Médios)**
+- Fórmula: $m_j = \frac{1}{N_j} \sum_{x \in \omega_j} x$
+- Substituição para cada classe:
+  ```
+  N_set = 35   (amostras de treino)
+  m_set = (1/35) · [Σ Comp.Pétala, Σ Larg.Pétala]
+        = [1.4800, 0.2486]
+  ```
+
+**Seção 2 — Função Discriminante**
+- Fórmulas:
+  - $d_j(x) = x^T m_j - \frac{1}{2} m_j^T m_j$
+  - $j^* = \arg\max_j\, d_j(x)$
+- Substituição completa com $x = [4.5, 1.5]$:
+  ```
+  classe versicolor:
+    m_ver = [4.2371, 1.3229]
+    x · m_ver = 4.50·4.2371 + 1.50·1.3229 = 21.0514
+    m_ver · m_ver = 4.2371² + 1.3229² = 19.7033
+    d_ver(x) = 21.0514 - ½·19.7033 = +11.1998
+  ```
+- Resultado destacado: `argmax → VERSICOLOR (d = +11.1998)`
+
+**Seção 3 — Equivalência Argmax ≡ Argmin**
+- Fórmulas:
+  - $\|x - m_j\| = \sqrt{\sum_k (x_k - m_{jk})^2}$
+  - $\arg\max_j\, d_j(x) \equiv \arg\min_j\, \|x - m_j\|$
+  - Expansão: $\|x - m_j\|^2 = x^T x - 2\,x^T m_j + m_j^T m_j$
+- Validação numérica lado a lado: o maior `d_j(x)` corresponde à menor `||x - m_j||`.
+
+**Seção 4 — Fronteiras de Decisão (3 pares)**
+- Fórmulas:
+  - $w = m_i - m_j$
+  - $b = -\frac{1}{2}(\|m_i\|^2 - \|m_j\|^2)$
+  - $x_2 = \frac{-w_1 x_1 - b}{w_2}$ (forma plotável)
+- Para cada par:
+  ```
+  PAR setosa × versicolor:
+    m_set = [1.4800, 0.2486]    m_ver = [4.2371, 1.3229]
+    w = [-2.7571, -1.0743]
+    ||m_set||² = 2.2522    ||m_ver||² = 19.7033
+    b = +8.7256
+    Equação: -2.7571 x1 -1.0743 x2 +8.7256 = 0
+    Reta:    x2 = -2.5665·x1 + 8.1222
+  ```
+
+### Por que isso é poderoso para a apresentação
+
+1. **Você está provando que entende a matemática**, não só rodando código. As mesmas fórmulas do `formulario.md` aparecem na tela com substituição numérica em tempo real.
+2. **Transparência total:** o professor pode pedir "calcula d_versicolor para [4.5, 1.5]" e a janela já mostra cada passo.
+3. **Conecta as 4 representações** (protótipo, discriminante, distância, fronteira) numa visualização única.
+4. **Atualiza dinamicamente:** trocou pétalas para sépalas, todos os números recalculam.
+
+---
+
+## 10. Futura Migração para Bibliotecas (NumPy / Scikit-learn)
 
 O projeto foi intencionalmente construído sem bibliotecas de ML para demonstrar domínio matemático. Em uma versão futura, cada função pura tem um equivalente direto:
 

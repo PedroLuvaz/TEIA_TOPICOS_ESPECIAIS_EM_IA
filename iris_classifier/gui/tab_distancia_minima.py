@@ -29,6 +29,7 @@ from math_utils import coeficientes_superficie_decisao
 
 from . import theme as T
 from .widgets import Card, MetricBlock
+from .janela_calculos import JanelaMemoriaCalculo
 
 
 # ---------------------------------------------------------------------------
@@ -194,8 +195,22 @@ class TabDistanciaMinima(tk.Frame):
                                      justify='left', wraplength=280)
         self.lbl_pred_sub.pack(fill='x', padx=14, pady=(0, 14))
 
+        # 5. Memoria de calculo (abre janela com formulas + substituicao)
+        card = Card(wrap, titulo='memoria de calculo')
+        card.grid(row=4, column=0, sticky='ew', pady=(14, 0))
+        tk.Label(card,
+                 text='Formulas matematicas com substituicao numerica '
+                      'usando o modelo atual.',
+                 bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_LABEL,
+                 wraplength=280, justify='left'
+                ).pack(anchor='w', padx=14, pady=(2, 8))
+        ttk.Button(card, text='Abrir memoria de calculo  >',
+                   style='Primary.TButton',
+                   command=self._abrir_memoria_calculo
+                  ).pack(fill='x', padx=14, pady=(0, 14))
+
         # spacer no fundo
-        wrap.rowconfigure(4, weight=1)
+        wrap.rowconfigure(5, weight=1)
 
     # ---- Coluna direita ----
     def _coluna_visualizacao(self):
@@ -340,6 +355,28 @@ class TabDistanciaMinima(tk.Frame):
                             for c in CLASSES if c != vencedor)
         self.lbl_pred_sub.configure(
             text=f'd_max = {scores[vencedor]:+.3f}\n{outros}')
+
+    def _abrir_memoria_calculo(self):
+        """Abre janela secundaria com as formulas e a substituicao numerica."""
+        if not self.prototipos:
+            return
+        cfg = CONFIGURACOES_ATRIBUTOS[self.atributos_ativos.get()]
+        # Numero de amostras de treino por classe (todas tem o mesmo)
+        n_treino = sum(1 for d in self.dados_treino
+                       if d['classe'] == 'setosa')
+        # Usa os valores do form de classificacao manual como amostra-exemplo
+        try:
+            amostra = [float(self.var_x.get().replace(',', '.')),
+                       float(self.var_y.get().replace(',', '.'))]
+        except ValueError:
+            amostra = [4.5, 1.5]
+        JanelaMemoriaCalculo(
+            self,
+            prototipos=self.prototipos,
+            eixos=(cfg['eixo_x'], cfg['eixo_y']),
+            n_treino_por_classe=n_treino,
+            amostra=amostra,
+        )
 
     # ------------------------------------------------------------------
     # Texto de analise
