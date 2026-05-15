@@ -21,7 +21,8 @@ from tkinter import ttk
 
 import matplotlib
 matplotlib.use('TkAgg')
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
+                                               NavigationToolbar2Tk)
 from matplotlib.figure import Figure
 
 from data_loader import carregar_dados_iris, split_estratificado
@@ -259,6 +260,7 @@ class TabPerceptronDelta(tk.Frame):
         painel.grid(row=0, column=0, sticky='nsew')
         painel.columnconfigure(0, weight=1)
         painel.rowconfigure(0, weight=1)
+        painel.rowconfigure(1, weight=0)   # toolbar — altura fixa
 
         self.figura = Figure(figsize=(9.5, 4.2), dpi=100,
                              facecolor=T.BG_PANEL)
@@ -273,7 +275,14 @@ class TabPerceptronDelta(tk.Frame):
 
         self.canvas = FigureCanvasTkAgg(self.figura, master=painel)
         self.canvas.get_tk_widget().grid(row=0, column=0, sticky='nsew',
-                                         padx=8, pady=8)
+                                         padx=8, pady=(8, 2))
+
+        # Barra de navegacao: zoom, pan, home, salvar
+        self.toolbar = NavigationToolbar2Tk(self.canvas, painel,
+                                            pack_toolbar=False)
+        self.toolbar.update()
+        self._estilizar_toolbar(self.toolbar)
+        self.toolbar.grid(row=1, column=0, sticky='ew', padx=6, pady=(0, 6))
 
         # --- Painel inferior: metricas + analise ---
         inferior = tk.Frame(wrap, bg=T.BG)
@@ -446,6 +455,18 @@ class TabPerceptronDelta(tk.Frame):
     # -----------------------------------------------------------------------
     # Graficos
     # -----------------------------------------------------------------------
+    @staticmethod
+    def _estilizar_toolbar(toolbar):
+        """Aplica o tema escuro a barra de ferramentas do matplotlib."""
+        toolbar.configure(background=T.BG_PANEL)
+        for child in toolbar.winfo_children():
+            try:
+                child.configure(background=T.BG_PANEL,
+                                activebackground=T.BG_HOVER,
+                                relief='flat', borderwidth=0)
+            except Exception:
+                pass
+
     def _estilizar_ax(self, ax):
         """Aplica o tema escuro ao subplot."""
         ax.set_facecolor(T.BG_PANEL)

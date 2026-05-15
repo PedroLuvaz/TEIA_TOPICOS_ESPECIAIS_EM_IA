@@ -18,7 +18,8 @@ from tkinter import ttk
 
 import matplotlib
 matplotlib.use('TkAgg')
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
+                                               NavigationToolbar2Tk)
 from matplotlib.figure import Figure
 
 from data_loader import (carregar_dados_iris, split_estratificado,
@@ -228,12 +229,20 @@ class TabDistanciaMinima(tk.Frame):
         painel.grid(row=0, column=0, sticky='nsew')
         painel.columnconfigure(0, weight=1)
         painel.rowconfigure(0, weight=1)
+        painel.rowconfigure(1, weight=0)   # toolbar — altura fixa
 
         self.figura = Figure(figsize=(7, 4.2), dpi=100, facecolor=T.BG_PANEL)
         self.ax = self.figura.add_subplot(111)
         self.canvas = FigureCanvasTkAgg(self.figura, master=painel)
         self.canvas.get_tk_widget().grid(row=0, column=0, sticky='nsew',
-                                         padx=10, pady=10)
+                                         padx=10, pady=(10, 2))
+
+        # Barra de navegacao: zoom, pan, home, salvar
+        self.toolbar = NavigationToolbar2Tk(self.canvas, painel,
+                                            pack_toolbar=False)
+        self.toolbar.update()
+        self._estilizar_toolbar(self.toolbar)
+        self.toolbar.grid(row=1, column=0, sticky='ew', padx=6, pady=(0, 6))
 
         # ---- Painel inferior ----
         inferior = tk.Frame(wrap, bg=T.BG)
@@ -271,6 +280,21 @@ class TabDistanciaMinima(tk.Frame):
         self.txt_analise.tag_configure('mono', foreground=T.FG,
                                         font=T.FONT_MONO)
         self.txt_analise.configure(state='disabled')
+
+    # ------------------------------------------------------------------
+    # Utilitarios
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _estilizar_toolbar(toolbar):
+        """Aplica o tema escuro a barra de ferramentas do matplotlib."""
+        toolbar.configure(background=T.BG_PANEL)
+        for child in toolbar.winfo_children():
+            try:
+                child.configure(background=T.BG_PANEL,
+                                activebackground=T.BG_HOVER,
+                                relief='flat', borderwidth=0)
+            except Exception:
+                pass
 
     # ------------------------------------------------------------------
     # Dados e modelo
