@@ -1,6 +1,7 @@
 # Perguntas e Respostas para a Prova
 
 > Questões prováveis com respostas completas. Estude ativamente: cubra as respostas e tente responder antes de ler.
+> Cobre: Distância Mínima (Q1–Q12) · Perceptron (Q13–Q17) · Regra Delta (Q18–Q21) · XOR e Comparação (Q22–Q25).
 
 ---
 
@@ -209,3 +210,293 @@ O valor 42 é convencional na comunidade de ML (referência ao livro "O Guia do 
 - Para 3 classes e 2 atributos: apenas 6 multiplicações + 3 somas
 
 O Classificador de Distância Mínima é extremamente eficiente computacionalmente — o treinamento é apenas calcular médias, e a predição é apenas calcular produtos escalares.
+
+---
+
+## Q13. O que é o Perceptron e como ele aprende?
+
+**Resposta:**
+
+O **Perceptron de Rosenblatt (1957)** é o classificador linear mais simples com aprendizado iterativo. Diferente do Classificador de Distância Mínima (que calcula médias em um único passo), o Perceptron ajusta os pesos gradualmente com base nos erros.
+
+**Estrutura:**
+- Entradas: vetor aumentado $x_\text{aug} = [1, x_1, x_2, \ldots, x_n]^T$ (1 é o bias)
+- Pesos: $w = [w_0, w_1, w_2, \ldots, w_n]^T$ — inicializados em 0
+- Ativação: $\text{net} = w^T x_\text{aug}$
+- Saída: $y = \text{sgn}(\text{net}) = +1$ se $\text{net} \geq 0$, senão $-1$
+
+**Regra de aprendizado** (atualiza somente quando erra):
+
+$$w \leftarrow w + p \cdot (d - y) \cdot x_\text{aug}$$
+
+- Se $d = +1$ e $y = -1$ (erro): $(d-y) = +2$, pesos crescem na direção de $x_\text{aug}$
+- Se $d = -1$ e $y = +1$ (erro): $(d-y) = -2$, pesos diminuem
+- Se $d = y$ (acerto): $(d-y) = 0$, sem atualização
+
+O aprendizado é **supervisionado** e **online** (atualiza amostra a amostra).
+
+---
+
+## Q14. Qual é o Teorema da Convergência do Perceptron?
+
+**Resposta:**
+
+O Teorema da Convergência (Rosenblatt, 1957) garante:
+
+> **Se os dados de treinamento são linearmente separáveis, o Perceptron converge em um número finito de iterações, independentemente da taxa de aprendizado $p > 0$.**
+
+O número máximo de atualizações de pesos é:
+
+$$t_{\max} \leq \left(\frac{R}{\gamma}\right)^2$$
+
+Onde:
+- $R = \max_k \|x_{\text{aug},k}\|$ — norma máxima das amostras aumentadas
+- $\gamma$ — margem de separação (distância do ponto mais próximo ao hiperplano ótimo)
+
+**Implicações práticas:**
+1. Se os dados são separáveis: o algoritmo sempre termina com zero erros
+2. Se os dados **não** são separáveis: o algoritmo **nunca converge** — oscila indefinidamente entre estados de pesos, por isso limitamos o número de épocas (`max_epocas`)
+3. A taxa de aprendizado $p$ não afeta *se* o algoritmo converge, mas *quantas* iterações leva
+
+**No projeto:** Setosa × Versicolor com pétalas converge em 6 épocas. Versicolor × Virginica não converge em 100 épocas — há sobreposição.
+
+---
+
+## Q15. Por que o Perceptron falha em Versicolor × Virginica com pétalas?
+
+**Resposta:**
+
+Porque Versicolor e Virginica **não são perfeitamente linearmente separáveis** com as pétalas, mesmo que a acurácia do Classificador de Distância Mínima pareça 100% no conjunto de teste de 30 amostras.
+
+O que acontece no dado completo (150 amostras):
+- Existem **5 amostras** que cruzam a fronteira entre Versicolor e Virginica
+- Essas amostras são de fato biologicamente "fronteiriças" — Iris de tamanho intermediário
+- No conjunto de teste de 45 amostras, essas 5 amostras podem ou não aparecer
+
+O Perceptron, diferente do Classificador de Distância Mínima, **itera sobre todos os dados** e não pode separar perfeitamente se há qualquer sobreposição. Por isso oscila e nunca atinge zero erros.
+
+**Conclusão pedagógica:** A acurácia 100% do Classificador de Distância Mínima foi "sorte" do split aleatório — as amostras sobrepostas caíram no treino ou não apareceram no teste. O Perceptron é mais honesto: detecta a sobreposição e não converge.
+
+---
+
+## Q16. O que é a Regra Delta e como ela difere do Perceptron?
+
+**Resposta:**
+
+A **Regra Delta** (Widrow e Hoff, 1960 — modelo ADALINE: ADAptive LInear NEuron) é uma variante que usa a saída **linear** $\text{net}$ na atualização, em vez da saída limiarizada $y = \text{sgn}(\text{net})$:
+
+$$w \leftarrow w + p \cdot (d - \text{net}) \cdot x_\text{aug}$$
+
+**Diferença fundamental:**
+
+| | Perceptron | Regra Delta |
+|---|---|---|
+| Erro | $d - \text{sgn}(\text{net}) \in \{-2, 0, +2\}$ | $d - \text{net} \in \mathbb{R}$ (contínuo) |
+| Atualiza quando | Somente se errar | **Sempre** |
+| Minimiza | Erros de classificação | MSE = $\frac{1}{N}\sum(d-\text{net})^2$ |
+| Convergência | Só se separável | **Sempre** (ao mín. MSE) |
+
+A Regra Delta é essencialmente **gradiente descendente** na superfície de erro MSE, que é uma parabolóide convexa — tem um único mínimo global, garantindo convergência.
+
+---
+
+## Q17. Derive a regra de atualização da Regra Delta a partir do gradiente.
+
+**Resposta:**
+
+A função de custo é o MSE:
+$$E(w) = \frac{1}{N} \sum_{k=1}^{N} (d_k - \text{net}_k)^2 = \frac{1}{N} \sum_{k=1}^{N} \left(d_k - \sum_i w_i x_{k,i}\right)^2$$
+
+Gradiente em relação ao peso $w_i$:
+$$\frac{\partial E}{\partial w_i} = \frac{-2}{N} \sum_{k=1}^{N} (d_k - \text{net}_k) \cdot x_{k,i}$$
+
+Regra de gradiente descendente (lote): $w_i \leftarrow w_i - \alpha \frac{\partial E}{\partial w_i}$
+
+Na versão **online** (estocástica, por amostra), processamos um $(x_k, d_k)$ de cada vez, com $\alpha = p/2$:
+
+$$w_i \leftarrow w_i + p \cdot (d_k - \text{net}_k) \cdot x_{k,i}$$
+
+Ou na forma vetorial:
+
+$$w \leftarrow w + p \cdot (d - \text{net}) \cdot x_\text{aug}$$
+
+Esta é a **Regra Delta** — essencialmente gradiente descendente estocástico (SGD) na superfície MSE.
+
+---
+
+## Q18. Por que a Regra Delta converge mesmo para dados não separáveis?
+
+**Resposta:**
+
+Porque a função de custo MSE
+
+$$E(w) = \frac{1}{N} \sum_{k=1}^{N} (d_k - w^T x_k)^2$$
+
+é uma **função quadrática convexa** em $w$ — sua superfície de erro no espaço de pesos é uma parabolóide com um único mínimo global.
+
+Isso significa que, independentemente do ponto de partida e do dado ser separável ou não, o gradiente descendente sempre converge ao mínimo global de $E(w)$.
+
+**Para dados separáveis:** $E_{\min} = 0$ (fronteira perfeita existe).
+
+**Para dados sobrepostos:** $E_{\min} > 0$ (o mínimo representa o melhor compromisso linear possível). Os pesos encontrados correspondem ao hiperplano que minimiza a soma dos erros quadráticos ao redor da fronteira de sobreposição.
+
+**Contraste com o Perceptron:** O Perceptron minimiza erros de classificação (função não-convexa, não-diferenciável) — não há garantia de convergência para dados não separáveis.
+
+---
+
+## Q19. O que é o problema XOR e por que ele é importante?
+
+**Resposta:**
+
+O problema XOR é a função booleana $d = x_1 \oplus x_2$ com a tabela verdade:
+
+| $(x_1, x_2)$ | $d$ | Grupo |
+|---|---|---|
+| $(0, 0)$ | 0 | Diagonal principal |
+| $(1, 1)$ | 0 | Diagonal principal |
+| $(0, 1)$ | 1 | Outra diagonal |
+| $(1, 0)$ | 1 | Outra diagonal |
+
+Os dois grupos (diagonal principal vs. outra diagonal) são distribuídos simetricamente no quadrado unitário — **nenhuma reta pode separá-los**.
+
+**Por que é importante historicamente:** Em 1969, Minsky e Papert demonstraram que o Perceptron simples (1 camada) não consegue aprender o XOR. Isso causou o "Inverno da IA" — décadas de desinvestimento em redes neurais. A solução veio com o **algoritmo Backpropagation** para redes multicamada (1986), que pode resolver XOR com 1 camada oculta de 2 neurônios.
+
+**No projeto:** O XOR serve como demonstração da limitação fundamental dos classificadores lineares — independentemente do algoritmo de treinamento, nenhum hiperplano resolve o problema.
+
+---
+
+## Q20. Calcule o MSE mínimo teórico do XOR com um classificador linear.
+
+**Resposta:**
+
+Por simetria, os 4 padrões têm a mesma influência na superfície de MSE. O melhor classificador linear faz a saída constante igual à média dos alvos:
+
+$$\bar{d} = \frac{d_1 + d_2 + d_3 + d_4}{4} = \frac{0 + 1 + 1 + 0}{4} = 0{,}5$$
+
+O MSE mínimo é:
+
+$$E_{\min} = \frac{1}{4} \sum_{k=1}^{4} (d_k - 0{,}5)^2 = \frac{(0-0{,}5)^2 + (1-0{,}5)^2 + (1-0{,}5)^2 + (0-0{,}5)^2}{4}$$
+
+$$= \frac{4 \times 0{,}25}{4} = \boxed{0{,}25}$$
+
+**Interpretação:** Qualquer classificador linear no XOR erra sistematicamente com MSE ≥ 0,25. Na prática, a Regra Delta converge para os pesos $w \approx [0{,}5, 0, 0]$ (bias ≈ 0,5, outros ≈ 0), produzindo saída constante ≈ 0,5 — e MSE ≈ 0,25 confirmado experimentalmente.
+
+---
+
+## Q21. Prove que o XOR não é linearmente separável.
+
+**Resposta:**
+
+Suponha por absurdo que exista $w = [w_0, w_1, w_2]$ tal que o Perceptron classifica corretamente todos os 4 padrões:
+
+- $(0,0) \to d=0$ (saída $-1$): $w_0 < 0$ ... (I)
+- $(0,1) \to d=1$ (saída $+1$): $w_0 + w_2 \geq 0$ ... (II)
+- $(1,0) \to d=1$ (saída $+1$): $w_0 + w_1 \geq 0$ ... (III)
+- $(1,1) \to d=0$ (saída $-1$): $w_0 + w_1 + w_2 < 0$ ... (IV)
+
+Somando (II) e (III):
+
+$$2w_0 + w_1 + w_2 \geq 0 \quad \cdots (V)$$
+
+Somando (I) e (IV):
+
+$$2w_0 + w_1 + w_2 < 0 \quad \cdots (VI)$$
+
+(V) e (VI) são **contraditórias**. Logo, não existe tal $w$ — o XOR não é linearmente separável. $\square$
+
+---
+
+## Q22. Compare os três classificadores implementados no projeto.
+
+**Resposta:**
+
+| | Dist. Mínima | Perceptron | Regra Delta |
+|---|---|---|---|
+| Arquivo | `classifier.py` | `perceptron.py` | `delta_rule.py` |
+| Tipo de treinamento | Analítico (1 passo) | Iterativo (por erros) | Iterativo (sempre) |
+| O que ajusta | Calcula protótipos | $w$ via sgn | $w$ via net linear |
+| Função minimizada | $\|x - m_j\|$ | Erros de class. | MSE |
+| Convergência garantida | Sempre | Só se separável | Sempre |
+| Dados sobrepostos | Classifica c/ erros | Oscila | Mín. MSE |
+| Fronteira de decisão | Perpendicular a $m_i - m_j$ | Qualquer hiperplano | Hiperplano de mín. MSE |
+
+**No Iris (pétalas):**
+- Distância Mínima: 100% no teste (5 erros na base completa)
+- Perceptron Set×Ver: converge 6 épocas, 100%
+- Perceptron Ver×Vir: não converge em 100 épocas
+- Regra Delta Set×Ver: MSE 0,33→0,07, 100%
+
+**Observação:** Para dados perfeitamente separáveis, todos os três encontram fronteiras similares. A diferença aparece nos dados sobrepostos.
+
+---
+
+## Q23. O que significa "taxa de aprendizado" e como ela afeta o treinamento?
+
+**Resposta:**
+
+A **taxa de aprendizado** $p$ (ou $\alpha$, $\eta$) controla o tamanho do passo de atualização dos pesos a cada iteração.
+
+**Efeito no Perceptron:**
+- A convergência é garantida para qualquer $p > 0$ (desde que os dados sejam separáveis)
+- $p$ grande: pesos oscilam mais antes de convergir
+- $p$ pequena: converge mais suavemente, mas pode precisar de mais épocas
+
+**Efeito na Regra Delta:**
+- $p$ muito grande: gradiente descendente pode **ultrapassar** o mínimo e divergir (instabilidade)
+- $p$ muito pequena: convergência muito lenta
+- Existe um $p_{\max}$ acima do qual o treinamento diverge (depende da escala dos dados)
+- Regra prática: $p < \frac{2}{\lambda_{\max}}$ onde $\lambda_{\max}$ é o maior autovalor da matriz de covariância
+
+**No projeto:**
+- Perceptron: $p = 0{,}03$ (padrão)
+- Regra Delta: $p = 0{,}02$ (menor, pois atualiza em todos os passos)
+
+---
+
+## Q24. Qual é a diferença entre o MSE antes e depois do limiar no Perceptron vs. Regra Delta?
+
+**Resposta:**
+
+Esta é a diferença central entre os dois algoritmos:
+
+**Perceptron:** O erro usado na atualização é:
+
+$$\delta_\text{perc} = d - \underbrace{\text{sgn}(\text{net})}_{\text{saída limiarizada}} \in \{-2, 0, +2\}$$
+
+A função sgn é **não-diferenciável** em $\text{net}=0$ e tem gradiente zero em todo o resto. Isso significa que o Perceptron não pode ser interpretado como gradiente descendente em nenhuma função de custo suave.
+
+**Regra Delta:** O erro usado na atualização é:
+
+$$\delta_\text{delta} = d - \underbrace{\text{net}}_{\text{saída linear}} \in \mathbb{R}$$
+
+Como $\text{net} = w^T x$ é linear em $w$, o gradiente de $E = (d - \text{net})^2$ em relação a $w$ é bem definido em todos os pontos, permitindo gradiente descendente clássico.
+
+**Consequência prática:** A Regra Delta tem uma superfície de erro suave (parabolóide convexa) com garantia de convergência. O Perceptron navega por uma superfície não-suave sem garantia equivalente para dados sobrepostos.
+
+---
+
+## Q25. Como resolver o XOR com uma rede neural? (Resposta conceitual)
+
+**Resposta:**
+
+O XOR requer uma **rede neural multicamada** (MLP — Multi-Layer Perceptron) com pelo menos uma **camada oculta**.
+
+**Arquitetura mínima para XOR:**
+
+```
+Entrada: x₁, x₂
+   ↓
+Camada Oculta: 2 neurônios com ativação não-linear (ex: sigmoide)
+   ↓
+Saída: 1 neurônio com limiar
+```
+
+**Intuição:** A camada oculta aprende a **transformar o espaço de features** — cria novas representações $h_1$, $h_2$ a partir de $x_1$, $x_2$ onde o XOR **se torna linearmente separável**. A camada de saída então aplica um classificador linear nas novas representações.
+
+**Por exemplo**, os neurônios ocultos podem aprender:
+- $h_1 \approx x_1 \text{ OR } x_2$ (ativo se pelo menos um é 1)
+- $h_2 \approx x_1 \text{ AND } x_2$ (ativo só se ambos são 1)
+
+Então: $d = h_1 \text{ AND NOT } h_2$, que é linearmente separável no espaço $(h_1, h_2)$.
+
+**No projeto:** Esta extensão corresponde à Aba 3 futura (Redes Neurais com sklearn/MLP).

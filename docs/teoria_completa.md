@@ -1,6 +1,7 @@
-# Teoria Completa — Classificador de Distância Mínima
+# Teoria Completa — Classificadores Lineares
 
-> Material de estudo detalhado para a prova. Cobre toda a teoria implementada no projeto.
+> Material de estudo detalhado para a prova. Cobre toda a teoria implementada no projeto:
+> Classificador de Distância Mínima (Aba 1) · Perceptron de Rosenblatt (Aba 2) · Regra Delta / Adaline (Aba 2) · Problema XOR (Aba 2).
 
 ---
 
@@ -297,3 +298,284 @@ O Classificador de Distância Mínima pode ser derivado como caso especial do **
 Nesse caso, maximizar a função discriminante de Bayes reduz a minimizar a distância euclidiana ao protótipo — que é exatamente o que fazemos.
 
 Isso justifica formalmente por que o algoritmo funciona para dados com distribuição aproximadamente gaussiana e classes bem separadas.
+
+---
+
+## 11. Perceptron de Rosenblatt
+
+### Contexto histórico
+
+O **Perceptron** foi proposto por Frank Rosenblatt em 1957 como modelo computacional do neurônio biológico. É o classificador linear mais simples com aprendizado adaptativo — diferentemente do Classificador de Distância Mínima, os pesos são ajustados iterativamente com base nos erros cometidos.
+
+### Arquitetura
+
+```
+x₁ ──w₁──┐
+x₂ ──w₂──┤  net = w₀·1 + w₁·x₁ + ... + wₙ·xₙ   →   y = sgn(net)
+  ⋮       ├─→[ net ]──→[ sgn ]──→ y ∈ {+1, −1}
+xₙ ──wₙ──┘
+ 1 ──w₀──┘  (bias — sempre 1, permite deslocar a fronteira)
+```
+
+O vetor aumentado (com bias) é: $x_\text{aug} = [1,\; x_1,\; x_2,\; \ldots,\; x_n]^T$
+
+O vetor de pesos: $w = [w_0,\; w_1,\; w_2,\; \ldots,\; w_n]^T$
+
+### Função de Ativação: Degrau Bipolar (sgn)
+
+$$y = \text{sgn}(\text{net}) = \begin{cases} +1 & \text{se } w^T x_\text{aug} \geq 0 \\ -1 & \text{se } w^T x_\text{aug} < 0 \end{cases}$$
+
+### Regra de Aprendizado
+
+O Perceptron **só atualiza os pesos quando erra**. Dado um par de treinamento $(x, d)$ com $d \in \{+1, -1\}$:
+
+$$w^{(t+1)} = w^{(t)} + p \cdot (d - y) \cdot x_\text{aug}$$
+
+Onde:
+- $p$ = taxa de aprendizado (ex: $p = 0{,}03$)
+- $d$ = saída desejada (+1 ou −1)
+- $y$ = saída atual = $\text{sgn}(w^T x_\text{aug})$
+- $(d - y) \in \{0,\; +2,\; -2\}$ — zero quando correto
+
+**Caso prático:** Se $d = +1$ e $y = -1$ (erro), então $(d-y) = +2$ e os pesos aumentam na direção de $x_\text{aug}$, empurrando a fronteira para o lado correto.
+
+### Algoritmo Completo
+
+```
+Inicializar: w = [0, 0, ..., 0]
+
+Para cada época até max_epocas:
+    n_erros = 0
+    Para cada amostra (x_aug, d) no treino:
+        net = w^T · x_aug
+        y = sgn(net)
+        Se y ≠ d:
+            n_erros += 1
+            w = w + p · (d - y) · x_aug
+    historico_erros.append(n_erros)
+    Se n_erros == 0: parar (convergiu)
+```
+
+**No código:** `treinar_perceptron()` em `perceptron.py`
+
+### Teorema da Convergência do Perceptron
+
+> **Se os dados forem linearmente separáveis, o Perceptron converge em um número finito de iterações.**
+
+Prova (Rosenblatt, 1957): Seja $\gamma$ a margem de separação (distância mínima de qualquer ponto à fronteira ótima) e $R = \max \|x_\text{aug}\|$. O número de atualizações é limitado por:
+
+$$t_{\max} \leq \left(\frac{R}{\gamma}\right)^2$$
+
+**Corolário:** Se os dados **não** são linearmente separáveis, o algoritmo **nunca para** (oscila indefinidamente). Por isso limitamos o treinamento com `max_epocas`.
+
+### Resultados no Iris (pétalas [2,3])
+
+| Par | Épocas | Convergiu | Acurácia (teste) |
+|---|---|---|---|
+| Setosa × Versicolor | 6 | ✓ | 100% |
+| Setosa × Virginica | 5 | ✓ | 100% |
+| Versicolor × Virginica | 100 | ✗ | ~50–80% |
+
+O par Versicolor × Virginica não converge porque há amostras sobrepostas — mesmo com pétalas, a separação não é perfeita (os 5 erros da Aba 1 correspondem justamente a esses pontos fronteiriços).
+
+---
+
+## 12. Regra Delta (Widrow-Hoff / Adaline)
+
+### Motivação
+
+O Perceptron tem dois problemas:
+1. Só converge para dados linearmente separáveis
+2. A atualização usa $y = \text{sgn}(\text{net})$ — uma função não-diferenciável — o que impede o uso de gradiente descente
+
+A **Regra Delta** (proposta por Widrow e Hoff em 1960, modelo ADALINE — *ADAptive LInear NEuron*) resolve ambos:
+- Usa a saída **linear** $\text{net}$ na atualização (diferenciável)
+- Minimiza o Erro Quadrático Médio (MSE), que tem solução analítica
+- Converge para o **mínimo global de MSE** mesmo com dados sobrepostos
+
+### Arquitetura
+
+Idêntica ao Perceptron, mas o aprendizado usa a saída antes da limiarização:
+
+```
+x_aug ──→ [ net = w^T x_aug ] ──→ TREINAMENTO: usa net diretamente
+                                  CLASSIFICAÇÃO: y = sgn(net)
+```
+
+### Função de Custo: MSE
+
+$$E(w) = \frac{1}{N} \sum_{k=1}^{N} (d_k - \text{net}_k)^2 = \frac{1}{N} \sum_{k=1}^{N} (d_k - w^T x_k)^2$$
+
+Onde $d_k \in \{+1, -1\}$ é o alvo e $\text{net}_k = w^T x_k$ é a saída linear.
+
+### Derivação da Regra de Atualização
+
+Calculamos o gradiente de $E$ em relação a $w_i$:
+
+$$\frac{\partial E}{\partial w_i} = \frac{-2}{N} \sum_{k=1}^{N} (d_k - \text{net}_k) \cdot x_{k,i}$$
+
+Gradiente descente: $w_i \leftarrow w_i - \eta \frac{\partial E}{\partial w_i}$
+
+Na forma **online (estocástica)** — atualiza após cada amostra, descartando $N$ e absorvendo 2 em $p$:
+
+$$\boxed{w \leftarrow w + p \cdot (d - \text{net}) \cdot x_\text{aug}}$$
+
+### Diferença Fundamental em Relação ao Perceptron
+
+| Característica | Perceptron | Regra Delta |
+|---|---|---|
+| Saída usada na atualização | $y = \text{sgn}(\text{net})$ (limiar) | $\text{net} = w^T x$ (linear) |
+| Atualiza quando | Erra | **Sempre** (mesmo quando acerta) |
+| O que minimiza | Erros de classificação | MSE (Erro Quadrático Médio) |
+| Garante convergência | Só para dados separáveis | Sempre (ao mínimo de MSE) |
+| Classificação final | $\text{sgn}(\text{net})$ | $\text{sgn}(\text{net})$ |
+
+A regra de atualização parece semelhante, mas o erro $\delta$ é diferente:
+- Perceptron: $\delta = d - \text{sgn}(\text{net}) \in \{-2, 0, +2\}$
+- Regra Delta: $\delta = d - \text{net} \in \mathbb{R}$ (contínuo)
+
+### Convergência e Superfície de Erro
+
+A função de custo $E(w)$ é uma **parabolóide convexa** em $w$ — tem um único mínimo global. O gradiente descente converge garantidamente a esse mínimo.
+
+Para dados **linearmente separáveis**: o MSE converge a zero (a fronteira ótima é encontrada).
+
+Para dados **não separáveis**: o MSE converge ao menor valor possível — mas nunca a zero. A fronteira encontrada é o **melhor compromisso linear** entre os grupos sobrepostos.
+
+### Resultados no Iris (pétalas [2,3])
+
+| Par | MSE inicial | MSE final (200 ep.) | Acurácia (teste) |
+|---|---|---|---|
+| Setosa × Versicolor | 0.3332 | 0.0727 | 100% |
+| Setosa × Virginica | 0.3734 | 0.0503 | 100% |
+| Versicolor × Virginica | 0.1298 | ~0.14 | ~50–80% |
+
+O par Ver×Vir com p=0.02 mostra comportamento esperado para dados sobrepostos: a Regra Delta encontra o compromisso linear mas não elimina todos os erros.
+
+---
+
+## 13. O Problema XOR — Limite dos Classificadores Lineares
+
+### A Função XOR
+
+A função booleana XOR (Ou-Exclusivo) é definida por:
+
+| $x_1$ | $x_2$ | $d = x_1 \oplus x_2$ |
+|---|---|---|
+| 0 | 0 | **0** |
+| 0 | 1 | **1** |
+| 1 | 0 | **1** |
+| 1 | 1 | **0** |
+
+Os padrões com saída 0: $\{(0,0),\, (1,1)\}$ — estão nos cantos da diagonal principal.
+Os padrões com saída 1: $\{(0,1),\, (1,0)\}$ — estão nos cantos da outra diagonal.
+
+### Por que Nenhuma Reta Separa o XOR?
+
+Para classificar perfeitamente, precisaríamos que:
+- $w_0 + w_1 \cdot 0 + w_2 \cdot 0 < 0$ (para $(0,0)$, saída 0)
+- $w_0 + w_1 \cdot 0 + w_2 \cdot 1 \geq 0$ (para $(0,1)$, saída 1)
+- $w_0 + w_1 \cdot 1 + w_2 \cdot 0 \geq 0$ (para $(1,0)$, saída 1)
+- $w_0 + w_1 \cdot 1 + w_2 \cdot 1 < 0$ (para $(1,1)$, saída 0)
+
+Somando as inequações das saídas 1:
+$$2w_0 + w_1 + w_2 \geq 0$$
+
+Somando as inequações das saídas 0:
+$$2w_0 + w_1 + w_2 < 0$$
+
+Contradição: $2w_0 + w_1 + w_2$ não pode ser simultaneamente $\geq 0$ e $< 0$.
+
+**Conclusão:** O XOR é matematicamente impossível de resolver com um único classificador linear.
+
+### MSE Mínimo Teórico para o XOR
+
+Dada a impossibilidade de separação perfeita, qual é o menor MSE que um classificador linear pode atingir?
+
+Por simetria, os 4 padrões têm a mesma influência no centróide. O melhor valor constante que minimiza o MSE é a média dos alvos:
+
+$$\bar{d} = \frac{0 + 1 + 1 + 0}{4} = 0{,}5$$
+
+O MSE mínimo é então:
+
+$$E_{\min} = \frac{1}{4}\sum_{k=1}^{4}(d_k - 0{,}5)^2 = \frac{4 \cdot 0{,}25}{4} = \boxed{0{,}25}$$
+
+### O Que Acontece na Prática
+
+Quando treinamos a Regra Delta no XOR por muitas épocas com $p$ pequeno:
+- Os pesos convergem para $w \approx [0{,}5, 0, 0]$ (bias ≈ 0.5, pesos ≈ 0)
+- A saída linear é $\approx 0{,}5$ para todas as entradas
+- O MSE converge para $\approx 0{,}25$
+
+Isso confirma que a Regra Delta encontrou o mínimo global da superfície quadrática — mas esse mínimo não representa uma separação útil.
+
+### Solução: Redes Neurais Multicamada
+
+O XOR foi o problema que motivou o desenvolvimento das **Redes Neurais com múltiplas camadas** (MLPs). Com uma camada oculta de 2 neurônios, o XOR pode ser resolvido perfeitamente usando ativações não-lineares (ex: sigmoide, ReLU).
+
+> Esta extensão corresponde a Aba 3 (futura implementação com sklearn/MLP).
+
+---
+
+## 14. Comparação dos Três Classificadores
+
+| | Distância Mínima | Perceptron | Regra Delta |
+|---|---|---|---|
+| **Treinamento** | Calcular média | Iterativo (por erros) | Iterativo (sempre) |
+| **Saída usada no ajuste** | N/A (sem iteração) | $\text{sgn}(\text{net})$ | $\text{net}$ (linear) |
+| **Fronteira de decisão** | Hiperplano equidistante | Hiperplano geral | Hiperplano (min. MSE) |
+| **Garante convergência** | Sempre (1 passo) | Só se separável | Sempre (ao mín. MSE) |
+| **O que minimiza** | Distância ao protótipo | Erros de class. | MSE |
+| **Dados não separáveis** | Classifica (com erros) | Não converge | Converge ao mín. MSE |
+| **Implementação** | `classifier.py` | `perceptron.py` | `delta_rule.py` |
+
+### Equivalência Assintótica
+
+Para dados linearmente separáveis, todos os três classificadores encontram **fronteiras equivalentes** (a menos de escala dos pesos). A diferença está no processo de aprendizado, não no resultado final.
+
+Para dados não separáveis, apenas a Regra Delta tem comportamento bem definido (mínimo de MSE). O Perceptron oscila; o Classificador de Distância Mínima simplesmente classifica com os protótipos calculados.
+
+---
+
+## 15. Interface Gráfica: Aba 2 — Perceptron & Delta
+
+A Aba 2 da GUI implementa os três experimentos acima de forma interativa:
+
+| Modo | O que demonstra |
+|---|---|
+| **Perceptron + Setosa×Versicolor** | Convergência rápida (6 épocas), fronteira clara |
+| **Perceptron + Versicolor×Virginica** | Não-convergência, sobreposição de classes |
+| **Regra Delta + qualquer par** | Curva de MSE decrescente, fronteira minimizando MSE |
+| **XOR (Regra Delta)** | MSE converge a 0.25, fronteira inútil, limite linear |
+
+**Como interpretar os gráficos:**
+- **Subplot esquerdo:** Scatter dos dados + fronteira de decisão (reta âmbar tracejada)
+- **Subplot direito:** Curva de convergência — erros/época (Perceptron) ou MSE/época (Delta)
+
+---
+
+## 16. Pipeline Completo do Projeto (Ambas as Abas)
+
+```
+DADOS (150 amostras, 4 features, 3 classes)
+       │
+       ▼
+SPLIT ESTRATIFICADO 70/30  (seed=42)
+  Treino: 105  │  Teste: 45
+       │
+  ┌────┴──────────────────────────────┐
+  │ ABA 1 — Distância Mínima          │ ABA 2 — Perceptron / Delta
+  │                                    │
+  │ Treino: m_j = média de cada classe │ Treino: w iterativo
+  │ Predição: argmax d_j(x)            │ Perceptron: w ← w + p(d−y)x  [se errar]
+  │ Fronteira: w=m_i−m_j, b=...        │ Delta:      w ← w + p(d−net)x [sempre]
+  │ Acurácia pétalas: 100%             │ XOR: MSE → 0.25 (não converge)
+  │ Acurácia sépalas: ~82%             │
+  └────────────────────────────────────┘
+       │
+       ▼
+AVALIAÇÃO: Acurácia · Matriz de Confusão · Precisão · Revocação · F1
+       │
+       ▼
+VISUALIZAÇÃO: Dispersão · Fronteiras · Heatmap · Convergência
+```

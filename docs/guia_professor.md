@@ -1,6 +1,10 @@
 # Guia de Explicação para o Professor
 
-Este documento serve como um guia para apresentar e explicar o projeto. Ele detalha a lógica implementada, as escolhas arquiteturais e a matemática por trás do classificador.
+Este documento serve como um guia para apresentar e explicar o projeto. Ele detalha a lógica implementada, as escolhas arquiteturais e a matemática por trás de cada classificador.
+
+**Conteúdo coberto:**
+- §1–§10: Distância Mínima (Aba 1) — split, protótipos, discriminante, fronteiras, GUI
+- §11–§14: Perceptron & Regra Delta & XOR (Aba 2) — teoria, resultados, demonstração
 
 ---
 
@@ -242,15 +246,151 @@ Este é o painel mais importante para defender o domínio matemático ao profess
 
 O projeto foi intencionalmente construído sem bibliotecas de ML para demonstrar domínio matemático. Em uma versão futura, cada função pura tem um equivalente direto:
 
-| Função Pura (`math_utils.py`) | Equivalente NumPy/Sklearn |
+| Função Pura | Equivalente NumPy/Sklearn |
 |---|---|
 | `produto_escalar(a, b)` | `np.dot(a, b)` |
 | `distancia_euclidiana(a, b)` | `np.linalg.norm(np.array(a) - np.array(b))` |
 | `calcular_media(vetores)` | `np.mean(X, axis=0)` |
 | `discriminante(x, mj)` | `np.dot(x, mj) - 0.5 * np.dot(mj, mj)` |
-| `treinar(dados, indices)` | `sklearn.neighbors.NearestCentroid().fit(X, y)` |
-| `predizer_todas_classes(...)` | `NearestCentroid().predict(x)` |
+| `treinar_perceptron(...)` | `sklearn.linear_model.Perceptron().fit(X, y)` |
+| `treinar_delta_iris(...)` | `sklearn.linear_model.SGDClassifier(loss='squared_error').fit(X,y)` |
+| `treinar_delta_xor(...)` | Não existe equivalente direto para demonstração didática |
 
-**Como apresentar ao professor:** "A estrutura modular foi pensada para facilitar a migração. O `math_utils.py` pode ser trocado por NumPy sem mudar nada no restante do código — basta substituir as funções uma a uma."
+**Como apresentar ao professor:** "A estrutura modular foi pensada para facilitar a migração. Os módulos `math_utils.py`, `perceptron.py` e `delta_rule.py` podem ser trocados por NumPy/sklearn sem mudar nada no restante do código — basta substituir as funções uma a uma."
 
-A mesma separação de responsabilidades (`data_loader → classifier → evaluator → visualizer`) continuará válida mesmo com bibliotecas.
+---
+
+## 11. Aba 2 — Perceptron & Regra Delta: O que Implementamos
+
+### Ponto Chave de Apresentação
+
+A Aba 2 implementa **três experimentos do PR4**, todos em Python puro:
+
+1. **Perceptron de Rosenblatt** — classificador binário com aprendizado por correção de erros
+2. **Regra Delta (Adaline / Widrow-Hoff)** — gradiente descendente na superfície MSE
+3. **XOR com Regra Delta** — demonstração do limite fundamental dos classificadores lineares
+
+**Por que isso é importante?** Enquanto a Aba 1 calculava protótipos em um único passo analítico, a Aba 2 mostra o aprendizado iterativo — o professor pode ver o processo de convergência em tempo real nos gráficos.
+
+### Arquivos implementados
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `iris_classifier/perceptron.py` | Perceptron puro: sgn, regra de atualização, convergência |
+| `iris_classifier/delta_rule.py` | Regra Delta pura: gradiente MSE, XOR |
+| `iris_classifier/gui/tab_perceptron_delta.py` | Aba 2: controles, 2 subplots, métricas, análise |
+
+---
+
+## 12. Demonstração da Aba 2: Roteiro de Apresentação
+
+Execute: `python iris_classifier/run_gui.py` e clique na aba **Perceptron & Delta**.
+
+### Experimento 1 — Perceptron, dados separáveis
+
+1. **Algoritmo:** Perceptron | **Par:** Setosa × Versicolor | **Atributos:** Pétalas
+2. **Hiperparâmetros:** p = 0,03 | Max. Épocas = 100
+3. Clicar em **Treinar**
+
+**O que mostrar:**
+- O gráfico direito (Convergência): o número de erros **cai para zero em 6 épocas** — convergência garantida pelo Teorema de Rosenblatt para dados separáveis
+- O gráfico esquerdo (Dispersão): a linha âmbar separa perfeitamente o azul (Setosa) do verde (Versicolor)
+- Métricas: **Acurácia 100%** · Épocas **6 / 100** · Convergência: **Convergiu**
+
+**Frase para o professor:** *"O Perceptron convergiu em apenas 6 épocas porque Setosa e Versicolor são linearmente separáveis com as pétalas. O Teorema da Convergência de Rosenblatt garante que sempre haverá convergência em tempo finito quando os dados são separáveis."*
+
+---
+
+### Experimento 2 — Perceptron, dados sobrepostos
+
+1. **Par:** Versicolor × Virginica | restante igual
+2. Clicar em **Treinar**
+
+**O que mostrar:**
+- Gráfico de convergência: os erros **nunca chegam a zero** — o algoritmo oscila até atingir `max_epocas`
+- Status abaixo do botão: *"Limite 100 épocas (não convergiu)"* em vermelho
+- Métricas: Acurácia **~50–80%** · Convergência: **Erros: X**
+
+**Frase para o professor:** *"Versicolor e Virginica têm amostras biologicamente fronteiriças que se cruzam no espaço das pétalas. Isso é exatamente o que vimos na Aba 1 (os 5 erros). O Perceptron detecta a impossibilidade e não para — corolário direto do Teorema da Convergência."*
+
+---
+
+### Experimento 3 — Regra Delta, comparação com o Perceptron
+
+1. **Algoritmo:** Regra Delta | **Par:** Setosa × Versicolor | **Pétalas** | p = 0,02 | 200 épocas
+2. Clicar em **Treinar**
+
+**O que mostrar:**
+- Gráfico de convergência: curva MSE **decrescendo suavemente** (parabolóide convexa)
+- Comparação com Perceptron: convergência mais lenta (200 vs 6 épocas) mas **garantida pela teoria**
+
+3. Trocar para **Versicolor × Virginica** e treinar novamente
+
+**O que mostrar:**
+- O MSE ainda converge (embora a um valor positivo)
+- Diferença do Perceptron: a Regra Delta **não oscila**, encontra o melhor compromisso linear
+- **Frase:** *"A Regra Delta usa a saída linear (net) para calcular o erro, não o limiar (sgn). Isso cria uma superfície de erro quadrática convexa — sempre tem mínimo global, independente da separabilidade dos dados."*
+
+---
+
+### Experimento 4 — XOR: o limite dos classificadores lineares
+
+1. **Algoritmo:** XOR (Delta) | p = 0,02 | Max. Épocas = 300
+2. Clicar em **Treinar**
+
+**O que mostrar:**
+- Gráfico esquerdo: os 4 pontos XOR — {(0,0),(1,1)} em azul vs {(0,1),(1,0)} em coral
+- A linha âmbar (fronteira linear) **não separa os dois grupos** — é impossível
+- Gráfico direito: MSE converge para **~0,25** (o mínimo teórico provado matematicamente)
+- Texto de análise: explica a prova de inseparabilidade e a solução via MLP
+
+**Frase para o professor:** *"O XOR é o problema que motivou a pesquisa em redes multicamada. A Regra Delta encontra o melhor classificador linear possível — mas esse melhor tem MSE = 0,25, confirmando matematicamente a impossibilidade. A solução exige uma camada oculta com ativação não-linear."*
+
+---
+
+## 13. Matemática Central da Aba 2 (resumo para apresentação)
+
+### Perceptron — por que o erro é (d − y)?
+
+Queremos que a saída $y = \text{sgn}(w^T x)$ concorde com o alvo $d$. Quando erram:
+
+- Se $d = +1$ e $y = -1$: o vetor de pesos precisa crescer em direção a $x$ → soma $+2 \cdot p \cdot x$
+- Se $d = -1$ e $y = +1$: o vetor de pesos precisa diminuir → soma $-2 \cdot p \cdot x$
+
+Isso é exatamente $(d - y) \cdot x = (\pm 2) \cdot x$.
+
+**No código (`perceptron.py`):**
+```python
+if y != d_val:
+    delta = taxa_aprendizado * (d_val - y)   # ±2p
+    w = [wi + delta * xi for wi, xi in zip(w, x_aug)]
+```
+
+### Regra Delta — por que usar net e não sgn?
+
+A função sgn não é diferenciável — seu gradiente é zero em quase todo lugar, impossibilitando gradiente descendente. Usando net diretamente:
+
+$$E(w) = (d - w^T x)^2 \quad \Rightarrow \quad \frac{\partial E}{\partial w} = -2(d - w^T x) \cdot x$$
+
+$$w \leftarrow w - \frac{p}{2} \cdot \frac{\partial E}{\partial w} = w + p(d - \text{net}) \cdot x$$
+
+**No código (`delta_rule.py`):**
+```python
+net = sum(wi * xi for wi, xi in zip(w, x_aug))
+erro = d_val - net            # erro linear, não limiarizado
+w = [wi + taxa_aprendizado * erro * xi for wi, xi in zip(w, x_aug)]
+```
+
+---
+
+## 14. Pontos Didáticos para Defender para o Professor
+
+1. **Progressão pedagógica:** Distância Mínima (sem iteração) → Perceptron (iteração por erro) → Delta Rule (gradiente) → XOR (limite linear) — a sequência mostra evolução histórica e conceitual do campo
+
+2. **Python puro em tudo:** `perceptron.py` e `delta_rule.py` usam apenas `sum()`, `zip()` e operações com listas — zero numpy. O professor pode auditar linha a linha
+
+3. **Convergência como experimento:** O aluno pode ver ao vivo a curva de convergência mudar ao trocar o par de classes — não só "saber" que Versicolor×Virginica não converge, mas **ver** o gráfico oscilar
+
+4. **XOR como ponte:** A demonstração experimental do MSE = 0,25 valida matematicamente a prova teórica de inseparabilidade — conecta teoria à prática
+
+5. **Mesmo dataset, resultados diferentes:** Usar o Iris em ambas as abas mostra como o mesmo problema pode ser abordado com algoritmos distintos, facilitando comparação direta
