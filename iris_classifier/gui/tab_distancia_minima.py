@@ -42,6 +42,10 @@ CAMINHO_DADOS_V1 = os.path.join(PROJETO_ROOT, 'data', 'Iris data.xls')
 CAMINHO_DADOS_V2 = os.path.join(PROJETO_ROOT, 'data', 'iris_data_02.xlsx')
 CAMINHOS_DADOS = {'v1': CAMINHO_DADOS_V1, 'v2': CAMINHO_DADOS_V2}
 
+_DS_OPCOES = ['Iris Original  ·  v1', 'Iris Separavel  ·  v2']
+_DS_CHAVE  = {'Iris Original  ·  v1': 'v1', 'Iris Separavel  ·  v2': 'v2'}
+_DS_LABEL  = {'v1': 'Iris Original  ·  v1', 'v2': 'Iris Separavel  ·  v2'}
+
 CLASSES = ['setosa', 'versicolor', 'virginica']
 
 CONFIGURACOES_ATRIBUTOS = {
@@ -123,22 +127,18 @@ class TabDistanciaMinima(tk.Frame):
         wrap.grid(row=0, column=0, sticky='nsew', padx=(20, 10), pady=20)
         wrap.columnconfigure(0, weight=1)
 
-        # 0. Conjunto de dados
-        card_dados = Card(wrap, titulo='conjunto de dados')
-        card_dados.grid(row=0, column=0, sticky='ew')
-        for rotulo, val in [('Iris Original  ·  v1',  'v1'),
-                            ('Iris Separavel  ·  v2', 'v2')]:
-            tk.Radiobutton(card_dados, text=rotulo,
-                           value=val, variable=self.var_dataset,
-                           bg=T.BG_CARD, fg=T.FG,
-                           selectcolor=T.BG_HOVER,
-                           activebackground=T.BG_CARD,
-                           activeforeground=T.ACCENT,
-                           font=T.FONT_BODY, anchor='w',
-                           borderwidth=0, highlightthickness=0,
-                           command=self._ao_mudar_dataset
-                          ).pack(fill='x', padx=14, pady=2)
-        tk.Frame(card_dados, bg=T.BG_CARD, height=8).pack()
+        # 0. Seletor de dataset
+        fds = tk.Frame(wrap, bg=T.BG)
+        fds.grid(row=0, column=0, sticky='ew', pady=(0, 4))
+        tk.Label(fds, text='Dataset:', bg=T.BG, fg=T.FG_MUTED,
+                 font=T.FONT_LABEL).pack(side='left', padx=(0, 8))
+        self._combo_dataset = ttk.Combobox(
+            fds, values=_DS_OPCOES, state='readonly',
+            width=22, font=T.FONT_BODY)
+        self._combo_dataset.set(_DS_LABEL[self.var_dataset.get()])
+        self._combo_dataset.pack(side='left', fill='x', expand=True)
+        self._combo_dataset.bind('<<ComboboxSelected>>',
+                                 self._ao_selecionar_dataset)
 
         # 1. Atributos
         card = Card(wrap, titulo='atributos do modelo')
@@ -371,6 +371,10 @@ class TabDistanciaMinima(tk.Frame):
             preds.append(p)
             gab.append(amostra['classe'])
         return preds, gab
+
+    def _ao_selecionar_dataset(self, event=None):
+        self.var_dataset.set(_DS_CHAVE[self._combo_dataset.get()])
+        self._ao_mudar_dataset()
 
     def _ao_mudar_dataset(self):
         self.lbl_pred.configure(text='—', fg=T.FG_DIM)

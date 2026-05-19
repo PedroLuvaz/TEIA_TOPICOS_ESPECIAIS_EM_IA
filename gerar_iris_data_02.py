@@ -21,7 +21,7 @@ RAIZ = os.path.dirname(os.path.abspath(__file__))
 ORIGEM  = os.path.join(RAIZ, 'data', 'Iris data.xls')
 DESTINO = os.path.join(RAIZ, 'data', 'iris_data_02.xlsx')
 INDICES_PETALAS = [2, 3]
-MARGEM = 0.08   # cm — folga minima alem da fronteira
+MARGEM = 1.5    # folga no espaco do discriminante (≈ 1 cm fisico no espaco de petalas)
 
 
 # ---------------------------------------------------------------------------

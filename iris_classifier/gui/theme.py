@@ -89,6 +89,21 @@ def aplicar_tema(root):
         foreground=[('selected', ACCENT), ('active', FG),
                     ('disabled', FG_DIM)])
 
+    # ---- Combobox ----
+    style.configure('TCombobox',
+        fieldbackground=BG_CARD, foreground=FG,
+        insertcolor=ACCENT,
+        bordercolor=BORDER_HARD, lightcolor=BORDER_HARD,
+        darkcolor=BORDER_HARD,
+        arrowcolor=FG_MUTED,
+        borderwidth=1, padding=(6, 4))
+    style.map('TCombobox',
+        fieldbackground=[('readonly', BG_CARD)],
+        bordercolor=[('focus', ACCENT)],
+        lightcolor=[('focus', ACCENT)],
+        darkcolor=[('focus', ACCENT)],
+        arrowcolor=[('active', ACCENT)])
+
     # ---- Scrollbar ----
     style.configure('TScrollbar',
         background=BG_CARD, troughcolor=BG_PANEL,

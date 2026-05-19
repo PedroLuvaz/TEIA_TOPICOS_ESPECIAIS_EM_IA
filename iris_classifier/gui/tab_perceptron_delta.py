@@ -43,6 +43,10 @@ CAMINHO_DADOS_V1 = os.path.join(PROJETO_ROOT, 'data', 'Iris data.xls')
 CAMINHO_DADOS_V2 = os.path.join(PROJETO_ROOT, 'data', 'iris_data_02.xlsx')
 CAMINHOS_DADOS = {'v1': CAMINHO_DADOS_V1, 'v2': CAMINHO_DADOS_V2}
 
+_DS_OPCOES = ['Iris Original  ·  v1', 'Iris Separavel  ·  v2']
+_DS_CHAVE  = {'Iris Original  ·  v1': 'v1', 'Iris Separavel  ·  v2': 'v2'}
+_DS_LABEL  = {'v1': 'Iris Original  ·  v1', 'v2': 'Iris Separavel  ·  v2'}
+
 CLASSES = ['setosa', 'versicolor', 'virginica']
 
 CONF_ATTR = {
@@ -139,23 +143,18 @@ class TabPerceptronDelta(tk.Frame):
                             padx=(20, 10), pady=20)
         self._wrap_esq.columnconfigure(0, weight=1)
 
-        # --- Card 0: Conjunto de dados ---
-        self.card_dados = Card(self._wrap_esq, titulo='conjunto de dados')
-        for rotulo, val in [
-            ('Iris Original  ·  v1',   'v1'),
-            ('Iris Separavel  ·  v2',  'v2'),
-        ]:
-            tk.Radiobutton(
-                self.card_dados, text=rotulo,
-                value=val, variable=self.var_dataset,
-                bg=T.BG_CARD, fg=T.FG,
-                selectcolor=T.BG_HOVER,
-                activebackground=T.BG_CARD, activeforeground=T.ACCENT,
-                font=T.FONT_BODY, anchor='w',
-                borderwidth=0, highlightthickness=0,
-                command=self._ao_mudar_dataset,
-            ).pack(fill='x', padx=14, pady=2)
-        tk.Frame(self.card_dados, bg=T.BG_CARD, height=8).pack()
+        # --- Seletor de dataset (sempre visivel, fora do relayoutar) ---
+        fds = tk.Frame(self._wrap_esq, bg=T.BG)
+        fds.pack(fill='x', pady=(0, 14))
+        tk.Label(fds, text='Dataset:', bg=T.BG, fg=T.FG_MUTED,
+                 font=T.FONT_LABEL).pack(side='left', padx=(0, 8))
+        self._combo_dataset = ttk.Combobox(
+            fds, values=_DS_OPCOES, state='readonly',
+            width=22, font=T.FONT_BODY)
+        self._combo_dataset.set(_DS_LABEL[self.var_dataset.get()])
+        self._combo_dataset.pack(side='left', fill='x', expand=True)
+        self._combo_dataset.bind('<<ComboboxSelected>>',
+                                 self._ao_selecionar_dataset)
 
         # --- Card 1: Algoritmo ---
         self.card_algo = Card(self._wrap_esq, titulo='algoritmo')
@@ -248,12 +247,11 @@ class TabPerceptronDelta(tk.Frame):
 
     def _relayoutar_controles(self):
         """Empacota os cartoes na ordem certa, ocultando os de Iris no modo XOR."""
-        for w in (self.card_dados, self.card_algo, self.card_par, self.card_attr,
+        for w in (self.card_algo, self.card_par, self.card_attr,
                   self.card_hiper, self._frame_btn):
             w.pack_forget()
 
-        self.card_dados.pack(fill='x')
-        self.card_algo.pack(fill='x', pady=(14, 0))
+        self.card_algo.pack(fill='x')
 
         if self.var_algo.get() != 'xor':
             self.card_par.pack(fill='x', pady=(14, 0))
@@ -385,6 +383,10 @@ class TabPerceptronDelta(tk.Frame):
         self._resetar_metricas()
         self._desenhar_inicial()
         self._escrever_analise_inicial()
+
+    def _ao_selecionar_dataset(self, event=None):
+        self.var_dataset.set(_DS_CHAVE[self._combo_dataset.get()])
+        self._ao_mudar_dataset()
 
     def _ao_mudar_dataset(self):
         """Ao trocar entre v1 e v2: recarrega dados e limpa estado."""
