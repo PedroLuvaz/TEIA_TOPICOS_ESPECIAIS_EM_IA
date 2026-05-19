@@ -1,6 +1,10 @@
 # Guia de Explicação para o Professor
 
-Este documento serve como um guia para apresentar e explicar o projeto. Ele detalha a lógica implementada, as escolhas arquiteturais e a matemática por trás do classificador.
+Este documento serve como um guia para apresentar e explicar o projeto. Ele detalha a lógica implementada, as escolhas arquiteturais e a matemática por trás de cada classificador.
+
+**Conteúdo coberto:**
+- §1–§10: Distância Mínima (Aba 1) — split, protótipos, discriminante, fronteiras, GUI
+- §11–§14: Perceptron & Regra Delta & XOR (Aba 2) — teoria, resultados, demonstração
 
 ---
 
@@ -110,32 +114,283 @@ Este experimento demonstra que a **escolha dos atributos (features)** impacta di
 
 ## 7. Estrutura Modular e Responsabilidade de Cada Arquivo
 
+### Núcleo (Python puro — sem bibliotecas de ML)
+
 | Arquivo | Responsabilidade | Matemática central |
 |---|---|---|
 | `math_utils.py` | Toda a álgebra linear em Python puro | `produto_escalar`, `distancia_euclidiana`, `discriminante`, `coeficientes_superficie_decisao` |
 | `data_loader.py` | Leitura do XLS + split estratificado | Agrupamento por classe, shuffle com `seed=42` |
 | `classifier.py` | Treinamento e predição | `treinar` → protótipos; `predizer_todas_classes` → argmax $d_j(x)$; `predizer_binario` → argmin distância |
 | `evaluator.py` | Métrica de avaliação | Acurácia |
-| `visualizer.py` | Gráficos matplotlib | Dispersão, superfícies de decisão, heatmap de confusão |
-| `main.py` | Orquestrador | Executa experimentos i, ii, iii + comparativo + interativo |
+| `visualizer.py` | Gráficos matplotlib (saída em `outputs/`) | Dispersão, superfícies de decisão, heatmap de confusão |
+| `main.py` | Orquestrador CLI | Executa experimentos i, ii, iii + comparativo + interativo |
 
-**Ponto importante:** `math_utils.py` não conhece nada de Iris — é uma biblioteca de álgebra genérica. Isso é uma boa prática de separação de responsabilidades.
+### Camada de apresentação (GUI Tkinter)
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `run_gui.py` | Ponto de entrada da interface (`python iris_classifier/run_gui.py`) |
+| `gui/app.py` | Janela principal (cabeçalho + notebook de 4 abas + rodapé) |
+| `gui/theme.py` | Paleta editorial escura, tipografia (Cambria/Segoe/Consolas), estilos `ttk` |
+| `gui/widgets.py` | Componentes reutilizáveis (`Card`, `MetricBlock`) |
+| `gui/tab_distancia_minima.py` | Aba ativa — controles, gráfico embarcado, métricas dinâmicas, análise textual |
+| `gui/janela_calculos.py` | **Janela de Memória de Cálculo** (fórmulas LaTeX renderizadas via mathtext + substituição numérica passo a passo) |
+
+**Ponto importante:** `math_utils.py` não conhece nada de Iris — é uma biblioteca de álgebra genérica. A camada GUI **não duplica** matemática: ela importa e chama os módulos puros. Isso é separação de responsabilidades.
 
 ---
 
-## 8. Futura Migração para Bibliotecas (NumPy / Scikit-learn)
+## 8. Demonstração Interativa: Interface Gráfica
+
+Além do modo CLI (`python iris_classifier/main.py`), o projeto inclui uma interface gráfica completa em **Tkinter + matplotlib**, executada com:
+
+```bash
+python iris_classifier/run_gui.py
+```
+
+### O que a interface oferece
+
+A janela principal usa um **notebook de abas** preparado para receber implementações futuras do projeto. A aba ativa, **Distância Mínima**, mostra:
+
+| Painel | Conteúdo |
+|---|---|
+| **Atributos do Modelo** | Toggle entre Pétalas `[2,3]` e Sépalas `[0,1]` — ao trocar, o modelo é re-treinado e todos os painéis atualizam |
+| **Visualização** | Toggle entre dispersão geral e fronteira de cada par (3 pares de classes) |
+| **Classificar Amostra** | Entrada manual de valores `(x₁, x₂)` para classificar uma nova amostra |
+| **Predição** | Resultado destacado com a classe vencedora, valor de `d_max` e scores das outras classes |
+| **Memória de Cálculo** | Botão que abre janela secundária com fórmulas matemáticas e substituição numérica |
+| **Acurácia teste** | Cor dinâmica: verde (≥95%), âmbar (≥80%), vermelho (<80%) |
+| **Erros base completa** | Mostra erros do modelo nas 150 amostras (treino + teste) — revela o overlap real |
+| **Análise** | Texto explicativo gerado dinamicamente sobre separabilidade vs sobreposição |
+
+### Pontos didáticos para apresentação
+
+1. **Mostre a alternância Pétalas ↔ Sépalas:**
+   - Pétalas: 100% de acurácia no teste, 5 erros na base completa (todos versicolor↔virginica)
+   - Sépalas: 82.22% no teste, 27 erros na base completa
+   - O texto da Análise muda automaticamente explicando o porquê.
+
+2. **Mostre as fronteiras dos pares:**
+   - `Setosa × Versicolor` e `Setosa × Virginica` — fronteira clara, regiões bem separadas
+   - `Versicolor × Virginica` — pontos atravessam a linha (são os erros do modelo)
+
+3. **Classifique uma amostra de borda:**
+   - Com pétalas: `(5.0, 1.7)` é caso ambíguo — ver os 3 scores discriminantes lado a lado.
+
+---
+
+## 9. Janela de Memória de Cálculo
+
+**Onde encontrar no código:** `iris_classifier/gui/janela_calculos.py`
+
+Este é o painel mais importante para defender o domínio matemático ao professor: ele mostra as **fórmulas em LaTeX renderizadas** (via `matplotlib.mathtext`) e logo abaixo a **substituição numérica** com os valores reais do modelo treinado.
+
+### Estrutura das 4 seções
+
+**Seção 1 — Protótipos (Vetores Médios)**
+- Fórmula: $m_j = \frac{1}{N_j} \sum_{x \in \omega_j} x$
+- Substituição para cada classe:
+  ```
+  N_set = 35   (amostras de treino)
+  m_set = (1/35) · [Σ Comp.Pétala, Σ Larg.Pétala]
+        = [1.4800, 0.2486]
+  ```
+
+**Seção 2 — Função Discriminante**
+- Fórmulas:
+  - $d_j(x) = x^T m_j - \frac{1}{2} m_j^T m_j$
+  - $j^* = \arg\max_j\, d_j(x)$
+- Substituição completa com $x = [4.5, 1.5]$:
+  ```
+  classe versicolor:
+    m_ver = [4.2371, 1.3229]
+    x · m_ver = 4.50·4.2371 + 1.50·1.3229 = 21.0514
+    m_ver · m_ver = 4.2371² + 1.3229² = 19.7033
+    d_ver(x) = 21.0514 - ½·19.7033 = +11.1998
+  ```
+- Resultado destacado: `argmax → VERSICOLOR (d = +11.1998)`
+
+**Seção 3 — Equivalência Argmax ≡ Argmin**
+- Fórmulas:
+  - $\|x - m_j\| = \sqrt{\sum_k (x_k - m_{jk})^2}$
+  - $\arg\max_j\, d_j(x) \equiv \arg\min_j\, \|x - m_j\|$
+  - Expansão: $\|x - m_j\|^2 = x^T x - 2\,x^T m_j + m_j^T m_j$
+- Validação numérica lado a lado: o maior `d_j(x)` corresponde à menor `||x - m_j||`.
+
+**Seção 4 — Fronteiras de Decisão (3 pares)**
+- Fórmulas:
+  - $w = m_i - m_j$
+  - $b = -\frac{1}{2}(\|m_i\|^2 - \|m_j\|^2)$
+  - $x_2 = \frac{-w_1 x_1 - b}{w_2}$ (forma plotável)
+- Para cada par:
+  ```
+  PAR setosa × versicolor:
+    m_set = [1.4800, 0.2486]    m_ver = [4.2371, 1.3229]
+    w = [-2.7571, -1.0743]
+    ||m_set||² = 2.2522    ||m_ver||² = 19.7033
+    b = +8.7256
+    Equação: -2.7571 x1 -1.0743 x2 +8.7256 = 0
+    Reta:    x2 = -2.5665·x1 + 8.1222
+  ```
+
+### Por que isso é poderoso para a apresentação
+
+1. **Você está provando que entende a matemática**, não só rodando código. As mesmas fórmulas do `formulario.md` aparecem na tela com substituição numérica em tempo real.
+2. **Transparência total:** o professor pode pedir "calcula d_versicolor para [4.5, 1.5]" e a janela já mostra cada passo.
+3. **Conecta as 4 representações** (protótipo, discriminante, distância, fronteira) numa visualização única.
+4. **Atualiza dinamicamente:** trocou pétalas para sépalas, todos os números recalculam.
+
+---
+
+## 10. Futura Migração para Bibliotecas (NumPy / Scikit-learn)
 
 O projeto foi intencionalmente construído sem bibliotecas de ML para demonstrar domínio matemático. Em uma versão futura, cada função pura tem um equivalente direto:
 
-| Função Pura (`math_utils.py`) | Equivalente NumPy/Sklearn |
+| Função Pura | Equivalente NumPy/Sklearn |
 |---|---|
 | `produto_escalar(a, b)` | `np.dot(a, b)` |
 | `distancia_euclidiana(a, b)` | `np.linalg.norm(np.array(a) - np.array(b))` |
 | `calcular_media(vetores)` | `np.mean(X, axis=0)` |
 | `discriminante(x, mj)` | `np.dot(x, mj) - 0.5 * np.dot(mj, mj)` |
-| `treinar(dados, indices)` | `sklearn.neighbors.NearestCentroid().fit(X, y)` |
-| `predizer_todas_classes(...)` | `NearestCentroid().predict(x)` |
+| `treinar_perceptron(...)` | `sklearn.linear_model.Perceptron().fit(X, y)` |
+| `treinar_delta_iris(...)` | `sklearn.linear_model.SGDClassifier(loss='squared_error').fit(X,y)` |
+| `treinar_delta_xor(...)` | Não existe equivalente direto para demonstração didática |
 
-**Como apresentar ao professor:** "A estrutura modular foi pensada para facilitar a migração. O `math_utils.py` pode ser trocado por NumPy sem mudar nada no restante do código — basta substituir as funções uma a uma."
+**Como apresentar ao professor:** "A estrutura modular foi pensada para facilitar a migração. Os módulos `math_utils.py`, `perceptron.py` e `delta_rule.py` podem ser trocados por NumPy/sklearn sem mudar nada no restante do código — basta substituir as funções uma a uma."
 
-A mesma separação de responsabilidades (`data_loader → classifier → evaluator → visualizer`) continuará válida mesmo com bibliotecas.
+---
+
+## 11. Aba 2 — Perceptron & Regra Delta: O que Implementamos
+
+### Ponto Chave de Apresentação
+
+A Aba 2 implementa **três experimentos do PR4**, todos em Python puro:
+
+1. **Perceptron de Rosenblatt** — classificador binário com aprendizado por correção de erros
+2. **Regra Delta (Adaline / Widrow-Hoff)** — gradiente descendente na superfície MSE
+3. **XOR com Regra Delta** — demonstração do limite fundamental dos classificadores lineares
+
+**Por que isso é importante?** Enquanto a Aba 1 calculava protótipos em um único passo analítico, a Aba 2 mostra o aprendizado iterativo — o professor pode ver o processo de convergência em tempo real nos gráficos.
+
+### Arquivos implementados
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `iris_classifier/perceptron.py` | Perceptron puro: sgn, regra de atualização, convergência |
+| `iris_classifier/delta_rule.py` | Regra Delta pura: gradiente MSE, XOR |
+| `iris_classifier/gui/tab_perceptron_delta.py` | Aba 2: controles, 2 subplots, métricas, análise |
+
+---
+
+## 12. Demonstração da Aba 2: Roteiro de Apresentação
+
+Execute: `python iris_classifier/run_gui.py` e clique na aba **Perceptron & Delta**.
+
+### Experimento 1 — Perceptron, dados separáveis
+
+1. **Algoritmo:** Perceptron | **Par:** Setosa × Versicolor | **Atributos:** Pétalas
+2. **Hiperparâmetros:** p = 0,03 | Max. Épocas = 100
+3. Clicar em **Treinar**
+
+**O que mostrar:**
+- O gráfico direito (Convergência): o número de erros **cai para zero em 6 épocas** — convergência garantida pelo Teorema de Rosenblatt para dados separáveis
+- O gráfico esquerdo (Dispersão): a linha âmbar separa perfeitamente o azul (Setosa) do verde (Versicolor)
+- Métricas: **Acurácia 100%** · Épocas **6 / 100** · Convergência: **Convergiu**
+
+**Frase para o professor:** *"O Perceptron convergiu em apenas 6 épocas porque Setosa e Versicolor são linearmente separáveis com as pétalas. O Teorema da Convergência de Rosenblatt garante que sempre haverá convergência em tempo finito quando os dados são separáveis."*
+
+---
+
+### Experimento 2 — Perceptron, dados sobrepostos
+
+1. **Par:** Versicolor × Virginica | restante igual
+2. Clicar em **Treinar**
+
+**O que mostrar:**
+- Gráfico de convergência: os erros **nunca chegam a zero** — o algoritmo oscila até atingir `max_epocas`
+- Status abaixo do botão: *"Limite 100 épocas (não convergiu)"* em vermelho
+- Métricas: Acurácia **~50–80%** · Convergência: **Erros: X**
+
+**Frase para o professor:** *"Versicolor e Virginica têm amostras biologicamente fronteiriças que se cruzam no espaço das pétalas. Isso é exatamente o que vimos na Aba 1 (os 5 erros). O Perceptron detecta a impossibilidade e não para — corolário direto do Teorema da Convergência."*
+
+---
+
+### Experimento 3 — Regra Delta, comparação com o Perceptron
+
+1. **Algoritmo:** Regra Delta | **Par:** Setosa × Versicolor | **Pétalas** | p = 0,02 | 200 épocas
+2. Clicar em **Treinar**
+
+**O que mostrar:**
+- Gráfico de convergência: curva MSE **decrescendo suavemente** (parabolóide convexa)
+- Comparação com Perceptron: convergência mais lenta (200 vs 6 épocas) mas **garantida pela teoria**
+
+3. Trocar para **Versicolor × Virginica** e treinar novamente
+
+**O que mostrar:**
+- O MSE ainda converge (embora a um valor positivo)
+- Diferença do Perceptron: a Regra Delta **não oscila**, encontra o melhor compromisso linear
+- **Frase:** *"A Regra Delta usa a saída linear (net) para calcular o erro, não o limiar (sgn). Isso cria uma superfície de erro quadrática convexa — sempre tem mínimo global, independente da separabilidade dos dados."*
+
+---
+
+### Experimento 4 — XOR: o limite dos classificadores lineares
+
+1. **Algoritmo:** XOR (Delta) | p = 0,02 | Max. Épocas = 300
+2. Clicar em **Treinar**
+
+**O que mostrar:**
+- Gráfico esquerdo: os 4 pontos XOR — {(0,0),(1,1)} em azul vs {(0,1),(1,0)} em coral
+- A linha âmbar (fronteira linear) **não separa os dois grupos** — é impossível
+- Gráfico direito: MSE converge para **~0,25** (o mínimo teórico provado matematicamente)
+- Texto de análise: explica a prova de inseparabilidade e a solução via MLP
+
+**Frase para o professor:** *"O XOR é o problema que motivou a pesquisa em redes multicamada. A Regra Delta encontra o melhor classificador linear possível — mas esse melhor tem MSE = 0,25, confirmando matematicamente a impossibilidade. A solução exige uma camada oculta com ativação não-linear."*
+
+---
+
+## 13. Matemática Central da Aba 2 (resumo para apresentação)
+
+### Perceptron — por que o erro é (d − y)?
+
+Queremos que a saída $y = \text{sgn}(w^T x)$ concorde com o alvo $d$. Quando erram:
+
+- Se $d = +1$ e $y = -1$: o vetor de pesos precisa crescer em direção a $x$ → soma $+2 \cdot p \cdot x$
+- Se $d = -1$ e $y = +1$: o vetor de pesos precisa diminuir → soma $-2 \cdot p \cdot x$
+
+Isso é exatamente $(d - y) \cdot x = (\pm 2) \cdot x$.
+
+**No código (`perceptron.py`):**
+```python
+if y != d_val:
+    delta = taxa_aprendizado * (d_val - y)   # ±2p
+    w = [wi + delta * xi for wi, xi in zip(w, x_aug)]
+```
+
+### Regra Delta — por que usar net e não sgn?
+
+A função sgn não é diferenciável — seu gradiente é zero em quase todo lugar, impossibilitando gradiente descendente. Usando net diretamente:
+
+$$E(w) = (d - w^T x)^2 \quad \Rightarrow \quad \frac{\partial E}{\partial w} = -2(d - w^T x) \cdot x$$
+
+$$w \leftarrow w - \frac{p}{2} \cdot \frac{\partial E}{\partial w} = w + p(d - \text{net}) \cdot x$$
+
+**No código (`delta_rule.py`):**
+```python
+net = sum(wi * xi for wi, xi in zip(w, x_aug))
+erro = d_val - net            # erro linear, não limiarizado
+w = [wi + taxa_aprendizado * erro * xi for wi, xi in zip(w, x_aug)]
+```
+
+---
+
+## 14. Pontos Didáticos para Defender para o Professor
+
+1. **Progressão pedagógica:** Distância Mínima (sem iteração) → Perceptron (iteração por erro) → Delta Rule (gradiente) → XOR (limite linear) — a sequência mostra evolução histórica e conceitual do campo
+
+2. **Python puro em tudo:** `perceptron.py` e `delta_rule.py` usam apenas `sum()`, `zip()` e operações com listas — zero numpy. O professor pode auditar linha a linha
+
+3. **Convergência como experimento:** O aluno pode ver ao vivo a curva de convergência mudar ao trocar o par de classes — não só "saber" que Versicolor×Virginica não converge, mas **ver** o gráfico oscilar
+
+4. **XOR como ponte:** A demonstração experimental do MSE = 0,25 valida matematicamente a prova teórica de inseparabilidade — conecta teoria à prática
+
+5. **Mesmo dataset, resultados diferentes:** Usar o Iris em ambas as abas mostra como o mesmo problema pode ser abordado com algoritmos distintos, facilitando comparação direta

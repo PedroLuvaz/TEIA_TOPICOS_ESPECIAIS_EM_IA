@@ -22,7 +22,8 @@ Este projeto implementa um **Classificador de Distância Mínima** a partir do z
 │       ├── app.py                # Janela principal (cabeçalho + notebook + rodapé)
 │       ├── theme.py              # Paleta editorial escura, tipografia, estilos ttk
 │       ├── widgets.py            # Cartões e blocos de métrica reutilizáveis
-│       └── tab_distancia_minima.py  # Aba do Classificador de Distância Mínima
+│       ├── tab_distancia_minima.py  # Aba do Classificador de Distância Mínima
+│       └── janela_calculos.py    # Janela secundária — fórmulas LaTeX + substituição numérica
 ├── outputs/                      # Pasta onde os gráficos são salvos automaticamente
 ├── README.md                     # Este arquivo
 └── requirements.txt              # Dependências do projeto
@@ -75,6 +76,19 @@ python iris_classifier/run_gui.py
 ```
 
 A janela já está estruturada com **abas** prontas para receber implementações futuras (Aba 2, Aba 3, Aba 4). A aba **Distância Mínima** continua usando exclusivamente Python puro.
+
+#### Recursos da aba Distância Mínima
+
+- **Atributos:** alterna entre Pétalas `[2,3]` e Sépalas `[0,1]` — todo o painel atualiza em tempo real
+- **Visualização:** dispersão geral ou fronteira de decisão de cada par de classes
+- **Classificar amostra:** entrada manual `(x₁, x₂)` com resultado destacado e scores `d_j(x)` de cada classe
+- **Memória de Cálculo:** botão dedicado abre janela secundária com **fórmulas matemáticas em LaTeX** (renderizadas via mathtext) e **substituição numérica passo a passo** com os valores reais do modelo:
+  - Cálculo dos protótipos $m_j$
+  - Função discriminante $d_j(x) = x^T m_j - \frac{1}{2} m_j^T m_j$ aplicada à amostra atual
+  - Equivalência $\arg\max_j d_j(x) \equiv \arg\min_j \|x - m_j\|$
+  - Coeficientes da fronteira $w$, $b$ para os 3 pares de classes
+- **Métricas:** acurácia teste (com cor dinâmica), split treino·teste, erros na base completa
+- **Análise:** texto explicativo gerado dinamicamente sobre separabilidade vs sobreposição
 
 **Grupo:** Erick Nathan · Laura Barbosa · Pedro Lucas
 

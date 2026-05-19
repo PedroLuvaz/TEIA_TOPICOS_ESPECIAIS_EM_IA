@@ -18,7 +18,8 @@ from tkinter import ttk
 
 import matplotlib
 matplotlib.use('TkAgg')
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
+                                               NavigationToolbar2Tk)
 from matplotlib.figure import Figure
 
 from data_loader import (carregar_dados_iris, split_estratificado,
@@ -29,6 +30,7 @@ from math_utils import coeficientes_superficie_decisao
 
 from . import theme as T
 from .widgets import Card, MetricBlock
+from .janela_calculos import JanelaMemoriaCalculo
 
 
 # ---------------------------------------------------------------------------
@@ -194,8 +196,22 @@ class TabDistanciaMinima(tk.Frame):
                                      justify='left', wraplength=280)
         self.lbl_pred_sub.pack(fill='x', padx=14, pady=(0, 14))
 
+        # 5. Memoria de calculo (abre janela com formulas + substituicao)
+        card = Card(wrap, titulo='memoria de calculo')
+        card.grid(row=4, column=0, sticky='ew', pady=(14, 0))
+        tk.Label(card,
+                 text='Formulas matematicas com substituicao numerica '
+                      'usando o modelo atual.',
+                 bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_LABEL,
+                 wraplength=280, justify='left'
+                ).pack(anchor='w', padx=14, pady=(2, 8))
+        ttk.Button(card, text='Abrir memoria de calculo  >',
+                   style='Primary.TButton',
+                   command=self._abrir_memoria_calculo
+                  ).pack(fill='x', padx=14, pady=(0, 14))
+
         # spacer no fundo
-        wrap.rowconfigure(4, weight=1)
+        wrap.rowconfigure(5, weight=1)
 
     # ---- Coluna direita ----
     def _coluna_visualizacao(self):
@@ -213,12 +229,20 @@ class TabDistanciaMinima(tk.Frame):
         painel.grid(row=0, column=0, sticky='nsew')
         painel.columnconfigure(0, weight=1)
         painel.rowconfigure(0, weight=1)
+        painel.rowconfigure(1, weight=0)   # toolbar — altura fixa
 
         self.figura = Figure(figsize=(7, 4.2), dpi=100, facecolor=T.BG_PANEL)
         self.ax = self.figura.add_subplot(111)
         self.canvas = FigureCanvasTkAgg(self.figura, master=painel)
         self.canvas.get_tk_widget().grid(row=0, column=0, sticky='nsew',
-                                         padx=10, pady=10)
+                                         padx=10, pady=(10, 2))
+
+        # Barra de navegacao: zoom, pan, home, salvar
+        self.toolbar = NavigationToolbar2Tk(self.canvas, painel,
+                                            pack_toolbar=False)
+        self.toolbar.update()
+        self._estilizar_toolbar(self.toolbar)
+        self.toolbar.grid(row=1, column=0, sticky='ew', padx=6, pady=(0, 6))
 
         # ---- Painel inferior ----
         inferior = tk.Frame(wrap, bg=T.BG)
@@ -256,6 +280,21 @@ class TabDistanciaMinima(tk.Frame):
         self.txt_analise.tag_configure('mono', foreground=T.FG,
                                         font=T.FONT_MONO)
         self.txt_analise.configure(state='disabled')
+
+    # ------------------------------------------------------------------
+    # Utilitarios
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _estilizar_toolbar(toolbar):
+        """Aplica o tema escuro a barra de ferramentas do matplotlib."""
+        toolbar.configure(background=T.BG_PANEL)
+        for child in toolbar.winfo_children():
+            try:
+                child.configure(background=T.BG_PANEL,
+                                activebackground=T.BG_HOVER,
+                                relief='flat', borderwidth=0)
+            except Exception:
+                pass
 
     # ------------------------------------------------------------------
     # Dados e modelo
@@ -340,6 +379,28 @@ class TabDistanciaMinima(tk.Frame):
                             for c in CLASSES if c != vencedor)
         self.lbl_pred_sub.configure(
             text=f'd_max = {scores[vencedor]:+.3f}\n{outros}')
+
+    def _abrir_memoria_calculo(self):
+        """Abre janela secundaria com as formulas e a substituicao numerica."""
+        if not self.prototipos:
+            return
+        cfg = CONFIGURACOES_ATRIBUTOS[self.atributos_ativos.get()]
+        # Numero de amostras de treino por classe (todas tem o mesmo)
+        n_treino = sum(1 for d in self.dados_treino
+                       if d['classe'] == 'setosa')
+        # Usa os valores do form de classificacao manual como amostra-exemplo
+        try:
+            amostra = [float(self.var_x.get().replace(',', '.')),
+                       float(self.var_y.get().replace(',', '.'))]
+        except ValueError:
+            amostra = [4.5, 1.5]
+        JanelaMemoriaCalculo(
+            self,
+            prototipos=self.prototipos,
+            eixos=(cfg['eixo_x'], cfg['eixo_y']),
+            n_treino_por_classe=n_treino,
+            amostra=amostra,
+        )
 
     # ------------------------------------------------------------------
     # Texto de analise

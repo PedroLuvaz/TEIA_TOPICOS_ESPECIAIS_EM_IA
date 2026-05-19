@@ -9,13 +9,13 @@ from tkinter import ttk
 
 from . import theme as T
 from .tab_distancia_minima import TabDistanciaMinima
+from .tab_perceptron_delta import TabPerceptronDelta
 
 
 GRUPO = 'Erick Nathan   ·   Laura Barbosa   ·   Pedro Lucas'
 DISCIPLINA = 'Topicos Especiais em Inteligencia Artificial'
 
 ABAS_FUTURAS = [
-    ('Aba 2', 'em breve'),
     ('Aba 3', 'em breve'),
     ('Aba 4', 'em breve'),
 ]
@@ -83,17 +83,21 @@ class App(tk.Tk):
         self.notebook = ttk.Notebook(wrap)
         self.notebook.pack(fill='both', expand=True)
 
-        # Aba ativa
+        # Aba 1 — Distancia Minima (Python puro)
         aba1 = TabDistanciaMinima(self.notebook)
         self.notebook.add(aba1, text='   Distancia Minima   ')
 
-        # Abas placeholder
+        # Aba 2 — Perceptron & Regra Delta (Python puro)
+        aba2 = TabPerceptronDelta(self.notebook)
+        self.notebook.add(aba2, text='   Perceptron & Delta   ')
+
+        # Abas placeholder (futuras)
         for nome, status in ABAS_FUTURAS:
             ph = self._construir_placeholder(nome, status)
             self.notebook.add(ph, text=f'   {nome}   ')
 
-        # Desabilitar abas futuras
-        for i in range(1, 1 + len(ABAS_FUTURAS)):
+        # Desabilitar apenas as abas futuras (3 e 4)
+        for i in range(2, 2 + len(ABAS_FUTURAS)):
             self.notebook.tab(i, state='disabled')
 
     def _construir_placeholder(self, nome, status):
@@ -124,7 +128,7 @@ class App(tk.Tk):
                  bg=T.BG_PANEL, fg=T.FG_MUTED,
                  font=T.FONT_SUBTITLE).pack(side='left', padx=20, pady=5)
         tk.Label(rod,
-                 text='UFRR  ·  Topicos Especiais em IA  ·  2026',
+                 text='UEPB  ·  Topicos Especiais em IA  ·  2026',
                  bg=T.BG_PANEL, fg=T.FG_DIM,
                  font=T.FONT_SUBTITLE).pack(side='right', padx=20, pady=5)
 
