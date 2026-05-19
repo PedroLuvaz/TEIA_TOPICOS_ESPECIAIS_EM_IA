@@ -38,7 +38,9 @@ from .janela_calculos import JanelaMemoriaCalculo
 # ---------------------------------------------------------------------------
 PROJETO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))))
-CAMINHO_DADOS = os.path.join(PROJETO_ROOT, 'data', 'Iris data.xls')
+CAMINHO_DADOS_V1 = os.path.join(PROJETO_ROOT, 'data', 'Iris data.xls')
+CAMINHO_DADOS_V2 = os.path.join(PROJETO_ROOT, 'data', 'iris_data_02.xlsx')
+CAMINHOS_DADOS = {'v1': CAMINHO_DADOS_V1, 'v2': CAMINHO_DADOS_V2}
 
 CLASSES = ['setosa', 'versicolor', 'virginica']
 
@@ -93,6 +95,7 @@ class TabDistanciaMinima(tk.Frame):
         self.dados_treino = []
         self.dados_teste = []
         self.prototipos = {}
+        self.var_dataset = tk.StringVar(value='v1')
         self.atributos_ativos = tk.StringVar(value='petalas')
         self.modo_grafico = tk.StringVar(value='dispersao')
         self.var_x = tk.StringVar(value='4.5')
@@ -120,9 +123,26 @@ class TabDistanciaMinima(tk.Frame):
         wrap.grid(row=0, column=0, sticky='nsew', padx=(20, 10), pady=20)
         wrap.columnconfigure(0, weight=1)
 
+        # 0. Conjunto de dados
+        card_dados = Card(wrap, titulo='conjunto de dados')
+        card_dados.grid(row=0, column=0, sticky='ew')
+        for rotulo, val in [('Iris Original  ·  v1',  'v1'),
+                            ('Iris Separavel  ·  v2', 'v2')]:
+            tk.Radiobutton(card_dados, text=rotulo,
+                           value=val, variable=self.var_dataset,
+                           bg=T.BG_CARD, fg=T.FG,
+                           selectcolor=T.BG_HOVER,
+                           activebackground=T.BG_CARD,
+                           activeforeground=T.ACCENT,
+                           font=T.FONT_BODY, anchor='w',
+                           borderwidth=0, highlightthickness=0,
+                           command=self._ao_mudar_dataset
+                          ).pack(fill='x', padx=14, pady=2)
+        tk.Frame(card_dados, bg=T.BG_CARD, height=8).pack()
+
         # 1. Atributos
         card = Card(wrap, titulo='atributos do modelo')
-        card.grid(row=0, column=0, sticky='ew')
+        card.grid(row=1, column=0, sticky='ew', pady=(14, 0))
         for chave, cfg in CONFIGURACOES_ATRIBUTOS.items():
             tk.Radiobutton(card, text=cfg['rotulo_ui'],
                            value=chave, variable=self.atributos_ativos,
@@ -139,7 +159,7 @@ class TabDistanciaMinima(tk.Frame):
 
         # 2. Modo do grafico
         card = Card(wrap, titulo='visualizacao')
-        card.grid(row=1, column=0, sticky='ew', pady=(14, 0))
+        card.grid(row=2, column=0, sticky='ew', pady=(14, 0))
         for rotulo, valor in MODOS_GRAFICO:
             tk.Radiobutton(card, text=rotulo,
                            value=valor, variable=self.modo_grafico,
@@ -155,7 +175,7 @@ class TabDistanciaMinima(tk.Frame):
 
         # 3. Classificacao manual
         card = Card(wrap, titulo='classificar amostra')
-        card.grid(row=2, column=0, sticky='ew', pady=(14, 0))
+        card.grid(row=3, column=0, sticky='ew', pady=(14, 0))
 
         form = tk.Frame(card, bg=T.BG_CARD)
         form.pack(fill='x', padx=14, pady=(2, 0))
@@ -184,7 +204,7 @@ class TabDistanciaMinima(tk.Frame):
 
         # 4. Predicao (resultado em destaque)
         card = Card(wrap, titulo='predicao')
-        card.grid(row=3, column=0, sticky='ew', pady=(14, 0))
+        card.grid(row=4, column=0, sticky='ew', pady=(14, 0))
         self.lbl_pred = tk.Label(card, text='—',
                                  bg=T.BG_CARD, fg=T.FG_DIM,
                                  font=T.FONT_VALUE_HUGE, anchor='w')
@@ -198,7 +218,7 @@ class TabDistanciaMinima(tk.Frame):
 
         # 5. Memoria de calculo (abre janela com formulas + substituicao)
         card = Card(wrap, titulo='memoria de calculo')
-        card.grid(row=4, column=0, sticky='ew', pady=(14, 0))
+        card.grid(row=5, column=0, sticky='ew', pady=(14, 0))
         tk.Label(card,
                  text='Formulas matematicas com substituicao numerica '
                       'usando o modelo atual.',
@@ -211,7 +231,7 @@ class TabDistanciaMinima(tk.Frame):
                   ).pack(fill='x', padx=14, pady=(0, 14))
 
         # spacer no fundo
-        wrap.rowconfigure(5, weight=1)
+        wrap.rowconfigure(6, weight=1)
 
     # ---- Coluna direita ----
     def _coluna_visualizacao(self):
@@ -300,10 +320,12 @@ class TabDistanciaMinima(tk.Frame):
     # Dados e modelo
     # ------------------------------------------------------------------
     def _carregar_dados(self):
-        if not os.path.exists(CAMINHO_DADOS):
-            self._set_analise(f'Erro: arquivo nao encontrado em\n{CAMINHO_DADOS}')
+        caminho = CAMINHOS_DADOS[self.var_dataset.get()]
+        if not os.path.exists(caminho):
+            self._set_analise(
+                f'Erro: arquivo nao encontrado:\n{os.path.basename(caminho)}')
             return
-        self.dados = carregar_dados_iris(CAMINHO_DADOS)
+        self.dados = carregar_dados_iris(caminho)
         self.dados_treino, self.dados_teste = split_estratificado(
             self.dados, proporcao_treino=0.7, semente=42)
 
@@ -349,6 +371,12 @@ class TabDistanciaMinima(tk.Frame):
             preds.append(p)
             gab.append(amostra['classe'])
         return preds, gab
+
+    def _ao_mudar_dataset(self):
+        self.lbl_pred.configure(text='—', fg=T.FG_DIM)
+        self.lbl_pred_sub.configure(text='aguardando entrada')
+        self._carregar_dados()
+        self._atualizar_modelo()
 
     def _ao_trocar_atributos(self):
         # Reseta resultado da classificacao manual ao trocar atributos
