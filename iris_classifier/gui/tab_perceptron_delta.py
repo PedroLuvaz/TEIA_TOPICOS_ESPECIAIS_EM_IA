@@ -39,7 +39,9 @@ from .widgets import Card, MetricBlock
 # ---------------------------------------------------------------------------
 PROJETO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))))
-CAMINHO_DADOS = os.path.join(PROJETO_ROOT, 'data', 'Iris data.xls')
+CAMINHO_DADOS_V1 = os.path.join(PROJETO_ROOT, 'data', 'Iris data.xls')
+CAMINHO_DADOS_V2 = os.path.join(PROJETO_ROOT, 'data', 'iris_data_02.xlsx')
+CAMINHOS_DADOS = {'v1': CAMINHO_DADOS_V1, 'v2': CAMINHO_DADOS_V2}
 
 CLASSES = ['setosa', 'versicolor', 'virginica']
 
@@ -99,6 +101,7 @@ class TabPerceptronDelta(tk.Frame):
         self.dados_treino = []
         self.dados_teste = []
 
+        self.var_dataset = tk.StringVar(value='v1')
         self.var_algo  = tk.StringVar(value='perceptron')
         self.var_par   = tk.StringVar(value='sv')
         self.var_attr  = tk.StringVar(value='petalas')
@@ -135,6 +138,24 @@ class TabPerceptronDelta(tk.Frame):
         self._wrap_esq.grid(row=0, column=0, sticky='nsew',
                             padx=(20, 10), pady=20)
         self._wrap_esq.columnconfigure(0, weight=1)
+
+        # --- Card 0: Conjunto de dados ---
+        self.card_dados = Card(self._wrap_esq, titulo='conjunto de dados')
+        for rotulo, val in [
+            ('Iris Original  ·  v1',   'v1'),
+            ('Iris Separavel  ·  v2',  'v2'),
+        ]:
+            tk.Radiobutton(
+                self.card_dados, text=rotulo,
+                value=val, variable=self.var_dataset,
+                bg=T.BG_CARD, fg=T.FG,
+                selectcolor=T.BG_HOVER,
+                activebackground=T.BG_CARD, activeforeground=T.ACCENT,
+                font=T.FONT_BODY, anchor='w',
+                borderwidth=0, highlightthickness=0,
+                command=self._ao_mudar_dataset,
+            ).pack(fill='x', padx=14, pady=2)
+        tk.Frame(self.card_dados, bg=T.BG_CARD, height=8).pack()
 
         # --- Card 1: Algoritmo ---
         self.card_algo = Card(self._wrap_esq, titulo='algoritmo')
@@ -227,13 +248,12 @@ class TabPerceptronDelta(tk.Frame):
 
     def _relayoutar_controles(self):
         """Empacota os cartoes na ordem certa, ocultando os de Iris no modo XOR."""
-        # Remove tudo primeiro
-        for w in (self.card_algo, self.card_par, self.card_attr,
+        for w in (self.card_dados, self.card_algo, self.card_par, self.card_attr,
                   self.card_hiper, self._frame_btn):
             w.pack_forget()
 
-        # Reempacota em ordem
-        self.card_algo.pack(fill='x')
+        self.card_dados.pack(fill='x')
+        self.card_algo.pack(fill='x', pady=(14, 0))
 
         if self.var_algo.get() != 'xor':
             self.card_par.pack(fill='x', pady=(14, 0))
@@ -330,12 +350,13 @@ class TabPerceptronDelta(tk.Frame):
     # Dados
     # -----------------------------------------------------------------------
     def _carregar_dados(self):
-        if not os.path.exists(CAMINHO_DADOS):
+        caminho = CAMINHOS_DADOS[self.var_dataset.get()]
+        if not os.path.exists(caminho):
             self.lbl_status.configure(
-                text=f'Dados nao encontrados: {CAMINHO_DADOS}',
+                text=f'Dados nao encontrados: {os.path.basename(caminho)}',
                 fg=T.DANGER)
             return
-        self.dados = carregar_dados_iris(CAMINHO_DADOS)
+        self.dados = carregar_dados_iris(caminho)
         self.dados_treino, self.dados_teste = split_estratificado(
             self.dados, proporcao_treino=0.7, semente=42)
 
@@ -362,6 +383,16 @@ class TabPerceptronDelta(tk.Frame):
         self.w = None
         self.historico = []
         self._resetar_metricas()
+        self._desenhar_inicial()
+        self._escrever_analise_inicial()
+
+    def _ao_mudar_dataset(self):
+        """Ao trocar entre v1 e v2: recarrega dados e limpa estado."""
+        self.w = None
+        self.historico = []
+        self._resetar_metricas()
+        self.lbl_status.configure(text='Modelo nao treinado.', fg=T.FG_MUTED)
+        self._carregar_dados()
         self._desenhar_inicial()
         self._escrever_analise_inicial()
 
@@ -505,9 +536,11 @@ class TabPerceptronDelta(tk.Frame):
     def _scatter_iris(self, ax, com_fronteira):
         indices = CONF_ATTR[self.var_attr.get()]['indices']
         cfg     = CONF_ATTR[self.var_attr.get()]
+        par     = self.var_par.get()
+        cp, cn  = PAR_POR_MODO[par]
 
-        # Plota todas as 3 classes (todos os dados)
-        for classe in CLASSES:
+        # Plota apenas as duas classes do par selecionado
+        for classe in [cp, cn]:
             pts = [d for d in self.dados if d['classe'] == classe]
             if not pts:
                 continue
@@ -523,8 +556,6 @@ class TabPerceptronDelta(tk.Frame):
         ax.set_xlabel(cfg['eixo_x'], fontsize=8)
         ax.set_ylabel(cfg['eixo_y'], fontsize=8)
 
-        par = self.var_par.get()
-        cp, cn = PAR_POR_MODO[par]
         titulo = f'{cp.capitalize()}  ×  {cn.capitalize()}'
 
         # Fronteira de decisao

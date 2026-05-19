@@ -1,32 +1,42 @@
 import xlrd
 import random
 
+def _linhas_xlsx(caminho):
+    """Gerador de linhas de um arquivo .xlsx via openpyxl."""
+    import openpyxl
+    wb = openpyxl.load_workbook(caminho, read_only=True, data_only=True)
+    ws = wb.active
+    for row in ws.iter_rows(values_only=True):
+        yield list(row)
+    wb.close()
+
+def _linhas_xls(caminho):
+    """Gerador de linhas de um arquivo .xls via xlrd."""
+    wb = xlrd.open_workbook(caminho)
+    ws = wb.sheet_by_index(0)
+    for i in range(ws.nrows):
+        yield ws.row_values(i)
+
 def carregar_dados_iris(caminho_arquivo):
     """
-    Lê os dados da Iris do arquivo XLS.
-    Estrutura esperada:
+    Le os dados da Iris do arquivo XLS ou XLSX.
     Col 0-3: atributos (features)
     Col 4: classe ('setosa', 'versicolor', 'virginica')
     """
+    if caminho_arquivo.lower().endswith('.xlsx'):
+        gerador = _linhas_xlsx(caminho_arquivo)
+    else:
+        gerador = _linhas_xls(caminho_arquivo)
+
     dados = []
-    workbook = xlrd.open_workbook(caminho_arquivo)
-    planilha = workbook.sheet_by_index(0)
-    
-    for i in range(planilha.nrows):
-        linha = planilha.row_values(i)
-        # Pular cabeçalho ou linhas malformadas
+    for linha in gerador:
         try:
             atributos = [float(x) for x in linha[:4]]
             classe = str(linha[4]).strip().lower()
             if not classe:
                 continue
-            amostra = {
-                'atributos': atributos,
-                'classe': classe
-            }
-            dados.append(amostra)
-        except (ValueError, IndexError):
-            # Provavelmente cabeçalho ou linha vazia
+            dados.append({'atributos': atributos, 'classe': classe})
+        except (ValueError, IndexError, TypeError):
             continue
     return dados
 
