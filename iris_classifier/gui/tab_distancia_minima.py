@@ -276,12 +276,10 @@ class TabDistanciaMinima(tk.Frame):
         col_m.grid(row=0, column=0, sticky='nsew', padx=(0, 14))
         col_m.columnconfigure(0, weight=1)
 
-        self.metric_acc = MetricBlock(col_m, 'acuracia teste', '—')
-        self.metric_acc.grid(row=0, column=0, sticky='ew')
         self.metric_split = MetricBlock(col_m, 'treino  ·  teste', '—')
-        self.metric_split.grid(row=1, column=0, sticky='ew', pady=(10, 0))
+        self.metric_split.grid(row=0, column=0, sticky='ew')
         self.metric_erros = MetricBlock(col_m, 'erros base completa', '—')
-        self.metric_erros.grid(row=2, column=0, sticky='ew', pady=(10, 0))
+        self.metric_erros.grid(row=1, column=0, sticky='ew', pady=(10, 0))
 
         # Analise textual
         card = Card(inferior, titulo='analise')
@@ -347,9 +345,6 @@ class TabDistanciaMinima(tk.Frame):
                        if {p, g} == {'versicolor', 'virginica'} and p != g)
 
         # Atualizar metricas
-        cor_acc = T.SUCCESS if acc_teste >= 0.95 else (
-                  T.ACCENT if acc_teste >= 0.80 else T.DANGER)
-        self.metric_acc.set(f'{acc_teste * 100:.2f}%', cor=cor_acc)
         self.metric_split.set(
             f'{len(self.dados_treino)}  ·  {len(self.dados_teste)}')
         self.metric_erros.set(

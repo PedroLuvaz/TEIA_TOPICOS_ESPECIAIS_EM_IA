@@ -32,6 +32,7 @@ from delta_rule import (treinar_delta_iris, treinar_delta_xor,
 
 from . import theme as T
 from .widgets import Card, MetricBlock
+from .janela_calculos import JanelaMemoriaCalculoPD
 
 
 # ---------------------------------------------------------------------------
@@ -117,6 +118,11 @@ class TabPerceptronDelta(tk.Frame):
         self.n_epocas_treinadas = 0
         self.acc_teste = None
         self.convergiu = False
+        self._classe_pos = None
+        self._classe_neg = None
+
+        self.var_test_x = tk.StringVar(value='4.5')
+        self.var_test_y = tk.StringVar(value='1.5')
 
         self._construir_layout()
         self._carregar_dados()
@@ -242,13 +248,64 @@ class TabPerceptronDelta(tk.Frame):
         )
         self.lbl_status.pack(fill='x', pady=(4, 0))
 
+        # --- Card: classificar amostra ---
+        self.card_testar = Card(self._wrap_esq, titulo='classificar amostra')
+        form_t = tk.Frame(self.card_testar, bg=T.BG_CARD)
+        form_t.pack(fill='x', padx=14, pady=(2, 0))
+        form_t.columnconfigure(1, weight=1)
+        self.lbl_test_x = tk.Label(form_t, text='Comp. Petala',
+                                   bg=T.BG_CARD, fg=T.FG_MUTED,
+                                   font=T.FONT_LABEL, anchor='w')
+        self.lbl_test_x.grid(row=0, column=0, sticky='w', pady=(0, 2))
+        ttk.Entry(form_t, textvariable=self.var_test_x,
+                  font=T.FONT_MONO, width=10
+                 ).grid(row=0, column=1, sticky='ew', padx=(8, 0))
+        self.lbl_test_y = tk.Label(form_t, text='Larg. Petala',
+                                   bg=T.BG_CARD, fg=T.FG_MUTED,
+                                   font=T.FONT_LABEL, anchor='w')
+        self.lbl_test_y.grid(row=1, column=0, sticky='w', pady=(8, 2))
+        ttk.Entry(form_t, textvariable=self.var_test_y,
+                  font=T.FONT_MONO, width=10
+                 ).grid(row=1, column=1, sticky='ew', padx=(8, 0))
+        ttk.Button(self.card_testar, text='Classificar  >',
+                   style='Primary.TButton',
+                   command=self._classificar_amostra_pd
+                  ).pack(fill='x', padx=14, pady=(14, 14))
+
+        # --- Resultado da predicao ---
+        self._frame_predicao_pd = Card(self._wrap_esq, titulo='predicao')
+        self.lbl_pred_pd = tk.Label(self._frame_predicao_pd, text='—',
+                                    bg=T.BG_CARD, fg=T.FG_DIM,
+                                    font=T.FONT_VALUE_HUGE, anchor='w')
+        self.lbl_pred_pd.pack(fill='x', padx=14, pady=(2, 2))
+        self.lbl_pred_sub_pd = tk.Label(
+            self._frame_predicao_pd, text='aguardando treinamento',
+            bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_MONO_SM,
+            anchor='w', justify='left', wraplength=280)
+        self.lbl_pred_sub_pd.pack(fill='x', padx=14, pady=(0, 14))
+
+        # --- Card: memoria de calculo ---
+        self.card_memoria_pd = Card(self._wrap_esq, titulo='memoria de calculo')
+        tk.Label(self.card_memoria_pd,
+                 text='Formulas matematicas com substituicao numerica '
+                      'usando os pesos treinados.',
+                 bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_LABEL,
+                 wraplength=280, justify='left'
+                ).pack(anchor='w', padx=14, pady=(2, 8))
+        ttk.Button(self.card_memoria_pd, text='Abrir memoria de calculo  >',
+                   style='Primary.TButton',
+                   command=self._abrir_memoria_calculo_pd
+                  ).pack(fill='x', padx=14, pady=(0, 14))
+
         # Layout inicial
         self._relayoutar_controles()
 
     def _relayoutar_controles(self):
         """Empacota os cartoes na ordem certa, ocultando os de Iris no modo XOR."""
         for w in (self.card_algo, self.card_par, self.card_attr,
-                  self.card_hiper, self._frame_btn):
+                  self.card_hiper, self._frame_btn,
+                  self.card_testar, self._frame_predicao_pd,
+                  self.card_memoria_pd):
             w.pack_forget()
 
         self.card_algo.pack(fill='x')
@@ -259,6 +316,11 @@ class TabPerceptronDelta(tk.Frame):
 
         self.card_hiper.pack(fill='x', pady=(14, 0))
         self._frame_btn.pack(fill='x', pady=(14, 0))
+
+        if self.var_algo.get() != 'xor':
+            self.card_testar.pack(fill='x', pady=(14, 0))
+            self._frame_predicao_pd.pack(fill='x', pady=(14, 0))
+            self.card_memoria_pd.pack(fill='x', pady=(14, 0))
 
     # -----------------------------------------------------------------------
     # Coluna direita — figura + metricas
@@ -314,12 +376,10 @@ class TabPerceptronDelta(tk.Frame):
         col_m.grid(row=0, column=0, sticky='nsew', padx=(0, 14))
         col_m.columnconfigure(0, weight=1)
 
-        self.metric_acc    = MetricBlock(col_m, 'acuracia teste',   '—')
-        self.metric_acc.grid(row=0, column=0, sticky='ew')
         self.metric_epocas = MetricBlock(col_m, 'epocas treinadas', '—')
-        self.metric_epocas.grid(row=1, column=0, sticky='ew', pady=(10, 0))
+        self.metric_epocas.grid(row=0, column=0, sticky='ew')
         self.metric_conv   = MetricBlock(col_m, 'convergencia', '—')
-        self.metric_conv.grid(row=2, column=0, sticky='ew', pady=(10, 0))
+        self.metric_conv.grid(row=1, column=0, sticky='ew', pady=(10, 0))
 
         # Cartao de analise textual
         card = Card(inferior, titulo='analise')
@@ -373,6 +433,9 @@ class TabPerceptronDelta(tk.Frame):
         self.w = None
         self.historico = []
         self._resetar_metricas()
+        if algo != 'xor':
+            self.lbl_pred_pd.configure(text='—', fg=T.FG_DIM)
+            self.lbl_pred_sub_pd.configure(text='aguardando treinamento')
         self._desenhar_inicial()
         self._escrever_analise_inicial()
 
@@ -381,6 +444,9 @@ class TabPerceptronDelta(tk.Frame):
         self.w = None
         self.historico = []
         self._resetar_metricas()
+        self._atualizar_labels_testar()
+        self.lbl_pred_pd.configure(text='—', fg=T.FG_DIM)
+        self.lbl_pred_sub_pd.configure(text='aguardando treinamento')
         self._desenhar_inicial()
         self._escrever_analise_inicial()
 
@@ -394,9 +460,69 @@ class TabPerceptronDelta(tk.Frame):
         self.historico = []
         self._resetar_metricas()
         self.lbl_status.configure(text='Modelo nao treinado.', fg=T.FG_MUTED)
+        if self.var_algo.get() != 'xor':
+            self.lbl_pred_pd.configure(text='—', fg=T.FG_DIM)
+            self.lbl_pred_sub_pd.configure(text='aguardando treinamento')
         self._carregar_dados()
         self._desenhar_inicial()
         self._escrever_analise_inicial()
+
+    # -----------------------------------------------------------------------
+    # Classificacao manual
+    # -----------------------------------------------------------------------
+    def _abrir_memoria_calculo_pd(self):
+        if self.w is None or self._classe_pos is None:
+            self.lbl_status.configure(
+                text='Treine o modelo primeiro.', fg=T.DANGER)
+            return
+        try:
+            amostra = [float(self.var_test_x.get().replace(',', '.')),
+                       float(self.var_test_y.get().replace(',', '.'))]
+        except ValueError:
+            amostra = [4.5, 1.5]
+        cfg = CONF_ATTR[self.var_attr.get()]
+        JanelaMemoriaCalculoPD(
+            self,
+            algo=self.var_algo.get(),
+            w=self.w,
+            classe_pos=self._classe_pos,
+            classe_neg=self._classe_neg,
+            eixos=(cfg['eixo_x'].replace(' (cm)', ''),
+                   cfg['eixo_y'].replace(' (cm)', '')),
+            taxa=self.var_taxa.get(),
+            epocas_treinadas=self.n_epocas_treinadas,
+            historico=self.historico,
+            amostra=amostra,
+        )
+
+    def _atualizar_labels_testar(self):
+        cfg = CONF_ATTR[self.var_attr.get()]
+        self.lbl_test_x.configure(text=cfg['eixo_x'].replace(' (cm)', ''))
+        self.lbl_test_y.configure(text=cfg['eixo_y'].replace(' (cm)', ''))
+
+    def _classificar_amostra_pd(self):
+        if self.w is None or self._classe_pos is None:
+            self.lbl_pred_pd.configure(text='—', fg=T.DANGER)
+            self.lbl_pred_sub_pd.configure(text='treine o modelo primeiro')
+            return
+        try:
+            v1 = float(self.var_test_x.get().replace(',', '.'))
+            v2 = float(self.var_test_y.get().replace(',', '.'))
+        except ValueError:
+            self.lbl_pred_pd.configure(text='—', fg=T.DANGER)
+            self.lbl_pred_sub_pd.configure(
+                text='valores invalidos (use numeros decimais)')
+            return
+
+        w0, w1, w2 = self.w[0], self.w[1], self.w[2]
+        net = w0 + w1 * v1 + w2 * v2
+        pred = self._classe_pos if net > 0 else self._classe_neg
+        cor = CORES_CLASSE[pred]
+        self.lbl_pred_pd.configure(text=pred.upper(), fg=cor)
+        self.lbl_pred_sub_pd.configure(
+            text=f'net = {net:+.4f}\n'
+                 f'{self._classe_pos} se net > 0  |  '
+                 f'{self._classe_neg} se net <= 0')
 
     # -----------------------------------------------------------------------
     # Treinamento
@@ -682,22 +808,11 @@ class TabPerceptronDelta(tk.Frame):
     # Metricas e analise
     # -----------------------------------------------------------------------
     def _resetar_metricas(self):
-        self.metric_acc.set('—')
-        self.metric_acc.lbl_valor.configure(fg=T.FG)
         self.metric_epocas.set('—')
         self.metric_conv.set('—')
 
     def _atualizar_metricas(self):
         algo = self.var_algo.get()
-
-        # Acuracia
-        if self.acc_teste is not None:
-            pct = self.acc_teste * 100
-            cor = (T.SUCCESS if pct >= 95 else
-                   T.ACCENT  if pct >= 80 else T.DANGER)
-            self.metric_acc.set(f'{pct:.2f}%', cor)
-        else:
-            self.metric_acc.set('N/A (XOR)', T.FG_MUTED)
 
         # Epocas
         max_ep = int(self.var_epocas.get())

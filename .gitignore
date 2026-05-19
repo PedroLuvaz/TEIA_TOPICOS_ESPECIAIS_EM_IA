@@ -2,6 +2,15 @@
 __pycache__/
 *.py[cod]
 *.pyo
+*.pyd
+*.pyc
+.Python
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.xml
 
 # Ambientes virtuais
 .venv/
@@ -16,12 +25,23 @@ outputs/
 .vscode/
 .idea/
 *.code-workspace
+*.swp
+*.swo
+*~
 
 # Windows
 Thumbs.db
 desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
 
 # Distribuição / build
 dist/
 build/
 *.egg-info/
+
+# Claude / agentes
+.claude
+
+# Arquivos gerados localmente
+data/iris_data_02.xlsx
