@@ -1,8 +1,8 @@
 """
 Tema visual do aplicativo - paleta, tipografia e estilos ttk.
 
-Direcao estetica: editorial cientifica em tema escuro.
-Slate profundo + ambar academico + dados em mint/coral/azul.
+Direcao estetica: editorial cientifica em tema claro.
+Fundo branco + ambar academico + dados em azul/verde/vermelho.
 Tipografia mista: serifa para titulos, sans para corpo, monospace
 para numeros. O objetivo e parecer com publicacao academica seria,
 nao com painel administrativo generico.
@@ -12,27 +12,27 @@ from tkinter import ttk
 # ---------------------------------------------------------------------------
 # Paleta
 # ---------------------------------------------------------------------------
-BG          = '#0E1117'   # fundo principal (slate quase preto)
-BG_PANEL    = '#161B22'   # paineis (1 nivel acima)
-BG_CARD     = '#1C2230'   # cartoes (2 niveis acima)
-BG_HOVER    = '#222B3D'   # estado hover
-BORDER      = '#2A3142'   # bordas suaves
-BORDER_HARD = '#3E4860'   # bordas com mais contraste
+BG          = '#FFFFFF'   # fundo principal (branco)
+BG_PANEL    = '#F6F8FA'   # paineis (cinza muito claro)
+BG_CARD     = '#EAEEF2'   # cartoes (cinza claro)
+BG_HOVER    = '#DDE3EA'   # estado hover
+BORDER      = '#D0D7DE'   # bordas suaves
+BORDER_HARD = '#ADBAC7'   # bordas com mais contraste
 
-FG          = '#E6EDF3'   # branco quente (texto principal)
-FG_MUTED    = '#8B949E'   # cinza intermediario
-FG_DIM      = '#6E7681'   # cinza apagado
+FG          = '#1F2328'   # quase preto (texto principal)
+FG_MUTED    = '#57606A'   # cinza intermediario
+FG_DIM      = '#8C959F'   # cinza apagado
 
-ACCENT      = '#E8A33D'   # ambar - assinatura visual do app
-ACCENT_DEEP = '#B07A20'   # ambar escuro (estados ativos)
+ACCENT      = '#BF7500'   # ambar escuro para contraste no branco
+ACCENT_DEEP = '#8A5500'   # ambar mais escuro (estados ativos)
 
-# Cores das classes - escolhidas para alto contraste no fundo escuro
-DATA_BLUE   = '#58A6FF'   # setosa
-DATA_MINT   = '#3FB950'   # versicolor
-DATA_CORAL  = '#F85149'   # virginica
+# Cores das classes - ajustadas para alto contraste no fundo claro
+DATA_BLUE   = '#0969DA'   # setosa
+DATA_MINT   = '#1A7F37'   # versicolor
+DATA_CORAL  = '#CF222E'   # virginica
 
-SUCCESS     = '#3FB950'
-DANGER      = '#F85149'
+SUCCESS     = '#1A7F37'
+DANGER      = '#CF222E'
 
 # ---------------------------------------------------------------------------
 # Tipografia (fontes nativas do Windows 11)
@@ -58,7 +58,7 @@ FONT_MONO_SM    = ('Consolas', 9, 'normal')
 # Aplicacao do tema ttk
 # ---------------------------------------------------------------------------
 def aplicar_tema(root):
-    """Configura ttk.Style com a paleta editorial escura.
+    """Configura ttk.Style com a paleta editorial clara.
 
     Apenas widgets ttk especificos sao estilizados aqui (Notebook, Entry,
     Primary.TButton). Para widgets dentro de cartoes onde a cor de fundo
@@ -89,6 +89,14 @@ def aplicar_tema(root):
         foreground=[('selected', ACCENT), ('active', FG),
                     ('disabled', FG_DIM)])
 
+    # ---- Scrollbar ----
+    style.configure('TScrollbar',
+        background=BG_CARD, troughcolor=BG_PANEL,
+        bordercolor=BORDER, arrowcolor=FG_MUTED,
+        borderwidth=0)
+    style.map('TScrollbar',
+        background=[('active', BG_HOVER)])
+
     # ---- Entry ----
     style.configure('TEntry',
         fieldbackground=BG_CARD, foreground=FG,
@@ -103,8 +111,9 @@ def aplicar_tema(root):
 
     # ---- Primary button (ambar solido) ----
     style.configure('Primary.TButton',
-        background=ACCENT, foreground=BG, font=FONT_BUTTON,
+        background=ACCENT, foreground='#FFFFFF', font=FONT_BUTTON,
         borderwidth=0, focuscolor=ACCENT,
         padding=(16, 10))
     style.map('Primary.TButton',
-        background=[('active', ACCENT_DEEP), ('pressed', ACCENT_DEEP)])
+        background=[('active', ACCENT_DEEP), ('pressed', ACCENT_DEEP)],
+        foreground=[('active', '#FFFFFF'), ('pressed', '#FFFFFF')])

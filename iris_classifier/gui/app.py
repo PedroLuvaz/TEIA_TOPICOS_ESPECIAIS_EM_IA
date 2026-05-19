@@ -11,6 +11,8 @@ from . import theme as T
 from .tab_distancia_minima import TabDistanciaMinima
 from .tab_perceptron_delta import TabPerceptronDelta
 
+_SCROLL_UNIT = 3   # unidades de scroll por tick da roda do mouse
+
 
 GRUPO = 'Erick Nathan   ·   Laura Barbosa   ·   Pedro Lucas'
 DISCIPLINA = 'Topicos Especiais em Inteligencia Artificial'
@@ -27,21 +29,60 @@ class App(tk.Tk):
         super().__init__()
         self.title('IRIS  ·  Classificador de Distancia Minima')
         self.geometry('1320x880')
-        self.minsize(1180, 800)
+        self.minsize(1180, 600)
 
         T.aplicar_tema(self)
 
+        self._construir_scroll_wrapper()
         self._construir_cabecalho()
         self._construir_notebook()
         self._construir_rodape()
 
     # ------------------------------------------------------------------
+    def _construir_scroll_wrapper(self):
+        """Cria o canvas rolavel + scrollbar que envolve todo o conteudo."""
+        outer = tk.Frame(self, bg=T.BG)
+        outer.pack(fill='both', expand=True)
+
+        self._scrollbar = ttk.Scrollbar(outer, orient='vertical')
+        self._scrollbar.pack(side='right', fill='y')
+
+        self._canvas = tk.Canvas(
+            outer, bg=T.BG, highlightthickness=0,
+            yscrollcommand=self._scrollbar.set
+        )
+        self._canvas.pack(side='left', fill='both', expand=True)
+        self._scrollbar.config(command=self._canvas.yview)
+
+        self._inner = tk.Frame(self._canvas, bg=T.BG)
+        self._win_id = self._canvas.create_window(
+            (0, 0), window=self._inner, anchor='nw'
+        )
+
+        # Atualiza regiao de scroll quando o conteudo muda de tamanho
+        self._inner.bind('<Configure>', self._ao_redimensionar_inner)
+        # Garante que a largura do frame interno acompanha o canvas
+        self._canvas.bind('<Configure>', self._ao_redimensionar_canvas)
+        # Roda do mouse em qualquer widget dentro da janela
+        self.bind_all('<MouseWheel>', self._ao_rolar_mouse)
+
+    def _ao_redimensionar_inner(self, event):
+        self._canvas.configure(scrollregion=self._canvas.bbox('all'))
+
+    def _ao_redimensionar_canvas(self, event):
+        self._canvas.itemconfig(self._win_id, width=event.width)
+
+    def _ao_rolar_mouse(self, event):
+        self._canvas.yview_scroll(int(-1 * (event.delta / 120)) * _SCROLL_UNIT,
+                                  'units')
+
+    # ------------------------------------------------------------------
     def _construir_cabecalho(self):
         # Faixa fina ambar no topo (assinatura visual)
-        tk.Frame(self, bg=T.ACCENT, height=2).pack(fill='x', side='top')
+        tk.Frame(self._inner, bg=T.ACCENT, height=2).pack(fill='x')
 
-        cab = tk.Frame(self, bg=T.BG, height=96)
-        cab.pack(fill='x', side='top')
+        cab = tk.Frame(self._inner, bg=T.BG, height=96)
+        cab.pack(fill='x')
         cab.pack_propagate(False)
 
         # Esquerda — kicker + titulo
@@ -72,12 +113,12 @@ class App(tk.Tk):
                  font=T.FONT_SUBTITLE).pack(anchor='e', pady=(2, 0))
 
         # Linha separadora
-        tk.Frame(self, bg=T.BORDER, height=1).pack(fill='x', side='top')
+        tk.Frame(self._inner, bg=T.BORDER, height=1).pack(fill='x')
 
     # ------------------------------------------------------------------
     def _construir_notebook(self):
         # Espaco de respiro entre o cabecalho e o notebook
-        wrap = tk.Frame(self, bg=T.BG)
+        wrap = tk.Frame(self._inner, bg=T.BG)
         wrap.pack(fill='both', expand=True, padx=20, pady=(8, 0))
 
         self.notebook = ttk.Notebook(wrap)
@@ -118,9 +159,9 @@ class App(tk.Tk):
 
     # ------------------------------------------------------------------
     def _construir_rodape(self):
-        tk.Frame(self, bg=T.BORDER, height=1).pack(fill='x', side='bottom')
-        rod = tk.Frame(self, bg=T.BG_PANEL, height=30)
-        rod.pack(fill='x', side='bottom')
+        tk.Frame(self._inner, bg=T.BORDER, height=1).pack(fill='x')
+        rod = tk.Frame(self._inner, bg=T.BG_PANEL, height=30)
+        rod.pack(fill='x')
         rod.pack_propagate(False)
         tk.Label(rod,
                  text='Iris  ·  150 amostras  ·  4 atributos  ·  3 classes  ·  '
