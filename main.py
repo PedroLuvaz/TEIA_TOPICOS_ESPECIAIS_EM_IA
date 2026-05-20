@@ -13,11 +13,12 @@ Implementacao em Python puro (sem numpy/scipy/sklearn/pandas).
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+RAIZ_PROJETO = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(RAIZ_PROJETO, 'src'))
 
-from data_loader import carregar_dados_iris, split_estratificado, filtrar_por_classes
-from classifier import treinar, predizer_todas_classes, predizer_binario
-from evaluator import (
+from core.data_loader import carregar_dados_iris, split_estratificado, filtrar_por_classes
+from core.classifier import treinar, predizer_todas_classes, predizer_binario
+from core.evaluator import (
     acuracia,
     matriz_confusao,
     imprimir_matriz_confusao,
@@ -28,9 +29,8 @@ from visualizer import (
     plotar_dispersao_todas_classes,
     plotar_matriz_confusao,
 )
-from math_utils import coeficientes_superficie_decisao, distancia_euclidiana
-
-RAIZ_PROJETO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from gui.interativo import abrir_interface
+from core.math_utils import coeficientes_superficie_decisao, distancia_euclidiana
 CAMINHO_DADOS = os.path.join(RAIZ_PROJETO, "data", "Iris data.xls")
 PASTA_OUTPUTS = os.path.join(RAIZ_PROJETO, "outputs")
 
@@ -280,6 +280,8 @@ def executar_experimentos():
         return
 
     dados = carregar_dados_iris(CAMINHO_DADOS)
+    for i, d in enumerate(dados):
+        d['indice'] = i
     dados_treino, dados_teste = split_estratificado(dados, proporcao_treino=0.7, semente=42)
 
     print(f"Amostras carregadas : {len(dados)}")
@@ -290,6 +292,10 @@ def executar_experimentos():
     experimento_superficies(dados_treino, dados_teste, dados)
     experimento_comparativo(dados_treino, dados_teste)
     modo_interativo(prototipos)
+
+    print("\nAbrindo interface grafica interativa...")
+    print("(Feche a janela para encerrar o programa)")
+    abrir_interface(dados, prototipos, dados_treino, dados_teste)
 
 
 if __name__ == "__main__":

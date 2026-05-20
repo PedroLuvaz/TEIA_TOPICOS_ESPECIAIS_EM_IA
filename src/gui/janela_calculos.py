@@ -20,12 +20,12 @@ matplotlib.rcParams['mathtext.fontset'] = 'stix'
 from matplotlib.figure import Figure
 from PIL import Image, ImageTk
 
-from math_utils import (produto_escalar, distancia_euclidiana,
-                        coeficientes_superficie_decisao,
-                        discriminante, calcular_media)
-from classifier import treinar, predizer_todas_classes
-from perceptron import treinar_perceptron, predizer_perceptron, _sgn
-from delta_rule import treinar_delta_iris, predizer_delta, _treinar_delta
+from core.math_utils import (produto_escalar, distancia_euclidiana,
+                             coeficientes_superficie_decisao,
+                             discriminante, calcular_media)
+from core.classifier import treinar, predizer_todas_classes
+from core.perceptron import treinar_perceptron, predizer_perceptron, _sgn
+from core.delta_rule import treinar_delta_iris, predizer_delta, _treinar_delta
 
 from . import theme as T
 from .widgets import Card

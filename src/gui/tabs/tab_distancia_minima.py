@@ -22,22 +22,22 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
 from matplotlib.figure import Figure
 
-from data_loader import (carregar_dados_iris, split_estratificado,
-                         filtrar_por_classes)
-from classifier import treinar, predizer_todas_classes
-from evaluator import acuracia
-from math_utils import coeficientes_superficie_decisao
+from core.data_loader import (carregar_dados_iris, split_estratificado,
+                              filtrar_por_classes)
+from core.classifier import treinar, predizer_todas_classes
+from core.evaluator import acuracia
+from core.math_utils import coeficientes_superficie_decisao
 
-from . import theme as T
-from .widgets import Card, MetricBlock
-from .janela_calculos import JanelaMemoriaCalculo
+from .. import theme as T
+from ..widgets import Card, MetricBlock
+from ..janela_calculos import JanelaMemoriaCalculo
 
 
 # ---------------------------------------------------------------------------
 # Constantes do experimento
 # ---------------------------------------------------------------------------
-PROJETO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__))))
+PROJETO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__)))))
 CAMINHO_DADOS_V1 = os.path.join(PROJETO_ROOT, 'data', 'Iris data.xls')
 CAMINHO_DADOS_V2 = os.path.join(PROJETO_ROOT, 'data', 'iris_data_02.xlsx')
 CAMINHOS_DADOS = {'v1': CAMINHO_DADOS_V1, 'v2': CAMINHO_DADOS_V2}

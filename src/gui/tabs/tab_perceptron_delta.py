@@ -25,21 +25,21 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
 from matplotlib.figure import Figure
 
-from data_loader import carregar_dados_iris, split_estratificado
-from perceptron import treinar_perceptron, acuracia_binaria_perceptron
-from delta_rule import (treinar_delta_iris, treinar_delta_xor,
-                        acuracia_binaria_delta)
+from core.data_loader import carregar_dados_iris, split_estratificado
+from core.perceptron import treinar_perceptron, acuracia_binaria_perceptron
+from core.delta_rule import (treinar_delta_iris, treinar_delta_xor,
+                              acuracia_binaria_delta)
 
-from . import theme as T
-from .widgets import Card, MetricBlock
-from .janela_calculos import JanelaMemoriaCalculoPD
+from .. import theme as T
+from ..widgets import Card, MetricBlock
+from ..janela_calculos import JanelaMemoriaCalculoPD
 
 
 # ---------------------------------------------------------------------------
 # Constantes
 # ---------------------------------------------------------------------------
-PROJETO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__))))
+PROJETO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__)))))
 CAMINHO_DADOS_V1 = os.path.join(PROJETO_ROOT, 'data', 'Iris data.xls')
 CAMINHO_DADOS_V2 = os.path.join(PROJETO_ROOT, 'data', 'iris_data_02.xlsx')
 CAMINHOS_DADOS = {'v1': CAMINHO_DADOS_V1, 'v2': CAMINHO_DADOS_V2}

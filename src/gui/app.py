@@ -8,8 +8,8 @@ import tkinter as tk
 from tkinter import ttk
 
 from . import theme as T
-from .tab_distancia_minima import TabDistanciaMinima
-from .tab_perceptron_delta import TabPerceptronDelta
+from .tabs.tab_distancia_minima import TabDistanciaMinima
+from .tabs.tab_perceptron_delta import TabPerceptronDelta
 
 _SCROLL_UNIT = 3   # unidades de scroll por tick da roda do mouse
 

@@ -10,10 +10,11 @@ Todas as demais amostras ficam identicas ao dataset original.
 Setosa e features de sepala [0,1] nao sao alteradas.
 """
 import os, sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+RAIZ_ = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(RAIZ_, 'src'))
 
 import openpyxl
-from iris_classifier.data_loader import carregar_dados_iris
+from core.data_loader import carregar_dados_iris
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 ORIGEM  = os.path.join(RAIZ, 'data', 'Iris data.xls')

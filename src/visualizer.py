@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from math_utils import coeficientes_superficie_decisao
+from core.math_utils import coeficientes_superficie_decisao
 
 # Cor + marcador por classe — pares distintos garantem que pontos sobrepostos
 # permanecam identificaveis mesmo onde as nuvens se cruzam (overlap real
