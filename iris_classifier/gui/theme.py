@@ -132,3 +132,19 @@ def aplicar_tema(root):
     style.map('Primary.TButton',
         background=[('active', ACCENT_DEEP), ('pressed', ACCENT_DEEP)],
         foreground=[('active', '#FFFFFF'), ('pressed', '#FFFFFF')])
+
+    # ---- Treeview (tabela de amostras do dataset) ----
+    style.configure('Treeview',
+        background=BG_CARD, foreground=FG,
+        fieldbackground=BG_CARD,
+        bordercolor=BORDER, borderwidth=0,
+        rowheight=20, font=FONT_MONO_SM)
+    style.configure('Treeview.Heading',
+        background=BG_PANEL, foreground=FG_MUTED,
+        font=FONT_KICKER, relief='flat',
+        bordercolor=BORDER, borderwidth=0, padding=(4, 6))
+    style.map('Treeview',
+        background=[('selected', ACCENT)],
+        foreground=[('selected', '#FFFFFF')])
+    style.map('Treeview.Heading',
+        background=[('active', BG_HOVER)])

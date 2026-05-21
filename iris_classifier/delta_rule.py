@@ -149,3 +149,74 @@ def acuracia_binaria_delta(dados, w, classe_pos, classe_neg,
             corretos += 1
         total += 1
     return corretos / total if total > 0 else 0.0
+
+
+# ===========================================================================
+# One-vs-All (Um Contra Todos) — multiclasse
+# ===========================================================================
+def treinar_delta_ova(dados_treino, indices_atributos,
+                      taxa_aprendizado=0.02, max_epocas=200):
+    """
+    Treina a Regra Delta no esquema Um-Contra-Todos (One-vs-All).
+
+    Para cada classe c, treina um classificador binario:
+        d = +1   se   amostra pertence a c
+        d = -1   caso contrario
+
+    A predicao multiclasse usa argmax sobre os 3 nets:
+        classe* = argmax_c  (w_c^T · x_aug)
+
+    Retorna
+    -------
+    pesos    : dict {classe: w}            — 1 vetor de pesos por classe
+    historico: dict {classe: [mse/epoca]}  — 1 historico por classe
+    n_epocas : int                         — max_epocas (sem parada antecipada)
+    """
+    classes = sorted(set(d['classe'] for d in dados_treino))
+    n_pesos = 1 + len(indices_atributos)
+
+    pesos = {}
+    historico = {}
+
+    for c in classes:
+        amostras = []
+        for d in dados_treino:
+            x_sel = [d['atributos'][i] for i in indices_atributos]
+            d_val = +1.0 if d['classe'] == c else -1.0
+            amostras.append(([1.0] + x_sel, d_val))
+
+        w, hist = _treinar_delta(amostras, n_pesos, max_epocas,
+                                 taxa_aprendizado)
+        pesos[c] = w
+        historico[c] = hist
+
+    return pesos, historico, max_epocas
+
+
+def predizer_delta_ova(x_atributos, pesos):
+    """
+    Predicao multiclasse via argmax dos nets dos classificadores OvA.
+
+    Retorna: (classe_vencedora, dict {classe: net})
+    """
+    x_aug = [1.0] + list(x_atributos)
+    nets = {}
+    for c, w in pesos.items():
+        nets[c] = sum(wi * xi for wi, xi in zip(w, x_aug))
+    vencedor = max(nets, key=nets.get)
+    return vencedor, nets
+
+
+def acuracia_delta_ova(dados, pesos, indices_atributos):
+    """
+    Acuracia multiclasse do classificador OvA.
+    Retorna: float em [0.0, 1.0]
+    """
+    corretos = total = 0
+    for d in dados:
+        x_sel = [d['atributos'][i] for i in indices_atributos]
+        pred, _ = predizer_delta_ova(x_sel, pesos)
+        if pred == d['classe']:
+            corretos += 1
+        total += 1
+    return corretos / total if total > 0 else 0.0

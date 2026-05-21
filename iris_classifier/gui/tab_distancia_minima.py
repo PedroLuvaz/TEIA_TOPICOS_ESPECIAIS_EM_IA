@@ -124,7 +124,7 @@ class TabDistanciaMinima(tk.Frame):
     # ---- Coluna esquerda ----
     def _coluna_controles(self):
         wrap = tk.Frame(self, bg=T.BG)
-        wrap.grid(row=0, column=0, sticky='nsew', padx=(20, 10), pady=20)
+        wrap.grid(row=0, column=0, sticky='nsew', padx=(20, 10), pady=12)
         wrap.columnconfigure(0, weight=1)
 
         # 0. Seletor de dataset
@@ -142,7 +142,7 @@ class TabDistanciaMinima(tk.Frame):
 
         # 1. Atributos
         card = Card(wrap, titulo='atributos do modelo')
-        card.grid(row=1, column=0, sticky='ew', pady=(14, 0))
+        card.grid(row=1, column=0, sticky='ew', pady=(6, 0))
         for chave, cfg in CONFIGURACOES_ATRIBUTOS.items():
             tk.Radiobutton(card, text=cfg['rotulo_ui'],
                            value=chave, variable=self.atributos_ativos,
@@ -155,11 +155,11 @@ class TabDistanciaMinima(tk.Frame):
                            command=self._ao_trocar_atributos
                           ).pack(fill='x', padx=14, pady=2)
         # respiro inferior
-        tk.Frame(card, bg=T.BG_CARD, height=10).pack()
+        tk.Frame(card, bg=T.BG_CARD, height=4).pack()
 
         # 2. Modo do grafico
         card = Card(wrap, titulo='visualizacao')
-        card.grid(row=2, column=0, sticky='ew', pady=(14, 0))
+        card.grid(row=2, column=0, sticky='ew', pady=(6, 0))
         for rotulo, valor in MODOS_GRAFICO:
             tk.Radiobutton(card, text=rotulo,
                            value=valor, variable=self.modo_grafico,
@@ -171,11 +171,11 @@ class TabDistanciaMinima(tk.Frame):
                            borderwidth=0, highlightthickness=0,
                            command=self._desenhar_grafico
                           ).pack(fill='x', padx=14, pady=2)
-        tk.Frame(card, bg=T.BG_CARD, height=10).pack()
+        tk.Frame(card, bg=T.BG_CARD, height=4).pack()
 
         # 3. Classificacao manual
         card = Card(wrap, titulo='classificar amostra')
-        card.grid(row=3, column=0, sticky='ew', pady=(14, 0))
+        card.grid(row=3, column=0, sticky='ew', pady=(6, 0))
 
         form = tk.Frame(card, bg=T.BG_CARD)
         form.pack(fill='x', padx=14, pady=(2, 0))
@@ -200,35 +200,29 @@ class TabDistanciaMinima(tk.Frame):
         ttk.Button(card, text='Classificar  >',
                    style='Primary.TButton',
                    command=self._classificar_amostra
-                  ).pack(fill='x', padx=14, pady=(14, 14))
+                  ).pack(fill='x', padx=14, pady=(10, 10))
 
         # 4. Predicao (resultado em destaque)
         card = Card(wrap, titulo='predicao')
-        card.grid(row=4, column=0, sticky='ew', pady=(14, 0))
+        card.grid(row=4, column=0, sticky='ew', pady=(6, 0))
         self.lbl_pred = tk.Label(card, text='—',
                                  bg=T.BG_CARD, fg=T.FG_DIM,
-                                 font=T.FONT_VALUE_HUGE, anchor='w')
-        self.lbl_pred.pack(fill='x', padx=14, pady=(2, 2))
+                                 font=T.FONT_VALUE_BIG, anchor='w')
+        self.lbl_pred.pack(fill='x', padx=14, pady=(0, 1))
         self.lbl_pred_sub = tk.Label(card,
                                      text='aguardando entrada',
                                      bg=T.BG_CARD, fg=T.FG_MUTED,
                                      font=T.FONT_MONO_SM, anchor='w',
                                      justify='left', wraplength=280)
-        self.lbl_pred_sub.pack(fill='x', padx=14, pady=(0, 14))
+        self.lbl_pred_sub.pack(fill='x', padx=14, pady=(0, 10))
 
         # 5. Memoria de calculo (abre janela com formulas + substituicao)
         card = Card(wrap, titulo='memoria de calculo')
-        card.grid(row=5, column=0, sticky='ew', pady=(14, 0))
-        tk.Label(card,
-                 text='Formulas matematicas com substituicao numerica '
-                      'usando o modelo atual.',
-                 bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_LABEL,
-                 wraplength=280, justify='left'
-                ).pack(anchor='w', padx=14, pady=(2, 8))
+        card.grid(row=5, column=0, sticky='ew', pady=(6, 0))
         ttk.Button(card, text='Abrir memoria de calculo  >',
                    style='Primary.TButton',
                    command=self._abrir_memoria_calculo
-                  ).pack(fill='x', padx=14, pady=(0, 14))
+                  ).pack(fill='x', padx=14, pady=(2, 10))
 
         # spacer no fundo
         wrap.rowconfigure(6, weight=1)
@@ -266,7 +260,7 @@ class TabDistanciaMinima(tk.Frame):
 
         # ---- Painel inferior ----
         inferior = tk.Frame(wrap, bg=T.BG)
-        inferior.grid(row=1, column=0, sticky='nsew', pady=(14, 0))
+        inferior.grid(row=1, column=0, sticky='nsew', pady=(6, 0))
         inferior.columnconfigure(0, weight=1)
         inferior.columnconfigure(1, weight=2)
         inferior.rowconfigure(0, weight=1)
