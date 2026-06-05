@@ -53,6 +53,7 @@ from metricas_avancadas import (
 
 from . import theme as T
 from .widgets import Card, MetricBlock
+from .janela_calculos import JanelaMemoriaCalculoMetricas
 
 # ---------------------------------------------------------------------------
 CAMINHO_DADOS = os.path.join(PROJETO_ROOT, 'data', 'Iris data.xls')
@@ -187,7 +188,15 @@ class TabMetricasAvancadas(tk.Frame):
                      font=T.FONT_LABEL, anchor='w').pack(side='left', padx=(4, 0))
         tk.Frame(card4, bg=T.BG_CARD, height=4).pack()
 
-        wrap.rowconfigure(6, weight=1)
+        # Memoria de calculo das metricas
+        card5 = Card(wrap, titulo='memoria de calculo')
+        card5.grid(row=6, column=0, sticky='ew', pady=(8, 0))
+        ttk.Button(card5, text='Abrir memoria de calculo  >',
+                   style='Primary.TButton',
+                   command=self._abrir_memoria_metricas
+                  ).pack(fill='x', padx=14, pady=(2, 10))
+
+        wrap.rowconfigure(7, weight=1)
 
     def _col_dir(self):
         wrap = tk.Frame(self, bg=T.BG)
@@ -427,6 +436,30 @@ class TabMetricasAvancadas(tk.Frame):
         self._preencher_detalhe()
         self._preencher_pares()
         self._preencher_matriz()
+
+    def _abrir_memoria_metricas(self):
+        """Abre janela de memoria de calculo das metricas do modelo selecionado."""
+        if not self._treinado or not self.resultados:
+            self.lbl_status.configure(
+                text='Treine os modelos primeiro.', fg=T.DANGER)
+            return
+        nome = self.var_modelo_sel.get()
+        if not nome or nome not in self.resultados:
+            return
+
+        # Se houver Perceptron OvA e Delta OvA, passa o par para o teste Z
+        perc = self.resultados.get('Perceptron OvA')
+        delt = self.resultados.get('Delta OvA')
+        perc_vs_delta = (perc, delt) if (perc and delt) else None
+
+        JanelaMemoriaCalculoMetricas(
+            self,
+            nome_modelo=nome,
+            relatorio=self.resultados[nome],
+            classes=CLASSES,
+            classe_foco=self.var_classe_sel.get(),
+            perc_vs_delta=perc_vs_delta,
+        )
 
     def _atualizar_metricas_globais(self):
         nome = self.var_modelo_sel.get()
