@@ -59,36 +59,30 @@ pip install -r requirements.txt
 
 ## 🚀 Como Executar
 
+### Modo Web GUI (Recomendado — Flask + SPA Frontend)
+Para abrir a nova interface web moderna em tela cheia com design dark premium, acesse a pasta e inicie o servidor Flask:
+```bash
+python api/server.py
+```
+Em seguida, abra seu navegador em **[http://localhost:5000](http://localhost:5000)**.
+
 ### Modo CLI (terminal)
-
 Para rodar todos os experimentos e gerar os gráficos no terminal:
-
 ```bash
 python iris_classifier/main.py
 ```
 
-### Modo GUI (interface gráfica — Tkinter)
-
-Para abrir a interface visual com tema escuro, métricas em tempo real, gráficos interativos e classificação manual:
-
+### Modo GUI Tkinter (legado)
+Para abrir a interface desktop original com tema escuro nativo:
 ```bash
 python iris_classifier/run_gui.py
 ```
 
-A janela já está estruturada com **abas** prontas para receber implementações futuras (Aba 2, Aba 3, Aba 4). A aba **Distância Mínima** continua usando exclusivamente Python puro.
-
-#### Recursos da aba Distância Mínima
-
-- **Atributos:** alterna entre Pétalas `[2,3]` e Sépalas `[0,1]` — todo o painel atualiza em tempo real
-- **Visualização:** dispersão geral ou fronteira de decisão de cada par de classes
-- **Classificar amostra:** entrada manual `(x₁, x₂)` com resultado destacado e scores `d_j(x)` de cada classe
-- **Memória de Cálculo:** botão dedicado abre janela secundária com **fórmulas matemáticas em LaTeX** (renderizadas via mathtext) e **substituição numérica passo a passo** com os valores reais do modelo:
-  - Cálculo dos protótipos $m_j$
-  - Função discriminante $d_j(x) = x^T m_j - \frac{1}{2} m_j^T m_j$ aplicada à amostra atual
-  - Equivalência $\arg\max_j d_j(x) \equiv \arg\min_j \|x - m_j\|$
-  - Coeficientes da fronteira $w$, $b$ para os 3 pares de classes
-- **Métricas:** acurácia teste (com cor dinâmica), split treino·teste, erros na base completa
-- **Análise:** texto explicativo gerado dinamicamente sobre separabilidade vs sobreposição
+## 📂 Estrutura da Branch `feature/js-new-front`
+A branch reorganiza o projeto para suportar uma aplicação web de página única (SPA) modular:
+- **`api/`**: Servidor Flask e rotas organizadas por blueprints.
+- **`frontend/`**: SPA puramente em Vanilla HTML/CSS/JS estruturada para permitir adicionar novas abas dinamicamente apenas registrando um arquivo JS em `js/app.js`.
+- **`iris_classifier/`**: Todo o backend original de IA em Python puro foi preservado 100% intacto, atuando como o núcleo matemático invocado pela API.
 
 **Grupo:** Erick Nathan · Laura Barbosa · Pedro Lucas
 

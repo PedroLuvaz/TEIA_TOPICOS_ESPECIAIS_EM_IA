@@ -63,11 +63,23 @@ TEIA_TOPICOS_ESPECIAIS_EM_IA/
 
 ## 5. Como Executar
 
+### Modo CLI (terminal)
 ```bash
 python iris_classifier/main.py
 ```
 
-Saída esperada no terminal:
+### Modo GUI Tkinter (legado)
+```bash
+python iris_classifier/run_gui.py
+```
+
+### Modo Web GUI (Recomendado — Flask + SPA Frontend)
+```bash
+python api/server.py
+```
+Abra o navegador em [http://localhost:5000](http://localhost:5000).
+
+Saída esperada no terminal da CLI:
 - Total de amostras carregadas: 150
 - Treino: 105 | Teste: 45
 - Protótipos das 3 classes

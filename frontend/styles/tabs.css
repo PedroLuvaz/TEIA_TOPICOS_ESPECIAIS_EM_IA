@@ -1,0 +1,432 @@
+/* ============================================================
+   TAB NAVIGATION — Classificador Iris
+   Horizontal tab bar with animated sliding indicator
+   ============================================================ */
+
+/* ── Tab Nav Container ─────────────────────────────────────── */
+.tab-nav {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  background: rgba(6, 6, 11, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.tab-nav-inner {
+  display: flex;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tab-nav-inner::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Tab Button ────────────────────────────────────────────── */
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  position: relative;
+  transition: all var(--transition-normal);
+  border: none;
+  background: none;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.tab-btn:hover {
+  color: var(--text-secondary);
+}
+
+.tab-btn.active {
+  color: var(--text-accent);
+}
+
+.tab-btn-icon {
+  font-size: var(--text-base);
+  line-height: 1;
+}
+
+.tab-btn-label {
+  line-height: 1.4;
+}
+
+/* Tab Badge (notification count) */
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent-red);
+  border-radius: var(--radius-full);
+  margin-left: 4px;
+  line-height: 1;
+}
+
+/* ── Sliding Indicator ─────────────────────────────────────── */
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background: var(--gradient-hero);
+  border-radius: 2px 2px 0 0;
+  transition: left var(--transition-slow), width var(--transition-slow);
+  box-shadow: 0 0 12px rgba(74,158,255,0.4), 0 0 4px rgba(74,158,255,0.6);
+}
+
+/* ── Tab Content Area ──────────────────────────────────────── */
+.tab-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+  min-height: 60vh;
+}
+
+.tab-panel {
+  display: none;
+  animation: tabFadeIn 0.35s ease-out;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Tab Content Layout Helpers ────────────────────────────── */
+.tab-content {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.tab-section {
+  margin-bottom: var(--space-2xl);
+}
+
+.tab-section-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin-bottom: var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.tab-section-title .icon {
+  font-size: var(--text-xl);
+}
+
+/* ── Three Column Layout (Desktop) ─────────────────────────── */
+.tab-layout-3col {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+.tab-sidebar {
+  position: sticky;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.tab-main {
+  min-width: 0;
+}
+
+/* ── Two Column Layout ─────────────────────────────────────── */
+.tab-layout-2col {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: var(--space-xl);
+  align-items: start;
+}
+
+/* ── Sub-tabs (inner tab navigation) ───────────────────────── */
+.sub-tabs {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-xs);
+  background: var(--bg-input);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+  overflow-x: auto;
+}
+
+.sub-tab-btn {
+  padding: 8px 16px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sub-tab-btn:hover {
+  color: var(--text-secondary);
+  background: rgba(255,255,255,0.04);
+}
+
+.sub-tab-btn.active {
+  color: var(--text-primary);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.sub-tab-panel {
+  display: none;
+  animation: tabFadeIn 0.25s ease-out;
+}
+
+.sub-tab-panel.active {
+  display: block;
+}
+
+/* ── Responsive Tab Layouts ────────────────────────────────── */
+@media (max-width: 1200px) {
+  .tab-layout-3col {
+    grid-template-columns: 240px 1fr;
+  }
+
+  .tab-layout-3col > :nth-child(3) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .tab-nav {
+    padding: 0 var(--space-md);
+  }
+
+  .tab-btn {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .tab-container {
+    padding: 0 var(--space-md);
+  }
+
+  .tab-layout-3col,
+  .tab-layout-2col {
+    grid-template-columns: 1fr;
+  }
+
+  .tab-sidebar {
+    position: static;
+  }
+
+  .tab-layout-3col > :nth-child(3) {
+    grid-column: auto;
+  }
+
+  .sub-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+}
+
+/* =============================================================
+   TAB GRID — Layout principal das abas (3 colunas)
+   ============================================================= */
+
+.tab-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr 280px;
+  gap: var(--space-lg);
+  align-items: start;
+  padding-bottom: var(--space-2xl);
+}
+
+/* Coluna Esquerda: Controles / Filtros */
+.col-controls {
+  position: sticky;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Coluna Central: Gráfico */
+.col-chart {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Coluna Direita: Métricas */
+.col-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* ── Metrics Grid ──────────────────────────────────────────── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+}
+
+/* ── Form Group ────────────────────────────────────────────── */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+}
+
+/* ── Radio Label ───────────────────────────────────────────── */
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--transition-fast),
+              background var(--transition-fast),
+              color var(--transition-fast);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  user-select: none;
+  line-height: 1.4;
+}
+
+.radio-label:hover {
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.025);
+}
+
+.radio-label input[type="radio"] {
+  accent-color: var(--accent-blue);
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* Estado checked via :has (suportado em todos os browsers modernos) */
+.radio-label:has(input[type="radio"]:checked) {
+  border-color: var(--border-accent);
+  background: rgba(74,158,255,0.07);
+  color: var(--accent-blue);
+  box-shadow: 0 0 0 1px rgba(74,158,255,0.12) inset;
+}
+
+/* ── Subtab Bar ────────────────────────────────────────────── */
+.subtab-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--space-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+}
+
+.subtab-btn {
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.subtab-btn:hover {
+  color: var(--text-secondary);
+  background: rgba(255,255,255,0.04);
+}
+
+.subtab-btn.active {
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.1);
+}
+
+/* ── Tab Grid — Responsivo ─────────────────────────────────── */
+@media (max-width: 1280px) {
+  .tab-grid {
+    grid-template-columns: 220px 1fr 250px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .tab-grid {
+    grid-template-columns: 200px 1fr;
+  }
+
+  .col-metrics {
+    grid-column: 1 / -1;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .tab-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .col-controls {
+    position: static;
+  }
+
+  .col-metrics {
+    grid-column: auto;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
