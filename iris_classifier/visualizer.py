@@ -5,9 +5,9 @@ from math_utils import coeficientes_superficie_decisao
 # permanecam identificaveis mesmo onde as nuvens se cruzam (overlap real
 # entre versicolor e virginica nas petalas, e quase total nas sepalas).
 CORES_CLASSE = {
-    'setosa':     '#2196F3',
-    'versicolor': '#4CAF50',
-    'virginica':  '#F44336',
+    'setosa':     '#0ea5e9',
+    'versicolor': '#10B981',
+    'virginica':  '#F43F5E',
 }
 
 MARCADORES_CLASSE = {
@@ -50,8 +50,8 @@ def plotar_superficie_decisao(pi, pj, dados_c1, dados_c2, classe_i, classe_j,
 
     w, b = coeficientes_superficie_decisao(pi, pj)
 
-    cor_i = CORES_CLASSE.get(classe_i, '#2196F3')
-    cor_j = CORES_CLASSE.get(classe_j, '#F44336')
+    cor_i = CORES_CLASSE.get(classe_i, '#0ea5e9')
+    cor_j = CORES_CLASSE.get(classe_j, '#F43F5E')
     marcador_i = MARCADORES_CLASSE.get(classe_i, 'o')
     marcador_j = MARCADORES_CLASSE.get(classe_j, 's')
 
@@ -209,7 +209,7 @@ def plotar_matriz_confusao(matriz, classes,
     fig, ax = plt.subplots(figsize=(7, 6))
 
     n = len(classes)
-    valores = [[matriz[real][pred] for pred in classes] for real in classes]
+    valores = [[matriz[pred][real] for real in classes] for pred in classes]
     valor_max = max(max(linha) for linha in valores) if valores else 1
     if valor_max == 0:
         valor_max = 1
@@ -229,8 +229,8 @@ def plotar_matriz_confusao(matriz, classes,
     ax.set_yticks(range(n))
     ax.set_xticklabels(classes, rotation=20, ha='right')
     ax.set_yticklabels(classes)
-    ax.set_xlabel('Classe Predita')
-    ax.set_ylabel('Classe Real')
+    ax.set_xlabel('Classe Real')
+    ax.set_ylabel('Classe Predita')
     ax.set_title(titulo)
 
     cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)

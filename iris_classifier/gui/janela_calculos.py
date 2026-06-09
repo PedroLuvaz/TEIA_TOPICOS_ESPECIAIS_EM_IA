@@ -944,8 +944,8 @@ class JanelaMemoriaCalculoMetricas(tk.Toplevel):
         card.pack(fill='x', padx=22, pady=(20, 0))
 
         self._add_explain(card,
-            'A matriz de confusao A = [a_ij] cruza classe REAL (linhas) e '
-            'classe PREDITA (colunas). Todas as metricas que seguem sao '
+            'A matriz de confusao A = [a_ij] cruza classe PREDITA (linhas) e '
+            'classe REAL (colunas). Todas as metricas que seguem sao '
             'derivadas dela.')
 
         matriz = self.rel['matriz']
@@ -960,29 +960,29 @@ class JanelaMemoriaCalculoMetricas(tk.Toplevel):
                      highlightthickness=1, highlightbackground=T.BORDER
                     ).grid(row=r, column=c, padx=1, pady=1, sticky='nsew')
 
-        cel(0, 0, 'Real \\ Pred', bg=T.BG_PANEL, fg=T.FG_MUTED, bold=True)
+        cel(0, 0, 'Pred \\ Real', bg=T.BG_PANEL, fg=T.FG_MUTED, bold=True)
         for j, c in enumerate(self.classes):
             cel(0, j + 1, c.capitalize(),
                 bg=CORES_CLASSE.get(c, T.BG_PANEL), fg='white', bold=True)
-        cel(0, len(self.classes) + 1, 'a_{i+}',
+        cel(0, len(self.classes) + 1, 'a_{i+} (Pred)',
             bg=T.BG_PANEL, fg=T.ACCENT, bold=True)
 
-        for i, real in enumerate(self.classes):
-            cel(i + 1, 0, real.capitalize(),
-                bg=CORES_CLASSE.get(real, T.BG_PANEL), fg='white', bold=True)
-            linha_total = sum(matriz[real][p] for p in self.classes)
-            for j, pred in enumerate(self.classes):
-                v = matriz[real][pred]
+        for i, pred in enumerate(self.classes):
+            cel(i + 1, 0, pred.capitalize(),
+                bg=CORES_CLASSE.get(pred, T.BG_PANEL), fg='white', bold=True)
+            linha_total = sum(matriz[pred][r] for r in self.classes)
+            for j, real in enumerate(self.classes):
+                v = matriz[pred][real]
                 bg = T.BG_HOVER if i == j else T.BG_CARD
                 cel(i + 1, j + 1, str(v), bg=bg)
             cel(i + 1, len(self.classes) + 1, str(linha_total),
                 bg=T.BG_PANEL, fg=T.ACCENT, bold=True)
 
-        cel(len(self.classes) + 1, 0, 'a_{+j}',
+        cel(len(self.classes) + 1, 0, 'a_{+j} (Real)',
             bg=T.BG_PANEL, fg=T.ACCENT, bold=True)
         m = 0
-        for j, pred in enumerate(self.classes):
-            col_total = sum(matriz[r][pred] for r in self.classes)
+        for j, real in enumerate(self.classes):
+            col_total = sum(matriz[p][real] for p in self.classes)
             cel(len(self.classes) + 1, j + 1, str(col_total),
                 bg=T.BG_PANEL, fg=T.ACCENT, bold=True)
             m += col_total
@@ -1259,9 +1259,9 @@ class JanelaMemoriaCalculoMetricas(tk.Toplevel):
             'matriz multiclasse.')
         self._add_formula(card,
             r'$\mathrm{VP} = a_{ii} \quad '
-            r'\mathrm{FP} = \sum_{r \neq i} a_{ri} \quad '
-            r'\mathrm{FN} = \sum_{p \neq i} a_{ip} \quad '
-            r'\mathrm{VN} = \sum_{r \neq i, p \neq i} a_{rp}$',
+            r'\mathrm{FP} = \sum_{r \neq i} a_{ir} \quad '
+            r'\mathrm{FN} = \sum_{p \neq i} a_{pi} \quad '
+            r'\mathrm{VN} = \sum_{r \neq i, p \neq i} a_{pr}$',
             fontsize=14)
         self._add_ref(card, _extrair_binario)
 
@@ -1272,12 +1272,12 @@ class JanelaMemoriaCalculoMetricas(tk.Toplevel):
         self._add_subkicker(card, f'extracao para classe = {c}')
         self._add_step(card, f'  VP  =  a[{c[:3]}][{c[:3]}]  =  {vp}')
 
-        fp_partes = [f'a[{r[:3]}][{c[:3]}]={matriz[r][c]}'
+        fp_partes = [f'a[{c[:3]}][{r[:3]}]={matriz[c][r]}'
                      for r in self.classes if r != c]
         self._add_step(card,
             f'  FP  =  ' + '  +  '.join(fp_partes) + f'  =  {fp}')
 
-        fn_partes = [f'a[{c[:3]}][{p[:3]}]={matriz[c][p]}'
+        fn_partes = [f'a[{p[:3]}][{c[:3]}]={matriz[p][c]}'
                      for p in self.classes if p != c]
         self._add_step(card,
             f'  FN  =  ' + '  +  '.join(fn_partes) + f'  =  {fn}')

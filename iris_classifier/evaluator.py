@@ -26,28 +26,27 @@ def acuracia(predicoes, gabarito):
 def matriz_confusao(predicoes, gabarito, classes):
     """
     Constroi a matriz de confusao C onde:
-        C[real][predito] = quantidade de amostras com classe real = i e predicao = j
+        C[predito][real] = quantidade de amostras com classe real = j e predicao = i
 
-    Retorna: dict {classe_real: {classe_predita: contagem}}
+    Retorna: dict {classe_predita: {classe_real: contagem}}
 
-    Diagonal principal = acertos. Fora da diagonal = erros (e mostra ONDE o
-    classificador se confunde, nao apenas QUANTO).
+    Diagonal principal = acertos. Fora da diagonal = erros.
     """
-    matriz = {real: {pred: 0 for pred in classes} for real in classes}
+    matriz = {pred: {real: 0 for real in classes} for pred in classes}
     for pred, real in zip(predicoes, gabarito):
-        if real in matriz and pred in matriz[real]:
-            matriz[real][pred] += 1
+        if pred in matriz and real in matriz[pred]:
+            matriz[pred][real] += 1
     return matriz
 
 
 def precisao_por_classe(matriz, classe):
     """
     Precisao(j) = VP / (VP + FP)
-    VP = matriz[j][j]              (predito j e real j)
-    FP = sum(matriz[i][j] para i != j)   (predito j e real i != j)
+    VP = matriz[j][j]                    (predito j e real j)
+    FP = sum(matriz[j][real] para real != j)  (predito j mas real != j)
     """
     vp = matriz[classe][classe]
-    fp = sum(matriz[real][classe] for real in matriz if real != classe)
+    fp = sum(matriz[classe][real] for real in matriz[classe] if real != classe)
     if vp + fp == 0:
         return 0.0
     return vp / (vp + fp)
@@ -57,10 +56,10 @@ def revocacao_por_classe(matriz, classe):
     """
     Revocacao(j) = VP / (VP + FN)
     VP = matriz[j][j]
-    FN = sum(matriz[j][k] para k != j)   (real j mas predito k != j)
+    FN = sum(matriz[pred][classe] para pred != j)  (real j mas predito != j)
     """
     vp = matriz[classe][classe]
-    fn = sum(matriz[classe][pred] for pred in matriz[classe] if pred != classe)
+    fn = sum(matriz[pred][classe] for pred in matriz if pred != classe)
     if vp + fn == 0:
         return 0.0
     return vp / (vp + fn)
@@ -81,18 +80,32 @@ def f1_por_classe(matriz, classe):
 def imprimir_matriz_confusao(matriz, classes):
     """
     Imprime a matriz de confusao formatada no terminal.
-    Linhas = classe real | Colunas = classe predita.
+    Linhas = classe predita | Colunas = classe real.
+    Apresenta o total das linhas, colunas e total geral.
     """
     larg_col = max(12, max(len(c) for c in classes) + 2)
     larg_lin = max(16, max(len(c) for c in classes) + 2)
-    cabecalho = "Real \\ Predito".ljust(larg_lin) + "".join(c.ljust(larg_col) for c in classes) + "Total"
+    cabecalho = "Predito \\ Real".ljust(larg_lin) + "".join(c.ljust(larg_col) for c in classes) + "Total"
     print(cabecalho)
     print("-" * len(cabecalho))
-    for real in classes:
-        total_linha = sum(matriz[real].values())
-        linha = real.ljust(larg_lin) + "".join(str(matriz[real][pred]).ljust(larg_col) for pred in classes)
+    
+    totais_colunas = {real: 0 for real in classes}
+    total_geral = 0
+    
+    for pred in classes:
+        total_linha = sum(matriz[pred][real] for real in classes)
+        linha = pred.ljust(larg_lin) + "".join(str(matriz[pred][real]).ljust(larg_col) for real in classes)
         linha += str(total_linha)
         print(linha)
+        
+        for real in classes:
+            totais_colunas[real] += matriz[pred][real]
+        total_geral += total_linha
+        
+    print("-" * len(cabecalho))
+    linha_total = "Total".ljust(larg_lin) + "".join(str(totais_colunas[real]).ljust(larg_col) for real in classes)
+    linha_total += str(total_geral)
+    print(linha_total)
 
 
 def imprimir_metricas_por_classe(matriz, classes):

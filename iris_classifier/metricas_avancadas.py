@@ -39,7 +39,8 @@ def acuracia_produtor(matriz, classe):
     Equivale a Sensibilidade / Recall para classificacao multiclasse.
     a_{+i} = soma da coluna i (total de amostras reais da classe i).
     """
-    total_real = sum(matriz[r][classe] for r in matriz)   # coluna
+    # Na nova representacao (Linha = Predito, Coluna = Real), o total real e a soma da coluna
+    total_real = sum(matriz[r][classe] for r in matriz)
     if total_real == 0:
         return 0.0
     return matriz[classe][classe] / total_real
@@ -51,7 +52,8 @@ def acuracia_usuario(matriz, classe):
     Equivale a Precisao / VPP para classificacao multiclasse.
     a_{i+} = soma da linha i (total de predicoes da classe i).
     """
-    total_predito = sum(matriz[classe][p] for p in matriz[classe])   # linha
+    # Na nova representacao (Linha = Predito, Coluna = Real), o total predito e a soma da linha
+    total_predito = sum(matriz[classe][p] for p in matriz[classe])
     if total_predito == 0:
         return 0.0
     return matriz[classe][classe] / total_predito
@@ -233,8 +235,10 @@ def _extrair_binario(matriz, classe_pos, classes):
     para a classe_pos.
     """
     vp = matriz[classe_pos][classe_pos]
-    fp = sum(matriz[r][classe_pos] for r in classes if r != classe_pos)
-    fn = sum(matriz[classe_pos][p] for p in classes if p != classe_pos)
+    # FP: Predito como classe_pos (linha classe_pos) mas real diferente (colunas r)
+    fp = sum(matriz[classe_pos][r] for r in classes if r != classe_pos)
+    # FN: Real como classe_pos (coluna classe_pos) mas predito diferente (linhas p)
+    fn = sum(matriz[p][classe_pos] for p in classes if p != classe_pos)
     vn = sum(matriz[r][p] for r in classes for p in classes
              if r != classe_pos and p != classe_pos)
     return vp, fp, fn, vn
@@ -325,11 +329,11 @@ def relatorio_completo(predicoes, gabarito, classes, nome_modelo=''):
     """
     Dado listas de predicoes e gabarito, retorna dict com todas as metricas.
     """
-    # Matriz de confusao
-    matriz = {real: {pred: 0 for pred in classes} for real in classes}
+    # Matriz de confusao: Linha = Predito, Coluna = Real
+    matriz = {pred: {real: 0 for real in classes} for pred in classes}
     for pred, real in zip(predicoes, gabarito):
-        if real in matriz and pred in matriz[real]:
-            matriz[real][pred] += 1
+        if pred in matriz and real in matriz[pred]:
+            matriz[pred][real] += 1
 
     ag = acerto_global(matriz, classes)
     k  = kappa(matriz, classes)

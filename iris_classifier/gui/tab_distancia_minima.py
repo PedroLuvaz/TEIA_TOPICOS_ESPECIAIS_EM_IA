@@ -173,11 +173,11 @@ class TabDistanciaMinima(tk.Frame):
                           ).pack(fill='x', padx=14, pady=2)
         tk.Frame(card, bg=T.BG_CARD, height=4).pack()
 
-        # 3. Classificacao manual
-        card = Card(wrap, titulo='classificar amostra')
-        card.grid(row=3, column=0, sticky='ew', pady=(6, 0))
+        # 3. Classificacao manual e predicao agrupadas
+        card_classif = Card(wrap, titulo='classificacao & predicao')
+        card_classif.grid(row=3, column=0, sticky='ew', pady=(6, 0))
 
-        form = tk.Frame(card, bg=T.BG_CARD)
+        form = tk.Frame(card_classif, bg=T.BG_CARD)
         form.pack(fill='x', padx=14, pady=(2, 0))
         form.columnconfigure(1, weight=1)
 
@@ -192,40 +192,40 @@ class TabDistanciaMinima(tk.Frame):
         self.lbl_y = tk.Label(form, text='Larg. Petala',
                               bg=T.BG_CARD, fg=T.FG_MUTED,
                               font=T.FONT_LABEL, anchor='w')
-        self.lbl_y.grid(row=1, column=0, sticky='w', pady=(8, 2))
+        self.lbl_y.grid(row=1, column=0, sticky='w', pady=(6, 2))
         ttk.Entry(form, textvariable=self.var_y,
                   font=T.FONT_MONO, width=10
                  ).grid(row=1, column=1, sticky='ew', padx=(8, 0))
 
-        ttk.Button(card, text='Classificar  >',
+        ttk.Button(card_classif, text='Classificar Amostra  >',
                    style='Primary.TButton',
                    command=self._classificar_amostra
-                  ).pack(fill='x', padx=14, pady=(10, 10))
+                  ).pack(fill='x', padx=14, pady=(8, 6))
 
-        # 4. Predicao (resultado em destaque)
-        card = Card(wrap, titulo='predicao')
-        card.grid(row=4, column=0, sticky='ew', pady=(6, 0))
-        self.lbl_pred = tk.Label(card, text='—',
+        # Divisor sutil
+        tk.Frame(card_classif, bg=T.BORDER, height=1).pack(fill='x', padx=14, pady=4)
+
+        # Predicao
+        self.lbl_pred = tk.Label(card_classif, text='—',
                                  bg=T.BG_CARD, fg=T.FG_DIM,
                                  font=T.FONT_VALUE_BIG, anchor='w')
-        self.lbl_pred.pack(fill='x', padx=14, pady=(0, 1))
-        self.lbl_pred_sub = tk.Label(card,
+        self.lbl_pred.pack(fill='x', padx=14, pady=(2, 1))
+        
+        self.lbl_pred_sub = tk.Label(card_classif,
                                      text='aguardando entrada',
                                      bg=T.BG_CARD, fg=T.FG_MUTED,
                                      font=T.FONT_MONO_SM, anchor='w',
                                      justify='left', wraplength=280)
-        self.lbl_pred_sub.pack(fill='x', padx=14, pady=(0, 10))
+        self.lbl_pred_sub.pack(fill='x', padx=14, pady=(0, 6))
 
-        # 5. Memoria de calculo (abre janela com formulas + substituicao)
-        card = Card(wrap, titulo='memoria de calculo')
-        card.grid(row=5, column=0, sticky='ew', pady=(6, 0))
-        ttk.Button(card, text='Abrir memoria de calculo  >',
+        # Memoria de calculo (abre janela com formulas + substituicao)
+        ttk.Button(card_classif, text='Abrir memoria de calculo  >',
                    style='Primary.TButton',
                    command=self._abrir_memoria_calculo
                   ).pack(fill='x', padx=14, pady=(2, 10))
 
         # spacer no fundo
-        wrap.rowconfigure(6, weight=1)
+        wrap.rowconfigure(4, weight=1)
 
     # ---- Coluna direita ----
     def _coluna_visualizacao(self):
@@ -536,13 +536,13 @@ class TabDistanciaMinima(tk.Frame):
             self.ax.annotate(f'm_{classe[:3]}', (p[0], p[1]),
                              xytext=(10, 8), textcoords='offset points',
                              color=T.FG, fontsize=9,
-                             fontweight='bold', fontfamily='Cambria')
+                             fontweight='bold', fontfamily=T.FONT_FAMILY_NAME)
 
         self.ax.set_xlabel(f"{cfg['eixo_x']} ({cfg['unidade']})")
         self.ax.set_ylabel(f"{cfg['eixo_y']} ({cfg['unidade']})")
         self.ax.set_title('Distribuicao completa  ·  teste destacado',
                           color=T.FG, fontsize=11, pad=10, loc='left',
-                          fontfamily='Cambria', fontweight='bold')
+                          fontfamily=T.FONT_FAMILY_NAME, fontweight='bold')
         self._legenda()
 
     def _desenhar_par(self, indices, cfg, par):
@@ -609,7 +609,7 @@ class TabDistanciaMinima(tk.Frame):
         self.ax.set_ylabel(f"{cfg['eixo_y']} ({cfg['unidade']})")
         self.ax.set_title(f'Fronteira  ·  {classe_i}  x  {classe_j}',
                           color=T.FG, fontsize=11, pad=10, loc='left',
-                          fontfamily='Cambria', fontweight='bold')
+                          fontfamily=T.FONT_FAMILY_NAME, fontweight='bold')
         self._legenda()
 
     def _scatter(self, dados, indices, cor, alpha=0.85, edge='white',

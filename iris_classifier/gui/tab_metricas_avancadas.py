@@ -41,7 +41,7 @@ for p in (PROJETO_ROOT, IRIS_ROOT):
 from data_loader import carregar_dados_iris, split_estratificado, filtrar_por_classes
 from classifier  import treinar, predizer_todas_classes, predizer_binario
 from math_utils  import distancia_euclidiana
-from perceptron  import treinar_perceptron
+from perceptron  import treinar_perceptron, predizer_perceptron
 from delta_rule  import (treinar_delta_iris, treinar_delta_ova, predizer_delta_ova)
 from metricas_avancadas import (
     relatorio_completo, relatorio_binario,
@@ -105,6 +105,11 @@ class TabMetricasAvancadas(tk.Frame):
         self.var_atributos  = tk.StringVar(value='petalas')
         self.var_modelo_sel = tk.StringVar(value='')
         self.var_classe_sel = tk.StringVar(value='setosa')
+        self.var_prop_treino = tk.StringVar(value='0.70')
+        self.var_semente     = tk.StringVar(value='42')
+        self.var_comparacao  = tk.StringVar(value='todas')
+        self.var_comp_modelo1 = tk.StringVar(value='')
+        self.var_comp_modelo2 = tk.StringVar(value='')
 
         self._construir_layout()
         self._carregar_dados()
@@ -128,7 +133,8 @@ class TabMetricasAvancadas(tk.Frame):
         card = Card(wrap, titulo='atributos do modelo')
         card.grid(row=0, column=0, sticky='ew')
         for val, lbl in [('petalas', 'Petalas  ·  [2,3]'),
-                          ('sepalas', 'Sepalas  ·  [0,1]')]:
+                          ('sepalas', 'Sepalas  ·  [0,1]'),
+                          ('todas',   'Todas (4 Features) · [0,1,2,3]')]:
             tk.Radiobutton(card, text=lbl, value=val,
                            variable=self.var_atributos,
                            bg=T.BG_CARD, fg=T.FG, selectcolor=T.BG_HOVER,
@@ -138,26 +144,67 @@ class TabMetricasAvancadas(tk.Frame):
                           ).pack(fill='x', padx=14, pady=2)
         tk.Frame(card, bg=T.BG_CARD, height=4).pack()
 
+        # Divisão dos dados
+        card_s = Card(wrap, titulo='divisao dos dados')
+        card_s.grid(row=1, column=0, sticky='ew', pady=(8, 0))
+        form_s = tk.Frame(card_s, bg=T.BG_CARD)
+        form_s.pack(fill='x', padx=14, pady=(2, 6))
+        form_s.columnconfigure(1, weight=1)
+        
+        tk.Label(form_s, text='Proporcao Treino',
+                 bg=T.BG_CARD, fg=T.FG_MUTED,
+                 font=T.FONT_LABEL, anchor='w'
+                ).grid(row=0, column=0, sticky='w', pady=(0, 2))
+        ttk.Entry(form_s, textvariable=self.var_prop_treino,
+                  font=T.FONT_MONO, width=9
+                 ).grid(row=0, column=1, sticky='ew', padx=(8, 0))
+                 
+        tk.Label(form_s, text='Semente (Seed)',
+                 bg=T.BG_CARD, fg=T.FG_MUTED,
+                 font=T.FONT_LABEL, anchor='w'
+                ).grid(row=1, column=0, sticky='w', pady=(4, 2))
+        ttk.Entry(form_s, textvariable=self.var_semente,
+                  font=T.FONT_MONO, width=9
+                 ).grid(row=1, column=1, sticky='ew', padx=(8, 0))
+
+        # Seleção de comparação (Classes)
+        card_cc = Card(wrap, titulo='comparacao (classes)')
+        card_cc.grid(row=2, column=0, sticky='ew', pady=(8, 0))
+        for val, lbl in [
+            ('todas', '3 Classes (Todas)'),
+            ('setosa_versicolor', 'Setosa × Versicolor'),
+            ('versicolor_virginica', 'Versicolor × Virginica'),
+            ('setosa_virginica', 'Setosa × Virginica')
+        ]:
+            tk.Radiobutton(card_cc, text=lbl, value=val,
+                           variable=self.var_comparacao,
+                           bg=T.BG_CARD, fg=T.FG, selectcolor=T.BG_HOVER,
+                           activebackground=T.BG_CARD, activeforeground=T.ACCENT,
+                           font=T.FONT_BODY, anchor='w',
+                           borderwidth=0, highlightthickness=0,
+                           command=self._ao_mudar_comparacao
+                          ).pack(fill='x', padx=14, pady=2)
+
         ttk.Button(wrap, text='Treinar e Calcular Metricas  >',
                    style='Primary.TButton',
                    command=self._treinar_tudo
-                  ).grid(row=1, column=0, sticky='ew', pady=(8, 0))
+                  ).grid(row=3, column=0, sticky='ew', pady=(10, 0))
 
         self.lbl_status = tk.Label(wrap, text='Aguardando treinamento.',
                                    bg=T.BG, fg=T.FG_MUTED,
                                    font=T.FONT_MONO_SM, anchor='w',
                                    wraplength=255, justify='left')
-        self.lbl_status.grid(row=2, column=0, sticky='ew', pady=(4, 0))
+        self.lbl_status.grid(row=4, column=0, sticky='ew', pady=(4, 0))
 
         # Seletor de modelo
         card2 = Card(wrap, titulo='selecionar modelo')
-        card2.grid(row=3, column=0, sticky='ew', pady=(10, 0))
+        card2.grid(row=5, column=0, sticky='ew', pady=(10, 0))
         self._frame_radios_modelo = tk.Frame(card2, bg=T.BG_CARD)
         self._frame_radios_modelo.pack(fill='x', padx=14, pady=(0, 6))
 
         # Seletor de classe (metricas OvR)
         card3 = Card(wrap, titulo='classe  (OvR)')
-        card3.grid(row=4, column=0, sticky='ew', pady=(8, 0))
+        card3.grid(row=6, column=0, sticky='ew', pady=(8, 0))
         for c in CLASSES:
             tk.Radiobutton(card3, text=c.capitalize(),
                            value=c, variable=self.var_classe_sel,
@@ -172,7 +219,7 @@ class TabMetricasAvancadas(tk.Frame):
 
         # Legenda Kappa
         card4 = Card(wrap, titulo='interpretacao kappa')
-        card4.grid(row=5, column=0, sticky='ew', pady=(8, 0))
+        card4.grid(row=7, column=0, sticky='ew', pady=(8, 0))
         for faixa, desc, cor in [
             ('> 0.80', 'Quase Perfeito', T.SUCCESS),
             ('> 0.60', 'Substancial',    T.DATA_MINT),
@@ -190,13 +237,13 @@ class TabMetricasAvancadas(tk.Frame):
 
         # Memoria de calculo das metricas
         card5 = Card(wrap, titulo='memoria de calculo')
-        card5.grid(row=6, column=0, sticky='ew', pady=(8, 0))
+        card5.grid(row=8, column=0, sticky='ew', pady=(8, 0))
         ttk.Button(card5, text='Abrir memoria de calculo  >',
                    style='Primary.TButton',
                    command=self._abrir_memoria_metricas
                   ).pack(fill='x', padx=14, pady=(2, 10))
 
-        wrap.rowconfigure(7, weight=1)
+        wrap.rowconfigure(9, weight=1)
 
     def _col_dir(self):
         wrap = tk.Frame(self, bg=T.BG)
@@ -246,7 +293,7 @@ class TabMetricasAvancadas(tk.Frame):
         for aba in [self._aba_comp, self._aba_detalhe, self._aba_pares,
                     self._aba_matriz, self._aba_graf, self._aba_comp2]:
             tk.Label(aba,
-                     text='Clique em  "Treinar e Calcular Metricas"  para iniciar.',
+                     text= 'Clique em  "Treinar e Calcular Metricas"  para iniciar.',
                      bg=T.BG_CARD, fg=T.FG_DIM, font=T.FONT_BODY
                     ).place(relx=0.5, rely=0.5, anchor='center')
 
@@ -282,8 +329,22 @@ class TabMetricasAvancadas(tk.Frame):
                 text=f'Dados nao encontrados:\n{CAMINHO_DADOS}', fg=T.DANGER)
             return
         self.dados = carregar_dados_iris(CAMINHO_DADOS)
+        
+        try:
+            prop = float(self.var_prop_treino.get())
+            if not (0.1 <= prop <= 0.9):
+                prop = 0.7
+        except ValueError:
+            prop = 0.7
+
+        try:
+            sem_str = self.var_semente.get().strip()
+            sem = int(sem_str) if sem_str else None
+        except ValueError:
+            sem = 42
+
         self.dados_treino, self.dados_teste = split_estratificado(
-            self.dados, proporcao_treino=0.7, semente=42)
+            self.dados, proporcao_treino=prop, semente=sem)
         self.lbl_status.configure(
             text=f'{len(self.dados)} amostras  '
                  f'({len(self.dados_treino)} treino / {len(self.dados_teste)} teste).',
@@ -292,34 +353,71 @@ class TabMetricasAvancadas(tk.Frame):
     # -----------------------------------------------------------------------
     # Treinar todos os classificadores
     # -----------------------------------------------------------------------
+    def _ao_mudar_comparacao(self):
+        comp = self.var_comparacao.get()
+        if comp == 'setosa_versicolor':
+            self.var_classe_sel.set('setosa')
+        elif comp == 'versicolor_virginica':
+            self.var_classe_sel.set('versicolor')
+        elif comp == 'setosa_virginica':
+            self.var_classe_sel.set('setosa')
+        else:
+            self.var_classe_sel.set('setosa')
+
+    def _obter_dados_filtrados(self):
+        comp = self.var_comparacao.get()
+        if comp == 'todas':
+            return self.dados_treino, self.dados_teste, CLASSES
+        elif comp == 'setosa_versicolor':
+            classes_sel = ['setosa', 'versicolor']
+        elif comp == 'versicolor_virginica':
+            classes_sel = ['versicolor', 'virginica']
+        else:
+            classes_sel = ['setosa', 'virginica']
+            
+        treino = filtrar_por_classes(self.dados_treino, classes_sel)
+        teste = filtrar_por_classes(self.dados_teste, classes_sel)
+        return treino, teste, classes_sel
+
+    # -----------------------------------------------------------------------
+    # Treinar todos os classificadores
+    # -----------------------------------------------------------------------
     def _treinar_tudo(self):
-        if not self.dados:
-            self._carregar_dados()
+        self._carregar_dados()
         if not self.dados:
             return
 
-        indices = IDX_PETALA if self.var_atributos.get() == 'petalas' else IDX_SEPALA
+        attr_sel = self.var_atributos.get()
+        if attr_sel == 'petalas':
+            indices = [2, 3]
+        elif attr_sel == 'sepalas':
+            indices = [0, 1]
+        else:
+            indices = [0, 1, 2, 3]
+
         self.lbl_status.configure(text='Treinando...', fg=T.ACCENT)
         self.update()
 
+        treino_f, teste_f, classes_sel = self._obter_dados_filtrados()
         resultados = {}
         preds_por = {}
 
         def registrar(nome, preds, gab):
-            resultados[nome] = relatorio_completo(preds, gab, CLASSES, nome)
+            resultados[nome] = relatorio_completo(preds, gab, classes_sel, nome)
             preds_por[nome]  = (preds, gab)
 
-        p, g = self._pred_dist_minima(indices);        registrar('Dist. Minima', p, g)
-        p, g = self._pred_dist_maxima(indices);        registrar('Dist. Maxima', p, g)
-        p, g = self._pred_ova_superficie(indices);     registrar('OvA Superficie', p, g)
-        p, g = self._pred_perceptron_ova(indices);     registrar('Perceptron OvA', p, g)
-        p, g = self._pred_delta_bin_ova(indices);      registrar('Delta Bin. OvA', p, g)
-        p, g = self._pred_delta_ova(indices);          registrar('Delta OvA', p, g)
+        p, g = self._pred_dist_minima(treino_f, teste_f, classes_sel, indices);        registrar('Dist. Minima', p, g)
+        p, g = self._pred_dist_maxima(treino_f, teste_f, classes_sel, indices);        registrar('Dist. Maxima', p, g)
+        p, g = self._pred_ova_superficie(treino_f, teste_f, classes_sel, indices);     registrar('Superficie 2a2' if len(classes_sel) == 3 else 'Superficie Binaria', p, g)
+        p, g = self._pred_perceptron_ova(treino_f, teste_f, classes_sel, indices);     registrar('Perceptron 2a2' if len(classes_sel) == 3 else 'Perceptron Binario', p, g)
+        p, g = self._pred_delta_bin_ova(treino_f, teste_f, classes_sel, indices);      registrar('Delta Bin. OvA' if len(classes_sel) == 3 else 'Delta Binario', p, g)
+        p, g = self._pred_delta_ova(treino_f, teste_f, classes_sel, indices);          registrar('Delta OvA' if len(classes_sel) == 3 else 'Delta Binario (Nets)', p, g)
 
         self.resultados       = resultados
         self.preds_por_modelo = preds_por
         self._treinado        = True
         self._indices_usados  = indices
+        self._classes_usadas  = classes_sel
 
         nomes = list(resultados.keys())
         self.var_modelo_sel.set(nomes[0])
@@ -339,30 +437,36 @@ class TabMetricasAvancadas(tk.Frame):
     # -----------------------------------------------------------------------
     # Classificadores
     # -----------------------------------------------------------------------
-    def _pred_dist_minima(self, indices):
-        proto = treinar(self.dados_treino, indices)
+    def _pred_dist_minima(self, treino, teste, classes, indices):
+        proto = treinar(treino, indices)
         preds, gab = [], []
-        for a in self.dados_teste:
+        for a in teste:
             _, pred = predizer_todas_classes(a['atributos'], proto, indices)
             preds.append(pred); gab.append(a['classe'])
         return preds, gab
 
-    def _pred_dist_maxima(self, indices):
-        proto = treinar(self.dados_treino, indices)
+    def _pred_dist_maxima(self, treino, teste, classes, indices):
+        proto = treinar(treino, indices)
         preds, gab = [], []
-        for a in self.dados_teste:
+        for a in teste:
             x = [a['atributos'][i] for i in indices]
-            dists = {c: distancia_euclidiana(x, proto[c]) for c in CLASSES}
+            dists = {c: distancia_euclidiana(x, proto[c]) for c in classes}
             preds.append(max(dists, key=dists.get))
             gab.append(a['classe'])
         return preds, gab
 
-    def _pred_ova_superficie(self, indices):
-        proto = treinar(self.dados_treino, indices)
+    def _pred_ova_superficie(self, treino, teste, classes, indices):
+        proto = treinar(treino, indices)
         preds, gab = [], []
-        for a in self.dados_teste:
-            votos = {c: 0 for c in CLASSES}
-            for ci, cj in PARES:
+        
+        if len(classes) == 2:
+            pares_locais = [(classes[0], classes[1])]
+        else:
+            pares_locais = PARES
+
+        for a in teste:
+            votos = {c: 0 for c in classes}
+            for ci, cj in pares_locais:
                 venc = predizer_binario(a['atributos'],
                                         proto[ci], proto[cj], ci, cj, indices)
                 votos[venc] += 1
@@ -370,44 +474,73 @@ class TabMetricasAvancadas(tk.Frame):
             gab.append(a['classe'])
         return preds, gab
 
-    def _pred_perceptron_ova(self, indices):
-        pesos = {}
-        for cp, cn in PARES:
-            treino_par = filtrar_por_classes(self.dados_treino, [cp, cn])
-            w, _, _ = treinar_perceptron(treino_par, cp, cn, indices, 0.03, 200)
-            pesos[(cp, cn)] = (w, cp, cn)
-        preds, gab = [], []
-        for a in self.dados_teste:
-            votos = {c: 0 for c in CLASSES}
-            for (w, cp, cn) in pesos.values():
+    def _pred_perceptron_ova(self, treino, teste, classes, indices):
+        if len(classes) == 2:
+            cp, cn = classes[0], classes[1]
+            w, _, _ = treinar_perceptron(treino, cp, cn, indices, 0.03, 200)
+            preds, gab = [], []
+            for a in teste:
+                x = [a['atributos'][i] for i in indices]
+                y = predizer_perceptron(x, w)
+                preds.append(cp if y == 1 else cn)
+                gab.append(a['classe'])
+            return preds, gab
+        else:
+            # Perceptron Hierárquico 2a2: Setosa (A) vs Versicolor/Virginica (B e C)
+            treino_s1 = []
+            for d in treino:
+                lbl = 'setosa' if d['classe'] == 'setosa' else 'not_setosa'
+                treino_s1.append({'atributos': d['atributos'], 'classe': lbl})
+            w1, _, _ = treinar_perceptron(treino_s1, 'setosa', 'not_setosa', indices, 0.03, 200)
+            
+            # Segunda superfície: Versicolor vs Virginica
+            treino_s2 = filtrar_por_classes(treino, ['versicolor', 'virginica'])
+            w2, _, _ = treinar_perceptron(treino_s2, 'versicolor', 'virginica', indices, 0.03, 200)
+            
+            preds, gab = [], []
+            for a in teste:
+                x = [a['atributos'][i] for i in indices]
+                y1 = predizer_perceptron(x, w1)
+                if y1 == 1:
+                    preds.append('setosa')
+                else:
+                    y2 = predizer_perceptron(x, w2)
+                    preds.append('versicolor' if y2 == 1 else 'virginica')
+                gab.append(a['classe'])
+            return preds, gab
+
+    def _pred_delta_bin_ova(self, treino, teste, classes, indices):
+        if len(classes) == 2:
+            cp, cn = classes[0], classes[1]
+            w, _, _ = treinar_delta_iris(treino, cp, cn, indices, 0.02, 300)
+            preds, gab = [], []
+            for a in teste:
                 x = [1.0] + [a['atributos'][i] for i in indices]
                 net = sum(wi * xi for wi, xi in zip(w, x))
-                votos[cp if net >= 0 else cn] += 1
-            preds.append(max(votos, key=votos.get))
-            gab.append(a['classe'])
-        return preds, gab
+                preds.append(cp if net >= 0 else cn)
+                gab.append(a['classe'])
+            return preds, gab
+        else:
+            pesos = {}
+            for cp, cn in PARES:
+                treino_par = filtrar_por_classes(treino, [cp, cn])
+                w, _, _ = treinar_delta_iris(treino_par, cp, cn, indices, 0.02, 300)
+                pesos[(cp, cn)] = (w, cp, cn)
+            preds, gab = [], []
+            for a in teste:
+                votos = {c: 0 for c in classes}
+                for (w, cp, cn) in pesos.values():
+                    x = [1.0] + [a['atributos'][i] for i in indices]
+                    net = sum(wi * xi for wi, xi in zip(w, x))
+                    votos[cp if net >= 0 else cn] += 1
+                preds.append(max(votos, key=votos.get))
+                gab.append(a['classe'])
+            return preds, gab
 
-    def _pred_delta_bin_ova(self, indices):
-        pesos = {}
-        for cp, cn in PARES:
-            treino_par = filtrar_por_classes(self.dados_treino, [cp, cn])
-            w, _, _ = treinar_delta_iris(treino_par, cp, cn, indices, 0.02, 300)
-            pesos[(cp, cn)] = (w, cp, cn)
+    def _pred_delta_ova(self, treino, teste, classes, indices):
+        pesos, _, _ = treinar_delta_ova(treino, indices, 0.02, 300)
         preds, gab = [], []
-        for a in self.dados_teste:
-            votos = {c: 0 for c in CLASSES}
-            for (w, cp, cn) in pesos.values():
-                x = [1.0] + [a['atributos'][i] for i in indices]
-                net = sum(wi * xi for wi, xi in zip(w, x))
-                votos[cp if net >= 0 else cn] += 1
-            preds.append(max(votos, key=votos.get))
-            gab.append(a['classe'])
-        return preds, gab
-
-    def _pred_delta_ova(self, indices):
-        pesos, _, _ = treinar_delta_ova(self.dados_treino, indices, 0.02, 300)
-        preds, gab = [], []
-        for a in self.dados_teste:
+        for a in teste:
             x = [a['atributos'][i] for i in indices]
             pred, _ = predizer_delta_ova(x, pesos)
             preds.append(pred); gab.append(a['classe'])
@@ -456,9 +589,9 @@ class TabMetricasAvancadas(tk.Frame):
             self,
             nome_modelo=nome,
             relatorio=self.resultados[nome],
-            classes=CLASSES,
+            classes=self._classes_usadas if hasattr(self, '_classes_usadas') else CLASSES,
             classe_foco=self.var_classe_sel.get(),
-            perc_vs_delta=perc_vs_delta,
+            perc_vs_delta=perc_vs_delta
         )
 
     def _atualizar_metricas_globais(self):
@@ -469,7 +602,8 @@ class TabMetricasAvancadas(tk.Frame):
         ag = rel['acerto_global']
         k  = rel['kappa']
         t  = rel['tau']
-        m  = sum(rel['matriz'][r][p] for r in CLASSES for p in CLASSES)
+        classes = self._classes_usadas if hasattr(self, '_classes_usadas') else CLASSES
+        m  = sum(rel['matriz'][p][r] for p in classes for r in classes)
 
         self.mb_ag.set(f'{ag*100:.2f}%',
                        T.SUCCESS if ag >= 0.9 else T.ACCENT if ag >= 0.7 else T.DANGER)
@@ -483,6 +617,10 @@ class TabMetricasAvancadas(tk.Frame):
 
         # Metricas OvR binarias
         classe = self.var_classe_sel.get()
+        if classe not in classes:
+            classe = classes[0]
+            self.var_classe_sel.set(classe)
+
         pc = rel['por_classe'].get(classe, {})
         if pc:
             def c_m(v): return T.SUCCESS if v >= 0.9 else T.ACCENT if v >= 0.7 else T.DANGER
@@ -505,10 +643,14 @@ class TabMetricasAvancadas(tk.Frame):
         frame = tk.Frame(self._aba_comp, bg=T.BG_CARD)
         frame.pack(fill='both', expand=True, padx=8, pady=6)
 
-        colunas  = ['Modelo', 'Acerto Global', 'Kappa', 'Tau',
-                    'set AP', 'ver AP', 'vir AP',
-                    'set AU', 'ver AU', 'vir AU']
-        larguras = [120, 100, 80, 80, 65, 65, 65, 65, 65, 65]
+        classes = self._classes_usadas if hasattr(self, '_classes_usadas') else CLASSES
+        colunas  = ['Modelo', 'Acerto Global', 'Kappa', 'Tau']
+        for c in classes:
+            colunas.append(f'{c[:3]} AP')
+        for c in classes:
+            colunas.append(f'{c[:3]} AU')
+            
+        larguras = [120, 100, 80, 80] + [65]*len(classes)*2
 
         canvas   = tk.Canvas(frame, bg=T.BG_CARD, highlightthickness=0)
         scroll_y = ttk.Scrollbar(frame, orient='vertical',   command=canvas.yview)
@@ -542,11 +684,11 @@ class TabMetricasAvancadas(tk.Frame):
 
             vals  = [nome, f'{ag*100:.2f}%', f'{k:.4f}', f'{t:.4f}']
             cores = [T.FG, cor_ag, cor_k, cor_k]
-            for c in CLASSES:
+            for c in classes:
                 pc = rel['por_classe'][c]
                 vals.append(f'{pc["acuracia_produtor"]*100:.1f}%')
                 cores.append(CORES_CLASSE[c])
-            for c in CLASSES:
+            for c in classes:
                 pc = rel['por_classe'][c]
                 vals.append(f'{pc["acuracia_usuario"]*100:.1f}%')
                 cores.append(CORES_CLASSE[c])
@@ -564,6 +706,7 @@ class TabMetricasAvancadas(tk.Frame):
         if not nome or nome not in self.resultados:
             return
         rel = self.resultados[nome]
+        classes = self._classes_usadas if hasattr(self, '_classes_usadas') else CLASSES
 
         outer = tk.Frame(self._aba_detalhe, bg=T.BG_CARD)
         outer.pack(fill='both', expand=True, padx=10, pady=8)
@@ -595,7 +738,7 @@ class TabMetricasAvancadas(tk.Frame):
         for j, nm in enumerate(cols):
             cel(0, j, nm, cor=T.ACCENT, bold=True)
 
-        for i, c in enumerate(CLASSES):
+        for i, c in enumerate(classes):
             pc  = rel['por_classe'][c]
             cor = CORES_CLASSE[c]
             for j, (v, cr) in enumerate(zip(
@@ -635,10 +778,10 @@ class TabMetricasAvancadas(tk.Frame):
             fg.columnconfigure(col, weight=1)
             tk.Label(bloco, text=rot.upper(), bg=T.BG_CARD, fg=T.ACCENT,
                      font=T.FONT_KICKER, anchor='w').pack(
-                fill='x', padx=8, pady=(6, 0))
+                 fill='x', padx=8, pady=(6, 0))
             tk.Label(bloco, text=val, bg=T.BG_CARD, fg=cor,
                      font=T.FONT_MONO, anchor='w').pack(
-                fill='x', padx=8, pady=(2, 6))
+                 fill='x', padx=8, pady=(2, 6))
 
     # -----------------------------------------------------------------------
     # Aba Pares de Classes — MCC e Fb por par (set×ver, ver×vir, set×vir)
@@ -650,6 +793,7 @@ class TabMetricasAvancadas(tk.Frame):
         if not nome or nome not in self.resultados:
             return
         rel = self.resultados[nome]
+        classes = self._classes_usadas if hasattr(self, '_classes_usadas') else CLASSES
 
         outer = tk.Frame(self._aba_pares, bg=T.BG_CARD)
         outer.pack(fill='both', expand=True, padx=10, pady=8)
@@ -667,13 +811,18 @@ class TabMetricasAvancadas(tk.Frame):
                  justify='left', anchor='w'
                 ).pack(fill='x', pady=(0, 8))
 
-        # Para cada par, extrai VP/FP/FN/VN da matriz APENAS com as duas classes
-        for ci, cj in PARES:
+        if len(classes) == 2:
+            pares_locais = [(classes[0], classes[1])]
+        else:
+            pares_locais = PARES
+
+        for ci, cj in pares_locais:
             mat = rel['matriz']
-            # Visao binaria pura: so as duas classes do par
+            # Visao binaria pura: so as duas classes do par.
+            # Como pred e linha e real e coluna:
             vp = mat[ci][ci]
-            fn = mat[ci][cj]
-            fp = mat[cj][ci]
+            fn = mat[cj][ci] # pred=cj, real=ci
+            fp = mat[ci][cj] # pred=ci, real=cj
             vn = mat[cj][cj]
             total_par = vp + fn + fp + vn
 
@@ -694,9 +843,9 @@ class TabMetricasAvancadas(tk.Frame):
             # Titulo do par
             tit = tk.Frame(bloco, bg=T.BG_PANEL)
             tit.pack(fill='x', padx=10, pady=(6, 4))
-            tk.Label(tit, text=ROTULO_PAR[(ci, cj)],
+            tk.Label(tit, text=ROTULO_PAR.get((ci, cj), f'{ci.capitalize()} x {cj.capitalize()}'),
                      bg=T.BG_PANEL, fg=T.FG,
-                     font=('Cambria', 11, 'bold'), anchor='w').pack(side='left')
+                     font=(T.FONT_FAMILY_TITLE, 11, 'bold'), anchor='w').pack(side='left')
             tk.Label(tit, text=f'  ({total_par} amostras de teste)',
                      bg=T.BG_PANEL, fg=T.FG_MUTED,
                      font=T.FONT_LABEL, anchor='w').pack(side='left')
@@ -712,7 +861,7 @@ class TabMetricasAvancadas(tk.Frame):
                          highlightthickness=1, highlightbackground=T.BORDER
                         ).grid(row=row, column=col, padx=1, pady=1, sticky='nsew')
 
-            cel2(0, 0, 'Real \\ Pred', bg=T.BG_PANEL, fg=T.FG_MUTED)
+            cel2(0, 0, 'Pred \\ Real', bg=T.BG_PANEL, fg=T.FG_MUTED)
             cel2(0, 1, ci.capitalize(), bg=cor_i, fg='white', bold=True)
             cel2(0, 2, cj.capitalize(), bg=cor_j, fg='white', bold=True)
             cel2(1, 0, ci.capitalize(), bg=cor_i, fg='white', bold=True)
@@ -721,12 +870,12 @@ class TabMetricasAvancadas(tk.Frame):
             # VP (diagonal = acerto da classe ci)
             bg_vp = '#1a7f37' if vp > 0 else T.BG_CARD
             cel2(1, 1, f'VP = {vp}', bg=bg_vp, fg='white' if vp > 0 else T.FG)
-            # FN (ci predito como cj)
+            # FN (real ci predito como cj)
             bg_fn = '#cf222e' if fn > 0 else T.BG_CARD
-            cel2(1, 2, f'FN = {fn}', bg=bg_fn, fg='white' if fn > 0 else T.FG)
-            # FP (cj predito como ci)
+            cel2(2, 1, f'FN = {fn}', bg=bg_fn, fg='white' if fn > 0 else T.FG)
+            # FP (real cj predito como ci)
             bg_fp = '#cf222e' if fp > 0 else T.BG_CARD
-            cel2(2, 1, f'FP = {fp}', bg=bg_fp, fg='white' if fp > 0 else T.FG)
+            cel2(1, 2, f'FP = {fp}', bg=bg_fp, fg='white' if fp > 0 else T.FG)
             # VN (diagonal = acerto da classe cj)
             bg_vn = '#1a7f37' if vn > 0 else T.BG_CARD
             cel2(2, 2, f'VN = {vn}', bg=bg_vn, fg='white' if vn > 0 else T.FG)
@@ -741,10 +890,10 @@ class TabMetricasAvancadas(tk.Frame):
                 b.pack(side='left', padx=(0, 6), ipadx=6, ipady=4)
                 tk.Label(b, text=rotulo.upper(), bg=T.BG_CARD, fg=T.ACCENT,
                          font=T.FONT_KICKER, anchor='w').pack(
-                    fill='x', padx=6, pady=(4, 0))
+                     fill='x', padx=6, pady=(4, 0))
                 tk.Label(b, text=valor, bg=T.BG_CARD, fg=cor,
                          font=T.FONT_HEADLINE, anchor='w').pack(
-                    fill='x', padx=6, pady=(0, 4))
+                     fill='x', padx=6, pady=(0, 4))
 
             c_mv = T.SUCCESS if mv > 0.8 else T.ACCENT if mv > 0.4 else T.DANGER
             c_f  = T.SUCCESS if f1 > 0.9 else T.ACCENT if f1 > 0.7 else T.DANGER
@@ -770,19 +919,21 @@ class TabMetricasAvancadas(tk.Frame):
             return
         rel    = self.resultados[nome]
         matriz = rel['matriz']
+        classes = self._classes_usadas if hasattr(self, '_classes_usadas') else CLASSES
+        n = len(classes)
 
         outer = tk.Frame(self._aba_matriz, bg=T.BG_CARD)
         outer.pack(fill='both', expand=True, padx=12, pady=8)
 
         tk.Label(outer,
                  text=f'Matriz de Confusao  —  {nome}  |  '
-                      f'Linhas = Real  ·  Colunas = Predito',
+                      f'Linhas = Predito  ·  Colunas = Real',
                  bg=T.BG_CARD, fg=T.ACCENT, font=T.FONT_KICKER, anchor='w'
                 ).pack(fill='x', pady=(0, 8))
 
         grid  = tk.Frame(outer, bg=T.BG_CARD)
         grid.pack(anchor='w')
-        vals  = [[matriz[r][p] for p in CLASSES] for r in CLASSES]
+        vals  = [[matriz[pred][real] for real in classes] for pred in classes]
         v_max = max(max(l) for l in vals) or 1
 
         def bg_cel(v, diag):
@@ -793,49 +944,87 @@ class TabMetricasAvancadas(tk.Frame):
                 r = 255; g = int(255 * (1 - 0.7 * t)); b = int(255 * (1 - 0.7 * t))
             return f'#{r:02x}{g:02x}{b:02x}'
 
-        tk.Label(grid, text='Real \\ Pred', bg=T.BG_PANEL, fg=T.FG_MUTED,
+        tk.Label(grid, text='Pred \\ Real', bg=T.BG_PANEL, fg=T.FG_MUTED,
                  font=T.FONT_KICKER, width=10, anchor='center',
                  highlightthickness=1, highlightbackground=T.BORDER
                 ).grid(row=0, column=0, padx=2, pady=2)
 
-        for j, c in enumerate(CLASSES):
+        for j, c in enumerate(classes):
             tk.Label(grid, text=c.capitalize(), bg=CORES_CLASSE[c],
                      fg='white', font=T.FONT_KICKER, width=10, anchor='center',
                      highlightthickness=1, highlightbackground=T.BORDER
                     ).grid(row=0, column=j + 1, padx=2, pady=2)
+                    
+        # Coluna de total da linha
+        tk.Label(grid, text='Total', bg=T.BG_PANEL, fg=T.ACCENT,
+                 font=T.FONT_KICKER, width=10, anchor='center',
+                 highlightthickness=1, highlightbackground=T.BORDER
+                ).grid(row=0, column=n + 1, padx=2, pady=2)
 
-        for i, real in enumerate(CLASSES):
-            tk.Label(grid, text=real.capitalize(), bg=CORES_CLASSE[real],
+        totais_colunas = {real: 0 for real in classes}
+        total_geral = 0
+
+        for i, pred in enumerate(classes):
+            tk.Label(grid, text=pred.capitalize(), bg=CORES_CLASSE[pred],
                      fg='white', font=T.FONT_KICKER, width=10, anchor='center',
                      highlightthickness=1, highlightbackground=T.BORDER
                     ).grid(row=i + 1, column=0, padx=2, pady=2)
-            for j, pred in enumerate(CLASSES):
-                v   = matriz[real][pred]
+            
+            total_linha = sum(matriz[pred][real] for real in classes)
+            
+            for j, real in enumerate(classes):
+                v   = matriz[pred][real]
                 bg  = bg_cel(v, i == j)
                 cfg = 'white' if (v / v_max > 0.4) else T.FG
                 tk.Label(grid, text=str(v), bg=bg, fg=cfg,
                          font=('Consolas', 11, 'bold'), width=10, anchor='center',
                          highlightthickness=1, highlightbackground=T.BORDER
                         ).grid(row=i + 1, column=j + 1, padx=2, pady=2)
+                totais_colunas[real] += v
+                
+            cel_tot_linha = tk.Label(grid, text=str(total_linha), bg=T.BG_PANEL, fg=T.FG,
+                                     font=('Consolas', 11, 'bold'), width=10, anchor='center',
+                                     highlightthickness=1, highlightbackground=T.BORDER)
+            cel_tot_linha.grid(row=i + 1, column=n + 1, padx=2, pady=2)
+            total_geral += total_linha
+
+        # Linha inferior de Totais das colunas
+        tk.Label(grid, text='Total', bg=T.BG_PANEL, fg=T.ACCENT,
+                 font=T.FONT_KICKER, width=10, anchor='center',
+                 highlightthickness=1, highlightbackground=T.BORDER
+                ).grid(row=n + 1, column=0, padx=2, pady=2)
+                
+        for j, real in enumerate(classes):
+            v_col = totais_colunas[real]
+            tk.Label(grid, text=str(v_col), bg=T.BG_PANEL, fg=T.FG,
+                     font=('Consolas', 11, 'bold'), width=10, anchor='center',
+                     highlightthickness=1, highlightbackground=T.BORDER
+                    ).grid(row=n + 1, column=j + 1, padx=2, pady=2)
+                    
+        # Célula inferior direita com total geral
+        tk.Label(grid, text=str(total_geral), bg=T.BG_PANEL, fg=T.ACCENT,
+                 font=('Consolas', 11, 'bold'), width=10, anchor='center',
+                 highlightthickness=1, highlightbackground=T.BORDER
+                ).grid(row=n + 1, column=n + 1, padx=2, pady=2)
 
         # Acuracia produtor e usuario
         info = tk.Frame(outer, bg=T.BG_CARD)
         info.pack(fill='x', pady=(12, 0))
-        tk.Label(info, text='ACURACIA DO PRODUTOR', bg=T.BG_CARD, fg=T.ACCENT,
+        tk.Label(info, text='ACURACIA DO PRODUTOR (Sensibilidade / Colunas)', bg=T.BG_CARD, fg=T.ACCENT,
                  font=T.FONT_KICKER, anchor='w'
-                ).grid(row=0, column=0, columnspan=3, sticky='w', pady=(0, 4))
-        tk.Label(info, text='ACURACIA DO USUARIO', bg=T.BG_CARD, fg=T.ACCENT,
+                ).grid(row=0, column=0, columnspan=n, sticky='w', pady=(0, 4))
+        tk.Label(info, text='ACURACIA DO USUARIO (Precisao / Linhas)', bg=T.BG_CARD, fg=T.ACCENT,
                  font=T.FONT_KICKER, anchor='w'
-                ).grid(row=0, column=3, columnspan=3, sticky='w', pady=(0, 4),
+                ).grid(row=0, column=n, columnspan=n, sticky='w', pady=(0, 4),
                        padx=(20, 0))
-        for col, c in enumerate(CLASSES):
+        for col, c in enumerate(classes):
             pc  = rel['por_classe'][c]
             cor = CORES_CLASSE[c]
-            for offset, chave in [(0, 'acuracia_produtor'), (3, 'acuracia_usuario')]:
+            for offset, chave in [(0, 'acuracia_produtor'), (n, 'acuracia_usuario')]:
                 b = tk.Frame(info, bg=T.BG_PANEL,
                              highlightthickness=1, highlightbackground=T.BORDER)
                 b.grid(row=1, column=col + offset, sticky='ew',
-                       padx=(20 if (col == 0 and offset == 3) else
+                       padx=(20 if (col == 0 and offset == n) else
                               (0 if col == 0 else 4), 0))
                 info.columnconfigure(col + offset, weight=1)
                 tk.Label(b, text=c.capitalize(), bg=T.BG_PANEL, fg=cor,
@@ -874,7 +1063,7 @@ class TabMetricasAvancadas(tk.Frame):
                 s.set_color(T.BORDER)
             ax.grid(axis='y', color=T.BORDER, linewidth=0.5, alpha=0.6)
             ax.set_title(titulo, color=T.FG, fontsize=9, pad=6,
-                         fontfamily='Cambria', fontweight='bold')
+                         fontfamily=T.FONT_FAMILY_NAME, fontweight='bold')
             ax.set_xticks(xs)
             ax.set_xticklabels([n.replace(' ', '\n') for n in nomes],
                                fontsize=6.5, color=T.FG_MUTED)
@@ -912,7 +1101,7 @@ class TabMetricasAvancadas(tk.Frame):
         canvas.draw()
 
     # -----------------------------------------------------------------------
-    # Aba Comparacao Kappa & Tau — Perceptron vs Delta  (Item 2 do Lab 3)
+    # Aba Comparacao Kappa & Tau — Selecao Dinamica de Modelos
     # -----------------------------------------------------------------------
     def _preencher_comparacao_kt(self):
         for w in self._aba_comp2.winfo_children():
@@ -921,26 +1110,54 @@ class TabMetricasAvancadas(tk.Frame):
         outer = tk.Frame(self._aba_comp2, bg=T.BG_CARD)
         outer.pack(fill='both', expand=True, padx=14, pady=10)
 
+        nomes_modelos = list(self.resultados.keys())
+        if not nomes_modelos:
+            tk.Label(outer, text='Treine os modelos primeiro.',
+                     bg=T.BG_CARD, fg=T.DANGER, font=T.FONT_BODY).pack()
+            return
+
+        m1 = self.var_comp_modelo1.get()
+        m2 = self.var_comp_modelo2.get()
+
+        if m1 not in nomes_modelos:
+            perc_opt = [n for n in nomes_modelos if 'Perceptron' in n]
+            self.var_comp_modelo1.set(perc_opt[0] if perc_opt else nomes_modelos[0])
+        if m2 not in nomes_modelos:
+            delta_opt = [n for n in nomes_modelos if 'Delta' in n and 'Bin.' not in n]
+            self.var_comp_modelo2.set(delta_opt[0] if delta_opt else (nomes_modelos[1] if len(nomes_modelos) > 1 else nomes_modelos[0]))
+
+        p_name = self.var_comp_modelo1.get()
+        d_name = self.var_comp_modelo2.get()
+
+        # Seletores de Modelos para Comparacao
+        frame_seletores = tk.Frame(outer, bg=T.BG_CARD)
+        frame_seletores.pack(fill='x', pady=(0, 10))
+        
+        tk.Label(frame_seletores, text='Classificador A:', bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_LABEL).pack(side='left', padx=(0, 6))
+        cb1 = ttk.Combobox(frame_seletores, textvariable=self.var_comp_modelo1, values=nomes_modelos, state='readonly', font=T.FONT_BODY, width=22)
+        cb1.pack(side='left', padx=(0, 20))
+        cb1.bind('<<ComboboxSelected>>', lambda e: self._preencher_comparacao_kt())
+
+        tk.Label(frame_seletores, text='Classificador B:', bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_LABEL).pack(side='left', padx=(0, 6))
+        cb2 = ttk.Combobox(frame_seletores, textvariable=self.var_comp_modelo2, values=nomes_modelos, state='readonly', font=T.FONT_BODY, width=22)
+        cb2.pack(side='left')
+        cb2.bind('<<ComboboxSelected>>', lambda e: self._preencher_comparacao_kt())
+
         tk.Label(outer,
-                 text='ITEM 2 — Teste de Significancia: Perceptron OvA  vs  Delta OvA',
+                 text=f'ITEM 2 — Teste de Significancia: {p_name}  vs  {d_name}',
                  bg=T.BG_CARD, fg=T.ACCENT, font=T.FONT_KICKER, anchor='w'
-                ).pack(fill='x', pady=(0, 4))
+                ).pack(fill='x', pady=(10, 4))
         tk.Label(outer,
                  text='Verifica se a diferenca entre os dois classificadores e '
-                      'estatisticamente significativa ao nivel de 5%.\n'
-                      'H0: nao ha diferenca entre os coeficientes  |  '
-                      'H1: ha diferenca',
+                       'estatisticamente significativa ao nivel de 5%.\n'
+                       'H0: nao ha diferenca entre os coeficientes  |  '
+                       'H1: ha diferenca',
                  bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_LABEL,
                  justify='left', anchor='w', wraplength=820
                 ).pack(fill='x', pady=(0, 10))
 
-        # Verificar se ambos os modelos existem
-        perc = self.resultados.get('Perceptron OvA')
-        delt = self.resultados.get('Delta OvA')
-        if not perc or not delt:
-            tk.Label(outer, text='Treine os modelos primeiro.',
-                     bg=T.BG_CARD, fg=T.DANGER, font=T.FONT_BODY).pack()
-            return
+        perc = self.resultados.get(p_name)
+        delt = self.resultados.get(d_name)
 
         k1  = perc['kappa'];          k2  = delt['kappa']
         t1  = perc['tau'];            t2  = delt['tau']
@@ -974,7 +1191,7 @@ class TabMetricasAvancadas(tk.Frame):
                      highlightbackground=T.BORDER
                     ).grid(row=row, column=col, padx=1, pady=1, sticky='nsew')
 
-        for col, h in enumerate(['Metrica', 'Perceptron OvA', 'Delta OvA',
+        for col, h in enumerate(['Metrica', p_name, d_name,
                                   'Z calculado', 'p-valor', 'Conclusao (5%)']):
             th(col, h)
 
@@ -982,7 +1199,7 @@ class TabMetricasAvancadas(tk.Frame):
             ('Acerto Global',
              f'{ag1*100:.2f}%', f'{ag2*100:.2f}%',
              '—', '—',
-             'Maior: ' + ('Perceptron' if ag1 > ag2 else 'Delta OvA')),
+             'Maior: ' + (p_name if ag1 > ag2 else d_name)),
             ('Kappa',
              f'{k1:.6f}', f'{k2:.6f}',
              f'{zk:.4f}', f'{pzk:.4f}',
@@ -1010,14 +1227,32 @@ class TabMetricasAvancadas(tk.Frame):
         # Interpretacao
         tk.Frame(outer, bg=T.BORDER, height=1).pack(fill='x', pady=(4, 8))
 
-        maior_acc = 'Perceptron OvA' if ag1 > ag2 else ('Delta OvA' if ag2 > ag1 else 'empate')
-        maior_k   = 'Perceptron OvA' if k1 > k2 else ('Delta OvA' if k2 > k1 else 'empate')
+        maior_acc = p_name if ag1 > ag2 else (d_name if ag2 > ag1 else 'empate')
+        maior_k   = p_name if k1 > k2 else (d_name if k2 > k1 else 'empate')
+
+        calculos_passos = (
+            f"MEMORIA DE CALCULO DO TESTE Z:\n"
+            f"1. Teste de Significancia para Kappa:\n"
+            f"   Formula: Z_k = (K_A - K_B) / sqrt(Var(K_A) + Var(K_B))\n"
+            f"   Calculo: Z_k = ({k1:.6f} - {k2:.6f}) / sqrt({vk1:.8f} + {vk2:.8f})\n"
+            f"            Z_k = {k1 - k2:+.6f} / {math.sqrt(vk1 + vk2):.8f}\n"
+            f"            Z_k = {zk:+.4f}   ==>   p-valor = {pzk:.4f} "
+            f"({'p < 0.05' if pzk < 0.05 else 'p >= 0.05'})\n\n"
+            f"2. Teste de Significancia para Tau:\n"
+            f"   Formula: Z_t = (Tau_A - Tau_B) / sqrt(Var(Tau_A) + Var(Tau_B))\n"
+            f"   Cálculo: Z_t = ({t1:.6f} - {t2:.6f}) / sqrt({vt1:.8f} + {vt2:.8f})\n"
+            f"            Z_t = {t1 - t2:+.6f} / {math.sqrt(vt1 + vt2):.8f}\n"
+            f"            Z_t = {zt:+.4f}   ==>   p-valor = {pzt:.4f} "
+            f"({'p < 0.05' if pzt < 0.05 else 'p >= 0.05'})\n\n"
+            f"--------------------------------------------------------------------------------\n"
+        )
 
         texto_interp = (
+            calculos_passos +
             f'Maior acuracia:  {maior_acc}  '
-            f'(Perceptron {ag1*100:.2f}%  vs  Delta {ag2*100:.2f}%)\n'
+            f'({p_name} {ag1*100:.2f}%  vs  {d_name} {ag2*100:.2f}%)\n'
             f'Maior Kappa:     {maior_k}  '
-            f'(Perceptron K={k1:.4f}  vs  Delta K={k2:.4f})\n\n'
+            f'({p_name} K={k1:.4f}  vs  {d_name} K={k2:.4f})\n\n'
         )
         if sig_k or sig_t:
             texto_interp += (

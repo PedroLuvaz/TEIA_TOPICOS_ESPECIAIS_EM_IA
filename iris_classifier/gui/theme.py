@@ -1,54 +1,66 @@
 """
 Tema visual do aplicativo - paleta, tipografia e estilos ttk.
 
-Direcao estetica: editorial cientifica em tema claro.
-Fundo branco + ambar academico + dados em azul/verde/vermelho.
-Tipografia mista: serifa para titulos, sans para corpo, monospace
-para numeros. O objetivo e parecer com publicacao academica seria,
-nao com painel administrativo generico.
+Direcao estetica: dashboard interativo moderno em tema claro (slate light).
+Fundo branco limpo + realce em indigo eletrico + dados em alta legibilidade.
+Tipografia: Segoe UI para toda a interface (sem serifas academicas),
+Consolas para numeros e formulas.
 """
 from tkinter import ttk
 
 # ---------------------------------------------------------------------------
-# Paleta
+# Paleta Light Mode Premium (Modern, Clean & Slate Light)
 # ---------------------------------------------------------------------------
-BG          = '#FFFFFF'   # fundo principal (branco)
-BG_PANEL    = '#F6F8FA'   # paineis (cinza muito claro)
-BG_CARD     = '#EAEEF2'   # cartoes (cinza claro)
-BG_HOVER    = '#DDE3EA'   # estado hover
-BORDER      = '#D0D7DE'   # bordas suaves
-BORDER_HARD = '#ADBAC7'   # bordas com mais contraste
+BG          = '#FFFFFF'   # fundo principal (branco limpo)
+BG_PANEL    = '#F8FAFC'   # Slate 50 - painéis de controle e áreas secundárias
+BG_CARD     = '#F1F5F9'   # Slate 100 - cartões de conteúdo
+BG_HOVER    = '#E2E8F0'   # Slate 200 - estado de hover
+BORDER      = '#E2E8F0'   # Slate 200 - bordas sutis e limpas
+BORDER_HARD = '#CBD5E1'   # Slate 300 - bordas com mais definição
 
-FG          = '#1F2328'   # quase preto (texto principal)
-FG_MUTED    = '#57606A'   # cinza intermediario
-FG_DIM      = '#8C959F'   # cinza apagado
+FG          = '#0F172A'   # Slate 900 - texto principal quase preto para excelente legibilidade
+FG_MUTED    = '#475569'   # Slate 600 - texto intermediário
+FG_DIM      = '#94A3B8'   # Slate 400 - texto apagado/secundário
 
-ACCENT      = '#BF7500'   # ambar escuro para contraste no branco
-ACCENT_DEEP = '#8A5500'   # ambar mais escuro (estados ativos)
+ACCENT      = '#E8A33D'   # ambar/laranja - assinatura visual do app
+ACCENT_DEEP = '#B07A20'   # ambar escuro (estados ativos)
 
-# Cores das classes - ajustadas para alto contraste no fundo claro
-DATA_BLUE   = '#0969DA'   # setosa
-DATA_MINT   = '#1A7F37'   # versicolor
-DATA_CORAL  = '#CF222E'   # virginica
+DATA_BLUE   = '#0284C7'   # Cyan/Sky 600 - Setosa
+DATA_MINT   = '#059669'   # Emerald/Green 600 - Versicolor
+DATA_CORAL  = '#E11D48'   # Rose/Red 600 - Virginica
 
-SUCCESS     = '#1A7F37'
-DANGER      = '#CF222E'
+SUCCESS     = '#059669'   # Verde sucesso / acerto
+DANGER      = '#E11D48'   # Vermelho erro / perigo
 
 # ---------------------------------------------------------------------------
-# Tipografia (fontes nativas do Windows 11)
+# Tipografia (fontes modernas nativas do Windows 11/10)
 # ---------------------------------------------------------------------------
-FONT_DISPLAY    = ('Cambria', 22, 'normal')
-FONT_HEADLINE   = ('Cambria', 16, 'bold')
-FONT_TITLE      = ('Cambria', 14, 'bold')
-FONT_VALUE_BIG  = ('Cambria', 20, 'bold')
-FONT_VALUE_HUGE = ('Cambria', 28, 'bold')
+FONT_FAMILY = 'Segoe UI'
+FONT_FAMILY_NAME = FONT_FAMILY
+FONT_FAMILY_TITLE = 'Segoe UI Semibold'
 
-FONT_BODY       = ('Segoe UI', 10, 'normal')
-FONT_LABEL      = ('Segoe UI', 9, 'normal')
-FONT_SUBTITLE   = ('Segoe UI', 9, 'normal')
-FONT_BUTTON     = ('Segoe UI Semibold', 10, 'normal')
-FONT_TAB        = ('Segoe UI Semibold', 10, 'normal')
-FONT_KICKER     = ('Segoe UI', 8, 'bold')   # rotulos em CAPS
+FONT_DISPLAY    = (FONT_FAMILY_TITLE, 22, 'normal')
+FONT_HEADLINE   = (FONT_FAMILY_TITLE, 15, 'bold')
+FONT_TITLE      = (FONT_FAMILY_TITLE, 12, 'bold')
+FONT_VALUE_BIG  = (FONT_FAMILY_TITLE, 20, 'bold')
+FONT_VALUE_HUGE = (FONT_FAMILY_TITLE, 28, 'bold')
+
+FONT_BODY       = (FONT_FAMILY, 10, 'normal')
+FONT_LABEL      = (FONT_FAMILY, 9, 'normal')
+FONT_SUBTITLE   = (FONT_FAMILY, 9, 'normal')
+FONT_BUTTON     = (FONT_FAMILY_TITLE, 10, 'normal')
+FONT_TAB        = (FONT_FAMILY_TITLE, 10, 'normal')
+FONT_KICKER     = (FONT_FAMILY, 8, 'bold')   # rotulos em CAPS
+
+FONT_MONO       = ('Consolas', 10, 'normal')
+FONT_VALUE_HUGE = (FONT_FAMILY_TITLE, 28, 'bold')
+
+FONT_BODY       = (FONT_FAMILY, 10, 'normal')
+FONT_LABEL      = (FONT_FAMILY, 9, 'normal')
+FONT_SUBTITLE   = (FONT_FAMILY, 9, 'normal')
+FONT_BUTTON     = (FONT_FAMILY_TITLE, 10, 'normal')
+FONT_TAB        = (FONT_FAMILY_TITLE, 10, 'normal')
+FONT_KICKER     = (FONT_FAMILY, 8, 'bold')   # rotulos em CAPS
 
 FONT_MONO       = ('Consolas', 10, 'normal')
 FONT_MONO_SM    = ('Consolas', 9, 'normal')
@@ -58,18 +70,19 @@ FONT_MONO_SM    = ('Consolas', 9, 'normal')
 # Aplicacao do tema ttk
 # ---------------------------------------------------------------------------
 def aplicar_tema(root):
-    """Configura ttk.Style com a paleta editorial clara.
+    """Configura ttk.Style com a paleta editorial escura e define defaults.
 
     Apenas widgets ttk especificos sao estilizados aqui (Notebook, Entry,
     Primary.TButton). Para widgets dentro de cartoes onde a cor de fundo
-    importa, preferimos tk.* nativos com configuracao direta - mais simples
-    do que mapear estilos ttk hibridos.
+    importa, preferimos tk.* nativos com configuracao direta.
     """
     style = ttk.Style(root)
     style.theme_use('clam')
 
     root.configure(bg=BG)
     root.option_add('*Font', FONT_BODY)
+    root.option_add('*Background', BG)
+    root.option_add('*Foreground', FG)
     root.option_add('*tearOff', False)
 
     # ---- Frame ----
@@ -126,12 +139,12 @@ def aplicar_tema(root):
 
     # ---- Primary button (ambar solido) ----
     style.configure('Primary.TButton',
-        background=ACCENT, foreground='#FFFFFF', font=FONT_BUTTON,
+        background=ACCENT, foreground='#0F172A', font=FONT_BUTTON,
         borderwidth=0, focuscolor=ACCENT,
         padding=(16, 10))
     style.map('Primary.TButton',
         background=[('active', ACCENT_DEEP), ('pressed', ACCENT_DEEP)],
-        foreground=[('active', '#FFFFFF'), ('pressed', '#FFFFFF')])
+        foreground=[('active', '#0F172A'), ('pressed', '#0F172A')])
 
     # ---- Treeview (tabela de amostras do dataset) ----
     style.configure('Treeview',
@@ -145,6 +158,23 @@ def aplicar_tema(root):
         bordercolor=BORDER, borderwidth=0, padding=(4, 6))
     style.map('Treeview',
         background=[('selected', ACCENT)],
-        foreground=[('selected', '#FFFFFF')])
+        foreground=[('selected', '#0F172A')])
     style.map('Treeview.Heading',
         background=[('active', BG_HOVER)])
+
+    # ---- Matplotlib Global Dark Styling ----
+    try:
+        import matplotlib
+        matplotlib.rcParams['text.color'] = FG
+        matplotlib.rcParams['axes.labelcolor'] = FG_MUTED
+        matplotlib.rcParams['xtick.color'] = FG_MUTED
+        matplotlib.rcParams['ytick.color'] = FG_MUTED
+        matplotlib.rcParams['axes.edgecolor'] = BORDER_HARD
+        matplotlib.rcParams['axes.facecolor'] = BG_PANEL
+        matplotlib.rcParams['figure.facecolor'] = BG_PANEL
+        matplotlib.rcParams['grid.color'] = BORDER
+        matplotlib.rcParams['grid.alpha'] = 0.5
+        matplotlib.rcParams['font.family'] = 'sans-serif'
+        matplotlib.rcParams['font.sans-serif'] = [FONT_FAMILY_NAME, 'DejaVu Sans', 'Arial', 'Helvetica']
+    except ImportError:
+        pass

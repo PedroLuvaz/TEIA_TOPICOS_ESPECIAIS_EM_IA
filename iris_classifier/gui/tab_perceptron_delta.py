@@ -65,6 +65,12 @@ CONF_ATTR = {
         'eixo_x': 'Comp. Sepala (cm)',
         'eixo_y': 'Larg. Sepala (cm)',
     },
+    'todas': {
+        'rotulo_ui': 'Todas (4 Features) · [0,1,2,3]',
+        'indices': [0, 1, 2, 3],
+        'eixo_x': 'Comp. Petala (cm)',
+        'eixo_y': 'Larg. Petala (cm)',
+    },
 }
 
 PAR_POR_MODO = {
@@ -123,6 +129,8 @@ class TabPerceptronDelta(tk.Frame):
         self.var_attr  = tk.StringVar(value='petalas')
         self.var_taxa  = tk.StringVar(value='0.03')
         self.var_epocas = tk.StringVar(value='100')
+        self.var_prop_treino = tk.StringVar(value='0.70')
+        self.var_semente = tk.StringVar(value='42')
 
         self.w = None
         self.pesos_ova = None         # dict {classe: w} para Delta OvA
@@ -201,8 +209,10 @@ class TabPerceptronDelta(tk.Frame):
             ).pack(fill='x', padx=14, pady=2)
         tk.Frame(self.card_algo, bg=T.BG_CARD, height=4).pack()
 
-        # --- Card 2: Par de classes (Iris) ---
-        self.card_par = Card(self._wrap_esq, titulo='par de classes')
+        # --- Card 2: Par de classes e Atributos (Iris) lado a lado ---
+        self.frame_config_row = tk.Frame(self._wrap_esq, bg=T.BG)
+        
+        self.card_par = Card(self.frame_config_row, titulo='par de classes')
         for chave, rotulo in PAR_ROTULO.items():
             tk.Radiobutton(
                 self.card_par, text=rotulo,
@@ -213,11 +223,10 @@ class TabPerceptronDelta(tk.Frame):
                 font=T.FONT_BODY, anchor='w',
                 borderwidth=0, highlightthickness=0,
                 command=self._ao_mudar_config,
-            ).pack(fill='x', padx=14, pady=2)
-        tk.Frame(self.card_par, bg=T.BG_CARD, height=4).pack()
+            ).pack(fill='x', padx=14, pady=1)
+        tk.Frame(self.card_par, bg=T.BG_CARD, height=2).pack()
 
-        # --- Card 3: Atributos (Iris) ---
-        self.card_attr = Card(self._wrap_esq, titulo='atributos')
+        self.card_attr = Card(self.frame_config_row, titulo='atributos')
         for chave, cfg in CONF_ATTR.items():
             tk.Radiobutton(
                 self.card_attr, text=cfg['rotulo_ui'],
@@ -228,11 +237,33 @@ class TabPerceptronDelta(tk.Frame):
                 font=T.FONT_BODY, anchor='w',
                 borderwidth=0, highlightthickness=0,
                 command=self._ao_mudar_config,
-            ).pack(fill='x', padx=14, pady=2)
-        tk.Frame(self.card_attr, bg=T.BG_CARD, height=4).pack()
+            ).pack(fill='x', padx=14, pady=1)
+        tk.Frame(self.card_attr, bg=T.BG_CARD, height=2).pack()
 
-        # --- Card 4: Hiperparâmetros ---
-        self.card_hiper = Card(self._wrap_esq, titulo='hiperparametros')
+        # --- Card 3: Divisao dos dados ---
+        self.card_split = Card(self._wrap_esq, titulo='divisao dos dados')
+        form_s = tk.Frame(self.card_split, bg=T.BG_CARD)
+        form_s.pack(fill='x', padx=14, pady=(2, 6))
+        form_s.columnconfigure(1, weight=1)
+        
+        tk.Label(form_s, text='Proporcao Treino',
+                 bg=T.BG_CARD, fg=T.FG_MUTED,
+                 font=T.FONT_LABEL, anchor='w'
+                ).grid(row=0, column=0, sticky='w', pady=(0, 2))
+        ttk.Entry(form_s, textvariable=self.var_prop_treino,
+                  font=T.FONT_MONO, width=9
+                 ).grid(row=0, column=1, sticky='ew', padx=(8, 0))
+                 
+        tk.Label(form_s, text='Semente (Seed)',
+                 bg=T.BG_CARD, fg=T.FG_MUTED,
+                 font=T.FONT_LABEL, anchor='w'
+                ).grid(row=1, column=0, sticky='w', pady=(4, 2))
+        ttk.Entry(form_s, textvariable=self.var_semente,
+                  font=T.FONT_MONO, width=9
+                 ).grid(row=1, column=1, sticky='ew', padx=(8, 0))
+
+        # --- Card 4: Hiperparâmetros e Treinamento ---
+        self.card_hiper = Card(self._wrap_esq, titulo='hiperparametros & treino')
         form = tk.Frame(self.card_hiper, bg=T.BG_CARD)
         form.pack(fill='x', padx=14, pady=(2, 0))
         form.columnconfigure(1, weight=1)
@@ -242,36 +273,36 @@ class TabPerceptronDelta(tk.Frame):
                  font=T.FONT_LABEL, anchor='w'
                 ).grid(row=0, column=0, sticky='w', pady=(0, 2))
         ttk.Entry(form, textvariable=self.var_taxa,
-                  font=T.FONT_MONO, width=9
+                 font=T.FONT_MONO, width=9
                  ).grid(row=0, column=1, sticky='ew', padx=(8, 0))
 
         tk.Label(form, text='Max. Epocas',
                  bg=T.BG_CARD, fg=T.FG_MUTED,
                  font=T.FONT_LABEL, anchor='w'
-                ).grid(row=1, column=0, sticky='w', pady=(8, 2))
+                 ).grid(row=1, column=0, sticky='w', pady=(4, 2))
         ttk.Entry(form, textvariable=self.var_epocas,
                   font=T.FONT_MONO, width=9
                  ).grid(row=1, column=1, sticky='ew', padx=(8, 0))
-        tk.Frame(self.card_hiper, bg=T.BG_CARD, height=6).pack()
 
-        # --- Botao Treinar ---
-        self._frame_btn = tk.Frame(self._wrap_esq, bg=T.BG)
+        # --- Botao Treinar (dentro do card de hiperparâmetros) ---
+        self._frame_btn = tk.Frame(self.card_hiper, bg=T.BG_CARD)
+        self._frame_btn.pack(fill='x', padx=14, pady=(8, 6))
         ttk.Button(
-            self._frame_btn, text='Treinar  >',
+            self._frame_btn, text='Treinar Modelo  >',
             style='Primary.TButton',
             command=self._treinar,
-        ).pack(fill='x', ipady=4)
+        ).pack(fill='x', ipady=2)
         self.lbl_status = tk.Label(
             self._frame_btn, text='Modelo nao treinado.',
-            bg=T.BG, fg=T.FG_MUTED, font=T.FONT_MONO_SM,
+            bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_MONO_SM,
             anchor='w', wraplength=280, justify='left',
         )
         self.lbl_status.pack(fill='x', pady=(4, 0))
 
-        # --- Card: classificar amostra (4 features) ---
-        self.card_testar = Card(self._wrap_esq, titulo='classificar amostra')
+        # --- Card: classificar amostra, predição e memória ---
+        self.card_testar = Card(self._wrap_esq, titulo='classificacao & predicao')
         form_t = tk.Frame(self.card_testar, bg=T.BG_CARD)
-        form_t.pack(fill='x', padx=14, pady=(0, 0))
+        form_t.pack(fill='x', padx=14, pady=(2, 0))
         form_t.columnconfigure(1, weight=1)
         self.lbls_test = {}
         for row, (chave, nome_legivel, _idx) in enumerate(FEATURES):
@@ -285,38 +316,49 @@ class TabPerceptronDelta(tk.Frame):
                      ).grid(row=row, column=1, sticky='ew',
                             padx=(8, 0), pady=(0, 1))
 
-        ttk.Button(self.card_testar, text='Classificar  >',
+        ttk.Button(self.card_testar, text='Classificar Amostra  >',
                    style='Primary.TButton',
                    command=self._classificar_amostra_pd
-                  ).pack(fill='x', padx=14, pady=(8, 10))
+                  ).pack(fill='x', padx=14, pady=(8, 6))
 
-        # --- Resultado da predicao ---
-        self._frame_predicao_pd = Card(self._wrap_esq, titulo='predicao')
-        self.lbl_pred_pd = tk.Label(self._frame_predicao_pd, text='—',
+        # Divisor sutil
+        self.sep_pred = tk.Frame(self.card_testar, bg=T.BORDER, height=1)
+        self.sep_pred.pack(fill='x', padx=14, pady=4)
+
+        # Predição (dentro do mesmo card)
+        self.lbl_pred_pd = tk.Label(self.card_testar, text='—',
                                     bg=T.BG_CARD, fg=T.FG_DIM,
                                     font=T.FONT_VALUE_BIG, anchor='w')
-        self.lbl_pred_pd.pack(fill='x', padx=14, pady=(0, 1))
+        self.lbl_pred_pd.pack(fill='x', padx=14, pady=(2, 1))
+        
         self.lbl_pred_sub_pd = tk.Label(
-            self._frame_predicao_pd, text='aguardando treinamento',
+            self.card_testar, text='aguardando treinamento',
             bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_MONO_SM,
             anchor='w', justify='left', wraplength=280)
-        self.lbl_pred_sub_pd.pack(fill='x', padx=14, pady=(0, 4))
-        # Equacao treinada (compacta, sem separador)
+        self.lbl_pred_sub_pd.pack(fill='x', padx=14, pady=(0, 2))
+        
         self.lbl_equacao = tk.Label(
-            self._frame_predicao_pd, text='—',
+            self.card_testar, text='—',
             bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_MONO_SM,
             anchor='w', justify='left', wraplength=280)
-        self.lbl_equacao.pack(fill='x', padx=14, pady=(0, 10))
+        self.lbl_equacao.pack(fill='x', padx=14, pady=(0, 6))
 
-        # --- Card: amostras do dataset (tabela com selecao) ---
+        # Botão de memória de cálculo (no rodapé do card de classificação)
+        self.btn_memoria_pd = ttk.Button(
+            self.card_testar, text='Abrir memoria de calculo  >',
+            style='Primary.TButton',
+            command=self._abrir_memoria_calculo_pd
+        )
+
+        # --- Card: amostras do dataset (tabela compacta de 3 linhas) ---
         self.card_dataset = Card(self._wrap_esq, titulo='amostras do dataset')
         frame_tree = tk.Frame(self.card_dataset, bg=T.BG_CARD)
-        frame_tree.pack(fill='x', padx=14, pady=(0, 10))
+        frame_tree.pack(fill='x', padx=14, pady=(0, 8))
         frame_tree.columnconfigure(0, weight=1)
 
         cols = ('idx', 'cls', 'sc', 'sl', 'pc', 'pl')
         self.tree_dataset = ttk.Treeview(
-            frame_tree, columns=cols, show='headings', height=5,
+            frame_tree, columns=cols, show='headings', height=10,
             selectmode='browse')
         self.tree_dataset.heading('idx', text='#')
         self.tree_dataset.heading('cls', text='Classe')
@@ -347,44 +389,47 @@ class TabPerceptronDelta(tk.Frame):
         self.tree_dataset.bind(
             '<<TreeviewSelect>>', self._ao_selecionar_amostra_dataset)
 
-        # --- Card: memoria de calculo ---
-        self.card_memoria_pd = Card(self._wrap_esq, titulo='memoria de calculo')
-        ttk.Button(self.card_memoria_pd, text='Abrir memoria de calculo  >',
-                   style='Primary.TButton',
-                   command=self._abrir_memoria_calculo_pd
-                  ).pack(fill='x', padx=14, pady=(2, 10))
-
         # Layout inicial
         self._relayoutar_controles()
 
     def _relayoutar_controles(self):
         """Empacota os cartoes na ordem certa conforme o algoritmo selecionado."""
-        for w in (self.card_algo, self.card_par, self.card_attr,
-                  self.card_hiper, self._frame_btn,
-                  self.card_testar, self._frame_predicao_pd,
-                  self.card_dataset, self.card_memoria_pd):
+        for w in (self.card_algo, self.frame_config_row, self.card_par, self.card_attr,
+                  self.card_split, self.card_hiper, self.card_testar, self.card_dataset):
             w.pack_forget()
+        self.btn_memoria_pd.pack_forget()
 
         algo = self.var_algo.get()
         GAP = (6, 0)   # espacamento compacto entre cards
         self.card_algo.pack(fill='x')
 
-        if algo not in ('xor', 'delta_ova'):
-            self.card_par.pack(fill='x', pady=GAP)
+        show_par = algo not in ('xor', 'delta_ova')
+        show_attr = algo != 'xor'
+
+        if show_par or show_attr:
+            self.frame_config_row.pack(fill='x', pady=GAP)
+            self.card_par.pack_forget()
+            self.card_attr.pack_forget()
+            
+            if show_par and show_attr:
+                self.card_par.pack(side='left', fill='both', expand=True, padx=(0, 4))
+                self.card_attr.pack(side='right', fill='both', expand=True, padx=(4, 0))
+            elif show_par:
+                self.card_par.pack(fill='both', expand=True)
+            elif show_attr:
+                self.card_attr.pack(fill='both', expand=True)
 
         if algo != 'xor':
-            self.card_attr.pack(fill='x', pady=GAP)
+            self.card_split.pack(fill='x', pady=GAP)
 
         self.card_hiper.pack(fill='x', pady=GAP)
-        self._frame_btn.pack(fill='x', pady=GAP)
 
         if algo != 'xor':
             self.card_testar.pack(fill='x', pady=GAP)
-            self._frame_predicao_pd.pack(fill='x', pady=GAP)
             self.card_dataset.pack(fill='x', pady=GAP)
 
-        if algo in ('perceptron', 'delta'):
-            self.card_memoria_pd.pack(fill='x', pady=GAP)
+        if algo in ('perceptron', 'delta') and self.var_attr.get() != 'todas':
+            self.btn_memoria_pd.pack(fill='x', padx=14, pady=(2, 10))
 
     # -----------------------------------------------------------------------
     # Coluna direita — figura + metricas
@@ -474,8 +519,22 @@ class TabPerceptronDelta(tk.Frame):
                 fg=T.DANGER)
             return
         self.dados = carregar_dados_iris(caminho)
+        
+        try:
+            prop = float(self.var_prop_treino.get())
+            if not (0.1 <= prop <= 0.9):
+                prop = 0.7
+        except ValueError:
+            prop = 0.7
+
+        try:
+            sem_str = self.var_semente.get().strip()
+            sem = int(sem_str) if sem_str else None
+        except ValueError:
+            sem = 42
+
         self.dados_treino, self.dados_teste = split_estratificado(
-            self.dados, proporcao_treino=0.7, semente=42)
+            self.dados, proporcao_treino=prop, semente=sem)
         self._popular_tree_dataset()
 
     def _popular_tree_dataset(self):
@@ -549,6 +608,7 @@ class TabPerceptronDelta(tk.Frame):
         self.lbl_pred_pd.configure(text='—', fg=T.FG_DIM)
         self.lbl_pred_sub_pd.configure(text='aguardando treinamento')
         self.lbl_equacao.configure(text='—  (treine o modelo)', fg=T.FG_MUTED)
+        self._relayoutar_controles()
         self._desenhar_inicial()
         self._escrever_analise_inicial()
 
@@ -637,12 +697,11 @@ class TabPerceptronDelta(tk.Frame):
             return
 
         indices = CONF_ATTR[self.var_attr.get()]['indices']
-        v1 = amostra4[indices[0]]
-        v2 = amostra4[indices[1]]
+        x_sel = [amostra4[i] for i in indices]
 
         if algo == 'delta_ova' and self.pesos_ova is not None:
             # OvA: argmax dos 3 nets
-            pred, nets = predizer_delta_ova([v1, v2], self.pesos_ova)
+            pred, nets = predizer_delta_ova(x_sel, self.pesos_ova)
             cor = CORES_CLASSE[pred]
             self.lbl_pred_pd.configure(text=pred.upper(), fg=cor)
             linhas_nets = '\n'.join(
@@ -653,8 +712,7 @@ class TabPerceptronDelta(tk.Frame):
                 text=f'argmax dos 3 classificadores:\n{linhas_nets}')
         else:
             # Binario
-            w0, w1, w2 = self.w[0], self.w[1], self.w[2]
-            net = w0 + w1 * v1 + w2 * v2
+            net = self.w[0] + sum(wi * xi for wi, xi in zip(self.w[1:], x_sel))
             pred = self._classe_pos if net > 0 else self._classe_neg
             cor = CORES_CLASSE[pred]
             self.lbl_pred_pd.configure(text=pred.upper(), fg=cor)
@@ -676,6 +734,10 @@ class TabPerceptronDelta(tk.Frame):
             self.lbl_status.configure(
                 text='Erro: taxa > 0 e epocas > 0 (inteiro).',
                 fg=T.DANGER)
+            return
+
+        self._carregar_dados()
+        if not self.dados:
             return
 
         algo = self.var_algo.get()
@@ -788,15 +850,27 @@ class TabPerceptronDelta(tk.Frame):
             partes = []
             for classe in sorted(self.pesos_ova):
                 w = self.pesos_ova[classe]
-                partes.append(
-                    f'{classe[:3]}:  '
-                    f'{w[0]:+.3f}  {w[1]:+.3f}·x1  {w[2]:+.3f}·x2  =  0')
+                if len(w) == 3:
+                    partes.append(
+                        f'{classe[:3]}:  '
+                        f'{w[0]:+.3f}  {w[1]:+.3f}·x1  {w[2]:+.3f}·x2  =  0')
+                elif len(w) == 5:
+                    partes.append(
+                        f'{classe[:3]}:  '
+                        f'{w[0]:+.3f}  {w[1]:+.3f}·x1  {w[2]:+.3f}·x2  {w[3]:+.3f}·x3  {w[4]:+.3f}·x4  =  0')
             self.lbl_equacao.configure(
                 text='\n'.join(partes), fg=T.FG)
-        elif self.w is not None and len(self.w) >= 3:
-            w0, w1, w2 = self.w[0], self.w[1], self.w[2]
-            texto = (f'{w0:+.4f}  {w1:+.4f}·x1  {w2:+.4f}·x2  =  0\n\n'
-                     f'(decisao: classe positiva se net > 0)')
+        elif self.w is not None:
+            if len(self.w) == 3:
+                w0, w1, w2 = self.w[0], self.w[1], self.w[2]
+                texto = (f'{w0:+.4f}  {w1:+.4f}·x1  {w2:+.4f}·x2  =  0\n\n'
+                         f'(decisao: classe positiva se net > 0)')
+            elif len(self.w) == 5:
+                w0, w1, w2, w3, w4 = self.w[0], self.w[1], self.w[2], self.w[3], self.w[4]
+                texto = (f'{w0:+.4f}  {w1:+.4f}·x1  {w2:+.4f}·x2  {w3:+.4f}·x3  {w4:+.4f}·x4  =  0\n\n'
+                         f'(decisao: classe positiva se net > 0)')
+            else:
+                texto = 'Vetor de pesos de tamanho inesperado'
             self.lbl_equacao.configure(text=texto, fg=T.FG)
         else:
             self.lbl_equacao.configure(
@@ -882,8 +956,9 @@ class TabPerceptronDelta(tk.Frame):
             self._scatter_iris(ax, com_fronteira)
 
     def _scatter_iris(self, ax, com_fronteira):
-        indices = CONF_ATTR[self.var_attr.get()]['indices']
-        cfg     = CONF_ATTR[self.var_attr.get()]
+        attr_key = self.var_attr.get()
+        indices_plot = [2, 3] if attr_key == 'todas' else CONF_ATTR[attr_key]['indices']
+        cfg     = CONF_ATTR[attr_key]
         par     = self.var_par.get()
         cp, cn  = PAR_POR_MODO[par]
 
@@ -892,8 +967,8 @@ class TabPerceptronDelta(tk.Frame):
             pts = [d for d in self.dados if d['classe'] == classe]
             if not pts:
                 continue
-            x1 = [d['atributos'][indices[0]] for d in pts]
-            x2 = [d['atributos'][indices[1]] for d in pts]
+            x1 = [d['atributos'][indices_plot[0]] for d in pts]
+            x2 = [d['atributos'][indices_plot[1]] for d in pts]
             ax.scatter(x1, x2,
                        color=CORES_CLASSE[classe],
                        marker=MARCADORES_CLASSE[classe],
@@ -905,10 +980,12 @@ class TabPerceptronDelta(tk.Frame):
         ax.set_ylabel(cfg['eixo_y'], fontsize=8)
 
         titulo = f'{cp.capitalize()}  ×  {cn.capitalize()}'
+        if attr_key == 'todas':
+            titulo += ' (Proj. 2D - Treino 4D)'
 
         # Fronteira de decisao
         if com_fronteira and self.w is not None and len(self.w) == 3:
-            self._plotar_fronteira_2d(ax, self.w, indices)
+            self._plotar_fronteira_2d(ax, self.w, indices_plot)
 
         ax.set_title(titulo, fontsize=9, pad=6)
         ax.legend(fontsize=7, facecolor=T.BG_PANEL,
@@ -917,16 +994,17 @@ class TabPerceptronDelta(tk.Frame):
 
     def _scatter_iris_ova(self, ax, com_fronteira):
         """Scatter com as 3 classes + 3 fronteiras lineares (OvA)."""
-        indices = CONF_ATTR[self.var_attr.get()]['indices']
-        cfg     = CONF_ATTR[self.var_attr.get()]
+        attr_key = self.var_attr.get()
+        indices_plot = [2, 3] if attr_key == 'todas' else CONF_ATTR[attr_key]['indices']
+        cfg     = CONF_ATTR[attr_key]
 
         # Pontos das 3 classes
         for classe in CLASSES:
             pts = [d for d in self.dados if d['classe'] == classe]
             if not pts:
                 continue
-            x1 = [d['atributos'][indices[0]] for d in pts]
-            x2 = [d['atributos'][indices[1]] for d in pts]
+            x1 = [d['atributos'][indices_plot[0]] for d in pts]
+            x2 = [d['atributos'][indices_plot[1]] for d in pts]
             ax.scatter(x1, x2,
                        color=CORES_CLASSE[classe],
                        marker=MARCADORES_CLASSE[classe],
@@ -936,30 +1014,35 @@ class TabPerceptronDelta(tk.Frame):
 
         ax.set_xlabel(cfg['eixo_x'], fontsize=8)
         ax.set_ylabel(cfg['eixo_y'], fontsize=8)
-        ax.set_title('OvA  ·  3 classificadores Delta', fontsize=9, pad=6)
+        titulo_ova = 'OvA  ·  3 classificadores Delta'
+        if attr_key == 'todas':
+            titulo_ova += ' (Proj. 2D - Treino 4D)'
+        ax.set_title(titulo_ova, fontsize=9, pad=6)
 
         # 3 fronteiras de decisao — uma por classificador
         if com_fronteira and self.pesos_ova is not None:
-            todos_x1 = [d['atributos'][indices[0]] for d in self.dados]
-            x1_min = min(todos_x1) - 0.5
-            x1_max = max(todos_x1) + 0.5
-            n = 200
-            step = (x1_max - x1_min) / (n - 1)
-            x1_pts = [x1_min + k * step for k in range(n)]
+            primeira_classe = next(iter(self.pesos_ova))
+            if len(self.pesos_ova[primeira_classe]) == 3:
+                todos_x1 = [d['atributos'][indices_plot[0]] for d in self.dados]
+                x1_min = min(todos_x1) - 0.5
+                x1_max = max(todos_x1) + 0.5
+                n = 200
+                step = (x1_max - x1_min) / (n - 1)
+                x1_pts = [x1_min + k * step for k in range(n)]
 
-            for classe in sorted(self.pesos_ova):
-                w = self.pesos_ova[classe]
-                w0, w1, w2 = w[0], w[1], w[2]
-                cor = CORES_CLASSE[classe]
-                if abs(w2) > 1e-8:
-                    x2_pts = [(-w0 - w1 * x) / w2 for x in x1_pts]
-                    ax.plot(x1_pts, x2_pts, color=cor, ls='--',
-                            lw=1.4, alpha=0.85,
-                            label=f'fronteira {classe[:3]}', zorder=5)
-                elif abs(w1) > 1e-8:
-                    ax.axvline(-w0 / w1, color=cor, ls='--',
-                               lw=1.4, alpha=0.85,
-                               label=f'fronteira {classe[:3]}', zorder=5)
+                for classe in sorted(self.pesos_ova):
+                    w = self.pesos_ova[classe]
+                    w0, w1, w2 = w[0], w[1], w[2]
+                    cor = CORES_CLASSE[classe]
+                    if abs(w2) > 1e-8:
+                        x2_pts = [(-w0 - w1 * x) / w2 for x in x1_pts]
+                        ax.plot(x1_pts, x2_pts, color=cor, ls='--',
+                                lw=1.4, alpha=0.85,
+                                label=f'fronteira {classe[:3]}', zorder=5)
+                    elif abs(w1) > 1e-8:
+                        ax.axvline(-w0 / w1, color=cor, ls='--',
+                                   lw=1.4, alpha=0.85,
+                                   label=f'fronteira {classe[:3]}', zorder=5)
 
         ax.legend(fontsize=7, facecolor=T.BG_PANEL,
                   edgecolor=T.BORDER, labelcolor=T.FG_MUTED,
@@ -1013,6 +1096,8 @@ class TabPerceptronDelta(tk.Frame):
 
     def _plotar_fronteira_2d(self, ax, w, indices):
         """Desenha a reta de decisao w0 + w1*x1 + w2*x2 = 0."""
+        if len(w) != 3:
+            return
         todos_x1 = [d['atributos'][indices[0]] for d in self.dados]
         x1_min = min(todos_x1) - 0.5
         x1_max = max(todos_x1) + 0.5
@@ -1201,8 +1286,15 @@ class TabPerceptronDelta(tk.Frame):
         par = self.var_par.get()
         cp, cn = PAR_POR_MODO[par]
         n_ep = self.n_epocas_treinadas
-        w0, w1, w2 = self.w[0], self.w[1], self.w[2]
-        eq_concreta = f'{w0:+.4f}  {w1:+.4f}·x1  {w2:+.4f}·x2  =  0'
+        
+        if len(self.w) == 3:
+            w0, w1, w2 = self.w[0], self.w[1], self.w[2]
+            eq_concreta = f'{w0:+.4f}  {w1:+.4f}·x1  {w2:+.4f}·x2  =  0'
+            form_text = 'w0 + w1·x1 + w2·x2 = 0\n'
+        else:
+            w0, w1, w2, w3, w4 = self.w[0], self.w[1], self.w[2], self.w[3], self.w[4]
+            eq_concreta = f'{w0:+.4f}  {w1:+.4f}·x1  {w2:+.4f}·x2  {w3:+.4f}·x3  {w4:+.4f}·x4  =  0'
+            form_text = 'w0 + w1·x1 + w2·x2 + w3·x3 + w4·x4 = 0\n'
 
         if self.convergiu:
             self._txt_set([
@@ -1213,7 +1305,7 @@ class TabPerceptronDelta(tk.Frame):
                 (f'.  Acuracia teste: ', None),
                 (f'{self.acc_teste*100:.2f}%', 'ok'), ('.\n\n', None),
                 ('Fronteira: ', None),
-                ('w0 + w1·x1 + w2·x2 = 0\n', 'mono'),
+                (form_text, 'mono'),
                 (f'  {eq_concreta}\n\n', 'mono'),
                 (f'{cp.capitalize()} × {cn.capitalize()}', 'hl'),
                 (' sao linearmente separaveis nestes atributos.', None),
@@ -1237,8 +1329,15 @@ class TabPerceptronDelta(tk.Frame):
         mse_ini = self.historico[0] if self.historico else 0
         mse_fin = self.historico[-1] if self.historico else 0
         reducao = (1 - mse_fin / mse_ini) * 100 if mse_ini > 1e-12 else 0
-        w0, w1, w2 = self.w[0], self.w[1], self.w[2]
-        eq_concreta = f'{w0:+.4f}  {w1:+.4f}·x1  {w2:+.4f}·x2  =  0'
+
+        if len(self.w) == 3:
+            w0, w1, w2 = self.w[0], self.w[1], self.w[2]
+            eq_concreta = f'{w0:+.4f}  {w1:+.4f}·x1  {w2:+.4f}·x2  =  0'
+            form_text = 'w0 + w1·x1 + w2·x2 = 0\n'
+        else:
+            w0, w1, w2, w3, w4 = self.w[0], self.w[1], self.w[2], self.w[3], self.w[4]
+            eq_concreta = f'{w0:+.4f}  {w1:+.4f}·x1  {w2:+.4f}·x2  {w3:+.4f}·x3  {w4:+.4f}·x4  =  0'
+            form_text = 'w0 + w1·x1 + w2·x2 + w3·x3 + w4·x4 = 0\n'
 
         self._txt_set([
             ('Regra Delta — MSE convergiu\n\n', 'hl'),
@@ -1251,7 +1350,7 @@ class TabPerceptronDelta(tk.Frame):
             (' → ', None), (f'{mse_fin:.4f}', 'mono'),
             (f'  ({reducao:.1f}% reducao)\n\n', None),
             ('Fronteira: ', None),
-            ('w0 + w1·x1 + w2·x2 = 0\n', 'mono'),
+            (form_text, 'mono'),
             (f'  {eq_concreta}', 'mono'),
         ])
 
@@ -1269,10 +1368,16 @@ class TabPerceptronDelta(tk.Frame):
         ]
         for classe in sorted(self.pesos_ova):
             w = self.pesos_ova[classe]
-            partes.append(
-                (f'  {classe[:3]}:  '
-                 f'{w[0]:+.3f}  {w[1]:+.3f}·x1  {w[2]:+.3f}·x2  = 0\n',
-                 'mono'))
+            if len(w) == 3:
+                partes.append(
+                    (f'  {classe[:3]}:  '
+                     f'{w[0]:+.3f}  {w[1]:+.3f}·x1  {w[2]:+.3f}·x2  = 0\n',
+                     'mono'))
+            else:
+                partes.append(
+                    (f'  {classe[:3]}:  '
+                     f'{w[0]:+.3f}  {w[1]:+.3f}·x1  {w[2]:+.3f}·x2  {w[3]:+.3f}·x3  {w[4]:+.3f}·x4  = 0\n',
+                     'mono'))
         partes.append(('\nPredicao: ', None))
         partes.append(('argmax_c net_c', 'mono'))
         partes.append((

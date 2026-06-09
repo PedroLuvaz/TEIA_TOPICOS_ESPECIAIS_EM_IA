@@ -96,7 +96,7 @@ class App(tk.Tk):
         tk.Label(dir_, text='GRUPO', bg=T.BG, fg=T.ACCENT,
                  font=T.FONT_KICKER).pack(anchor='e')
         tk.Label(dir_, text=GRUPO, bg=T.BG, fg=T.FG,
-                 font=('Cambria', 12, 'bold')).pack(anchor='e', pady=(2, 0))
+                 font=(T.FONT_FAMILY_TITLE, 12, 'bold')).pack(anchor='e', pady=(2, 0))
         tk.Label(dir_, text=DISCIPLINA, bg=T.BG, fg=T.FG_MUTED,
                  font=T.FONT_SUBTITLE).pack(anchor='e', pady=(2, 0))
 
