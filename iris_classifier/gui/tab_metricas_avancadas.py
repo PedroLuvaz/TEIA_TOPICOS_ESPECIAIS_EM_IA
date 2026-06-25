@@ -47,6 +47,7 @@ from metricas_avancadas import (
     relatorio_completo, relatorio_binario,
     kappa, tau, variancia_kappa, variancia_tau,
     z_kappa, z_tau, p_valor_z,
+    matriz_binaria_ovr, kappa_por_classe, z_classes,
     acerto_global, acuracia_produtor, acuracia_usuario,
     fb_score, mcc as mcc_fn,
 )
@@ -110,6 +111,8 @@ class TabMetricasAvancadas(tk.Frame):
         self.var_comparacao  = tk.StringVar(value='todas')
         self.var_comp_modelo1 = tk.StringVar(value='')
         self.var_comp_modelo2 = tk.StringVar(value='')
+        self.var_sig_classe_a = tk.StringVar(value='setosa')
+        self.var_sig_classe_b = tk.StringVar(value='versicolor')
 
         self._construir_layout()
         self._carregar_dados()
@@ -126,7 +129,7 @@ class TabMetricasAvancadas(tk.Frame):
 
     def _col_esq(self):
         wrap = tk.Frame(self, bg=T.BG)
-        wrap.grid(row=0, column=0, sticky='nsew', padx=(16, 8), pady=12)
+        wrap.grid(row=0, column=0, sticky='nsew', padx=(T.PAD_PAGE, T.GAP), pady=T.PAD_PAGE)
         wrap.columnconfigure(0, weight=1)
 
         # Atributos
@@ -247,7 +250,7 @@ class TabMetricasAvancadas(tk.Frame):
 
     def _col_dir(self):
         wrap = tk.Frame(self, bg=T.BG)
-        wrap.grid(row=0, column=1, sticky='nsew', padx=(8, 16), pady=12)
+        wrap.grid(row=0, column=1, sticky='nsew', padx=(T.GAP, T.PAD_PAGE), pady=T.PAD_PAGE)
         wrap.columnconfigure(0, weight=1)
         wrap.rowconfigure(0, weight=0)
         wrap.rowconfigure(1, weight=1)
@@ -282,6 +285,7 @@ class TabMetricasAvancadas(tk.Frame):
         self._aba_matriz  = tk.Frame(self.nb, bg=T.BG_CARD)
         self._aba_graf    = tk.Frame(self.nb, bg=T.BG_CARD)
         self._aba_comp2   = tk.Frame(self.nb, bg=T.BG_CARD)
+        self._aba_pr51    = tk.Frame(self.nb, bg=T.BG_CARD)
 
         self.nb.add(self._aba_comp,    text='  Comparativo  ')
         self.nb.add(self._aba_detalhe, text='  Detalhe por Classe  ')
@@ -289,6 +293,7 @@ class TabMetricasAvancadas(tk.Frame):
         self.nb.add(self._aba_matriz,  text='  Matriz de Confusao  ')
         self.nb.add(self._aba_graf,    text='  Grafico  ')
         self.nb.add(self._aba_comp2,   text='  Comparacao K & T  ')
+        self.nb.add(self._aba_pr51,    text='  Exercicios PR51  ')
 
         for aba in [self._aba_comp, self._aba_detalhe, self._aba_pares,
                     self._aba_matriz, self._aba_graf, self._aba_comp2]:
@@ -296,6 +301,9 @@ class TabMetricasAvancadas(tk.Frame):
                      text= 'Clique em  "Treinar e Calcular Metricas"  para iniciar.',
                      bg=T.BG_CARD, fg=T.FG_DIM, font=T.FONT_BODY
                     ).place(relx=0.5, rely=0.5, anchor='center')
+
+        # Exercicio PR51 nao depende de treinamento — montar imediatamente
+        self._construir_aba_pr51()
 
 
         # Painel inferior — metricas binarias OvR
@@ -306,7 +314,7 @@ class TabMetricasAvancadas(tk.Frame):
         painel_bin.columnconfigure(list(range(6)), weight=1)
         tk.Label(painel_bin,
                  text='METRICAS BINARIAS  OvR  —  classe selecionada',
-                 bg=T.BG, fg=T.ACCENT, font=T.FONT_KICKER, anchor='w'
+                 bg=T.BG, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
                 ).grid(row=0, column=0, columnspan=6, sticky='w', padx=10, pady=(8, 4))
 
         self.mb_sens  = MetricBlock(painel_bin, 'Sensibilidade',  '—')
@@ -569,6 +577,7 @@ class TabMetricasAvancadas(tk.Frame):
         self._preencher_detalhe()
         self._preencher_pares()
         self._preencher_matriz()
+        self._preencher_comparacao_kt()
 
     def _abrir_memoria_metricas(self):
         """Abre janela de memoria de calculo das metricas do modelo selecionado."""
@@ -580,9 +589,11 @@ class TabMetricasAvancadas(tk.Frame):
         if not nome or nome not in self.resultados:
             return
 
-        # Se houver Perceptron OvA e Delta OvA, passa o par para o teste Z
-        perc = self.resultados.get('Perceptron OvA')
-        delt = self.resultados.get('Delta OvA')
+        # Se houver Perceptron e Delta (OvA ou binarios), passa o par para o teste Z
+        perc = next((self.resultados[n] for n in self.resultados
+                     if 'Perceptron' in n), None)
+        delt = next((self.resultados[n] for n in self.resultados
+                     if 'Delta' in n and 'Bin' not in n), None)
         perc_vs_delta = (perc, delt) if (perc and delt) else None
 
         JanelaMemoriaCalculoMetricas(
@@ -665,14 +676,14 @@ class TabMetricasAvancadas(tk.Frame):
         scroll_x.pack(side='bottom', fill='x')
 
         def cel(row, col, texto, cor=T.FG, bg=T.BG_PANEL, larg=80, bold=False):
-            f = ('Consolas', 9, 'bold') if bold else T.FONT_MONO_SM
+            f = T.FONT_CELL_BOLD if bold else T.FONT_MONO_SM
             tk.Label(inner, text=texto, bg=bg, fg=cor, font=f,
                      width=larg // 8, anchor='center',
                      highlightthickness=1, highlightbackground=T.BORDER
                     ).grid(row=row, column=col, sticky='nsew', padx=1, pady=1)
 
         for j, (nm, larg) in enumerate(zip(colunas, larguras)):
-            cel(0, j, nm, cor=T.ACCENT, larg=larg, bold=True)
+            cel(0, j, nm, cor=T.ACCENT_DEEP, larg=larg, bold=True)
 
         for i, (nome, rel) in enumerate(self.resultados.items()):
             ag = rel['acerto_global']
@@ -713,7 +724,7 @@ class TabMetricasAvancadas(tk.Frame):
 
         tk.Label(outer,
                  text=f'Modelo: {nome}  |  Metricas por Classe — visao OvR (One-vs-Rest)',
-                 bg=T.BG_CARD, fg=T.ACCENT, font=T.FONT_KICKER, anchor='w'
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
                 ).pack(fill='x', pady=(0, 6))
 
         cols  = ['Classe', 'Ac.Prod (Sens)', 'Ac.Usu (Prec)',
@@ -729,14 +740,14 @@ class TabMetricasAvancadas(tk.Frame):
 
         def cel(row, col, texto, cor=T.FG, bold=False):
             bg = T.BG_PANEL if row == 0 else (T.BG_CARD if row % 2 else T.BG)
-            f  = ('Consolas', 9, 'bold') if bold else T.FONT_MONO_SM
+            f  = T.FONT_CELL_BOLD if bold else T.FONT_MONO_SM
             tk.Label(inner, text=texto, bg=bg, fg=cor, font=f,
                      anchor='center', width=largs[col] // 8,
                      highlightthickness=1, highlightbackground=T.BORDER
                     ).grid(row=row, column=col, sticky='nsew', padx=1, pady=1)
 
         for j, nm in enumerate(cols):
-            cel(0, j, nm, cor=T.ACCENT, bold=True)
+            cel(0, j, nm, cor=T.ACCENT_DEEP, bold=True)
 
         for i, c in enumerate(classes):
             pc  = rel['por_classe'][c]
@@ -776,7 +787,7 @@ class TabMetricasAvancadas(tk.Frame):
             bloco.grid(row=0, column=col, sticky='ew',
                        padx=(0 if col == 0 else 4, 0))
             fg.columnconfigure(col, weight=1)
-            tk.Label(bloco, text=rot.upper(), bg=T.BG_CARD, fg=T.ACCENT,
+            tk.Label(bloco, text=rot.upper(), bg=T.BG_CARD, fg=T.ACCENT_DEEP,
                      font=T.FONT_KICKER, anchor='w').pack(
                  fill='x', padx=8, pady=(6, 0))
             tk.Label(bloco, text=val, bg=T.BG_CARD, fg=cor,
@@ -800,7 +811,7 @@ class TabMetricasAvancadas(tk.Frame):
 
         tk.Label(outer,
                  text=f'Modelo: {nome}  |  MCC e Fb Score — problema DUAS CLASSES (por par)',
-                 bg=T.BG_CARD, fg=T.ACCENT, font=T.FONT_KICKER, anchor='w'
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
                 ).pack(fill='x', pady=(0, 4))
 
         tk.Label(outer,
@@ -855,7 +866,7 @@ class TabMetricasAvancadas(tk.Frame):
             grid.pack(side='left', padx=10, pady=(0, 8))
 
             def cel2(row, col, texto, bg=T.BG_CARD, fg=T.FG, bold=False):
-                f = ('Consolas', 9, 'bold') if bold else T.FONT_MONO_SM
+                f = T.FONT_CELL_BOLD if bold else T.FONT_MONO_SM
                 tk.Label(grid, text=texto, bg=bg, fg=fg, font=f,
                          width=10, anchor='center',
                          highlightthickness=1, highlightbackground=T.BORDER
@@ -868,16 +879,16 @@ class TabMetricasAvancadas(tk.Frame):
             cel2(2, 0, cj.capitalize(), bg=cor_j, fg='white', bold=True)
 
             # VP (diagonal = acerto da classe ci)
-            bg_vp = '#1a7f37' if vp > 0 else T.BG_CARD
+            bg_vp = T.SUCCESS if vp > 0 else T.BG_CARD
             cel2(1, 1, f'VP = {vp}', bg=bg_vp, fg='white' if vp > 0 else T.FG)
             # FN (real ci predito como cj)
-            bg_fn = '#cf222e' if fn > 0 else T.BG_CARD
+            bg_fn = T.DANGER if fn > 0 else T.BG_CARD
             cel2(2, 1, f'FN = {fn}', bg=bg_fn, fg='white' if fn > 0 else T.FG)
             # FP (real cj predito como ci)
-            bg_fp = '#cf222e' if fp > 0 else T.BG_CARD
+            bg_fp = T.DANGER if fp > 0 else T.BG_CARD
             cel2(1, 2, f'FP = {fp}', bg=bg_fp, fg='white' if fp > 0 else T.FG)
             # VN (diagonal = acerto da classe cj)
-            bg_vn = '#1a7f37' if vn > 0 else T.BG_CARD
+            bg_vn = T.SUCCESS if vn > 0 else T.BG_CARD
             cel2(2, 2, f'VN = {vn}', bg=bg_vn, fg='white' if vn > 0 else T.FG)
 
             # Metricas do par
@@ -888,7 +899,7 @@ class TabMetricasAvancadas(tk.Frame):
                 b = tk.Frame(parent, bg=T.BG_CARD,
                              highlightthickness=1, highlightbackground=T.BORDER)
                 b.pack(side='left', padx=(0, 6), ipadx=6, ipady=4)
-                tk.Label(b, text=rotulo.upper(), bg=T.BG_CARD, fg=T.ACCENT,
+                tk.Label(b, text=rotulo.upper(), bg=T.BG_CARD, fg=T.ACCENT_DEEP,
                          font=T.FONT_KICKER, anchor='w').pack(
                      fill='x', padx=6, pady=(4, 0))
                 tk.Label(b, text=valor, bg=T.BG_CARD, fg=cor,
@@ -928,7 +939,7 @@ class TabMetricasAvancadas(tk.Frame):
         tk.Label(outer,
                  text=f'Matriz de Confusao  —  {nome}  |  '
                       f'Linhas = Predito  ·  Colunas = Real',
-                 bg=T.BG_CARD, fg=T.ACCENT, font=T.FONT_KICKER, anchor='w'
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
                 ).pack(fill='x', pady=(0, 8))
 
         grid  = tk.Frame(outer, bg=T.BG_CARD)
@@ -956,7 +967,7 @@ class TabMetricasAvancadas(tk.Frame):
                     ).grid(row=0, column=j + 1, padx=2, pady=2)
                     
         # Coluna de total da linha
-        tk.Label(grid, text='Total', bg=T.BG_PANEL, fg=T.ACCENT,
+        tk.Label(grid, text='Total', bg=T.BG_PANEL, fg=T.ACCENT_DEEP,
                  font=T.FONT_KICKER, width=10, anchor='center',
                  highlightthickness=1, highlightbackground=T.BORDER
                 ).grid(row=0, column=n + 1, padx=2, pady=2)
@@ -977,19 +988,19 @@ class TabMetricasAvancadas(tk.Frame):
                 bg  = bg_cel(v, i == j)
                 cfg = 'white' if (v / v_max > 0.4) else T.FG
                 tk.Label(grid, text=str(v), bg=bg, fg=cfg,
-                         font=('Consolas', 11, 'bold'), width=10, anchor='center',
+                         font=T.FONT_CELL_LG, width=10, anchor='center',
                          highlightthickness=1, highlightbackground=T.BORDER
                         ).grid(row=i + 1, column=j + 1, padx=2, pady=2)
                 totais_colunas[real] += v
                 
             cel_tot_linha = tk.Label(grid, text=str(total_linha), bg=T.BG_PANEL, fg=T.FG,
-                                     font=('Consolas', 11, 'bold'), width=10, anchor='center',
+                                     font=T.FONT_CELL_LG, width=10, anchor='center',
                                      highlightthickness=1, highlightbackground=T.BORDER)
             cel_tot_linha.grid(row=i + 1, column=n + 1, padx=2, pady=2)
             total_geral += total_linha
 
         # Linha inferior de Totais das colunas
-        tk.Label(grid, text='Total', bg=T.BG_PANEL, fg=T.ACCENT,
+        tk.Label(grid, text='Total', bg=T.BG_PANEL, fg=T.ACCENT_DEEP,
                  font=T.FONT_KICKER, width=10, anchor='center',
                  highlightthickness=1, highlightbackground=T.BORDER
                 ).grid(row=n + 1, column=0, padx=2, pady=2)
@@ -997,23 +1008,23 @@ class TabMetricasAvancadas(tk.Frame):
         for j, real in enumerate(classes):
             v_col = totais_colunas[real]
             tk.Label(grid, text=str(v_col), bg=T.BG_PANEL, fg=T.FG,
-                     font=('Consolas', 11, 'bold'), width=10, anchor='center',
+                     font=T.FONT_CELL_LG, width=10, anchor='center',
                      highlightthickness=1, highlightbackground=T.BORDER
                     ).grid(row=n + 1, column=j + 1, padx=2, pady=2)
                     
         # Célula inferior direita com total geral
-        tk.Label(grid, text=str(total_geral), bg=T.BG_PANEL, fg=T.ACCENT,
-                 font=('Consolas', 11, 'bold'), width=10, anchor='center',
+        tk.Label(grid, text=str(total_geral), bg=T.BG_PANEL, fg=T.ACCENT_DEEP,
+                 font=T.FONT_CELL_LG, width=10, anchor='center',
                  highlightthickness=1, highlightbackground=T.BORDER
                 ).grid(row=n + 1, column=n + 1, padx=2, pady=2)
 
         # Acuracia produtor e usuario
         info = tk.Frame(outer, bg=T.BG_CARD)
         info.pack(fill='x', pady=(12, 0))
-        tk.Label(info, text='ACURACIA DO PRODUTOR (Sensibilidade / Colunas)', bg=T.BG_CARD, fg=T.ACCENT,
+        tk.Label(info, text='ACURACIA DO PRODUTOR (Sensibilidade / Colunas)', bg=T.BG_CARD, fg=T.ACCENT_DEEP,
                  font=T.FONT_KICKER, anchor='w'
                 ).grid(row=0, column=0, columnspan=n, sticky='w', pady=(0, 4))
-        tk.Label(info, text='ACURACIA DO USUARIO (Precisao / Linhas)', bg=T.BG_CARD, fg=T.ACCENT,
+        tk.Label(info, text='ACURACIA DO USUARIO (Precisao / Linhas)', bg=T.BG_CARD, fg=T.ACCENT_DEEP,
                  font=T.FONT_KICKER, anchor='w'
                 ).grid(row=0, column=n, columnspan=n, sticky='w', pady=(0, 4),
                        padx=(20, 0))
@@ -1145,7 +1156,7 @@ class TabMetricasAvancadas(tk.Frame):
 
         tk.Label(outer,
                  text=f'ITEM 2 — Teste de Significancia: {p_name}  vs  {d_name}',
-                 bg=T.BG_CARD, fg=T.ACCENT, font=T.FONT_KICKER, anchor='w'
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
                 ).pack(fill='x', pady=(10, 4))
         tk.Label(outer,
                  text='Verifica se a diferenca entre os dois classificadores e '
@@ -1177,8 +1188,8 @@ class TabMetricasAvancadas(tk.Frame):
         tab.pack(fill='x', pady=(0, 14))
 
         def th(col, texto):
-            tk.Label(tab, text=texto, bg=T.BG_PANEL, fg=T.ACCENT,
-                     font=('Consolas', 9, 'bold'), anchor='center',
+            tk.Label(tab, text=texto, bg=T.BG_PANEL, fg=T.ACCENT_DEEP,
+                     font=T.FONT_CELL_BOLD, anchor='center',
                      width=18, highlightthickness=1,
                      highlightbackground=T.BORDER
                     ).grid(row=0, column=col, padx=1, pady=1, sticky='nsew')
@@ -1275,6 +1286,457 @@ class TabMetricasAvancadas(tk.Frame):
         tk.Label(outer, text=texto_interp,
                  bg=T.BG_CARD, fg=cor_txt, font=T.FONT_MONO_SM,
                  justify='left', anchor='w', wraplength=820
+                ).pack(fill='x')
+
+        # Secao adicional: significancia entre classes (OvR)
+        self._secao_significancia_classes(outer)
+
+    # -----------------------------------------------------------------------
+    # Significancia entre Classes (OvR) — teste Z de Kappa classe A vs B
+    # -----------------------------------------------------------------------
+    def _secao_significancia_classes(self, outer):
+        classes = self._classes_usadas if hasattr(self, '_classes_usadas') else CLASSES
+
+        tk.Frame(outer, bg=T.BORDER, height=1).pack(fill='x', pady=(12, 8))
+        nome_modelo = self.var_modelo_sel.get()
+        tk.Label(outer,
+                 text=f'SIGNIFICANCIA ENTRE CLASSES (OvR)  —  modelo: {nome_modelo}',
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
+                ).pack(fill='x', pady=(0, 4))
+        tk.Label(outer,
+                 text='Compara o Kappa OvR (classe vs resto) de duas classes do '
+                      'MESMO classificador.\n'
+                      'H0: os Kappas das duas classes nao diferem  |  '
+                      'regiao critica |Z| > 1.96 (a = 5%).',
+                 bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_LABEL,
+                 justify='left', anchor='w', wraplength=820
+                ).pack(fill='x', pady=(0, 8))
+
+        if not nome_modelo or nome_modelo not in self.resultados:
+            tk.Label(outer, text='Selecione um modelo treinado.',
+                     bg=T.BG_CARD, fg=T.DANGER, font=T.FONT_BODY,
+                     anchor='w').pack(fill='x')
+            return
+
+        # Seletores de classes A e B
+        ca = self.var_sig_classe_a.get()
+        cb = self.var_sig_classe_b.get()
+        if ca not in classes:
+            ca = classes[0]
+            self.var_sig_classe_a.set(ca)
+        if cb not in classes or cb == ca:
+            cb = next((c for c in classes if c != ca), classes[-1])
+            self.var_sig_classe_b.set(cb)
+
+        sel = tk.Frame(outer, bg=T.BG_CARD)
+        sel.pack(fill='x', pady=(0, 10))
+        tk.Label(sel, text='Classe A:', bg=T.BG_CARD, fg=T.FG_MUTED,
+                 font=T.FONT_LABEL).pack(side='left', padx=(0, 6))
+        cba = ttk.Combobox(sel, textvariable=self.var_sig_classe_a,
+                           values=classes, state='readonly',
+                           font=T.FONT_BODY, width=14)
+        cba.pack(side='left', padx=(0, 20))
+        cba.bind('<<ComboboxSelected>>', lambda e: self._preencher_comparacao_kt())
+        tk.Label(sel, text='Classe B:', bg=T.BG_CARD, fg=T.FG_MUTED,
+                 font=T.FONT_LABEL).pack(side='left', padx=(0, 6))
+        cbb = ttk.Combobox(sel, textvariable=self.var_sig_classe_b,
+                           values=classes, state='readonly',
+                           font=T.FONT_BODY, width=14)
+        cbb.pack(side='left')
+        cbb.bind('<<ComboboxSelected>>', lambda e: self._preencher_comparacao_kt())
+
+        if ca == cb:
+            tk.Label(outer, text='Escolha duas classes diferentes.',
+                     bg=T.BG_CARD, fg=T.DANGER, font=T.FONT_BODY,
+                     anchor='w').pack(fill='x')
+            return
+
+        matriz = self.resultados[nome_modelo]['matriz']
+        zc, k_a, var_a, k_b, var_b = z_classes(matriz, ca, cb)
+        sig = abs(zc) > 1.96   # inclui o caso Z infinito
+        z_txt = ('+Infinito' if zc > 0 else '-Infinito') if math.isinf(zc) \
+                else f'{zc:+.4f}'
+
+        # Mini-matrizes 2x2 OvR lado a lado (estilo aba Pares de Classes)
+        faixa_mat = tk.Frame(outer, bg=T.BG_CARD)
+        faixa_mat.pack(fill='x', pady=(0, 10))
+
+        for col, (classe, k_v, var_v) in enumerate(
+                [(ca, k_a, var_a), (cb, k_b, var_b)]):
+            m2 = matriz_binaria_ovr(matriz, classe)
+            vp = m2[classe][classe]
+            fp = m2[classe]['resto']
+            fn = m2['resto'][classe]
+            vn = m2['resto']['resto']
+            cor_c = CORES_CLASSE.get(classe, T.ACCENT)
+
+            bloco = tk.Frame(faixa_mat, bg=T.BG_PANEL,
+                             highlightthickness=1, highlightbackground=T.BORDER)
+            bloco.grid(row=0, column=col, sticky='n',
+                       padx=(0 if col == 0 else 16, 0))
+
+            tk.Label(bloco,
+                     text=f'{classe.capitalize()}  vs  Resto',
+                     bg=T.BG_PANEL, fg=cor_c,
+                     font=(T.FONT_FAMILY_TITLE, 11, 'bold'), anchor='w'
+                    ).pack(fill='x', padx=10, pady=(6, 4))
+
+            grid = tk.Frame(bloco, bg=T.BG_PANEL)
+            grid.pack(padx=10, pady=(0, 6))
+
+            def cel2(row, c_, texto, bg=T.BG_CARD, fg=T.FG, bold=False,
+                     _grid=grid):
+                f = T.FONT_CELL_BOLD if bold else T.FONT_MONO_SM
+                tk.Label(_grid, text=texto, bg=bg, fg=fg, font=f,
+                         width=10, anchor='center',
+                         highlightthickness=1, highlightbackground=T.BORDER
+                        ).grid(row=row, column=c_, padx=1, pady=1,
+                               sticky='nsew')
+
+            cel2(0, 0, 'Pred \\ Real', bg=T.BG_PANEL, fg=T.FG_MUTED)
+            cel2(0, 1, classe.capitalize(), bg=cor_c, fg='white', bold=True)
+            cel2(0, 2, 'Resto', bg=T.BG_HOVER, fg=T.FG, bold=True)
+            cel2(1, 0, classe.capitalize(), bg=cor_c, fg='white', bold=True)
+            cel2(2, 0, 'Resto', bg=T.BG_HOVER, fg=T.FG, bold=True)
+
+            cel2(1, 1, f'VP = {vp}',
+                 bg=T.SUCCESS if vp > 0 else T.BG_CARD,
+                 fg='white' if vp > 0 else T.FG)
+            cel2(1, 2, f'FP = {fp}',
+                 bg=T.DANGER if fp > 0 else T.BG_CARD,
+                 fg='white' if fp > 0 else T.FG)
+            cel2(2, 1, f'FN = {fn}',
+                 bg=T.DANGER if fn > 0 else T.BG_CARD,
+                 fg='white' if fn > 0 else T.FG)
+            cel2(2, 2, f'VN = {vn}',
+                 bg=T.SUCCESS if vn > 0 else T.BG_CARD,
+                 fg='white' if vn > 0 else T.FG)
+
+            tk.Label(bloco,
+                     text=f'Kappa = {k_v:.6f}    Var = {var_v:.8f}',
+                     bg=T.BG_PANEL, fg=T.FG, font=T.FONT_MONO_SM, anchor='w'
+                    ).pack(fill='x', padx=10, pady=(0, 8))
+
+        # Cards de resultado do teste Z
+        res = tk.Frame(outer, bg=T.BG_CARD)
+        res.pack(fill='x', pady=(0, 8))
+
+        def card_res(col, rotulo, valor, cor):
+            b = tk.Frame(res, bg=T.BG_PANEL,
+                         highlightthickness=1, highlightbackground=T.BORDER)
+            b.grid(row=0, column=col, sticky='ew',
+                   padx=(0 if col == 0 else 6, 0))
+            res.columnconfigure(col, weight=1)
+            tk.Label(b, text=rotulo.upper(), bg=T.BG_PANEL, fg=T.ACCENT_DEEP,
+                     font=T.FONT_KICKER, anchor='w').pack(
+                fill='x', padx=8, pady=(6, 0))
+            tk.Label(b, text=valor, bg=T.BG_PANEL, fg=cor,
+                     font=T.FONT_HEADLINE, anchor='w').pack(
+                fill='x', padx=8, pady=(2, 6))
+
+        cor_z = T.DANGER if sig else T.SUCCESS
+        card_res(0, f'Kappa {ca[:3]}.', f'{k_a:.4f}',
+                 CORES_CLASSE.get(ca, T.FG))
+        card_res(1, f'Kappa {cb[:3]}.', f'{k_b:.4f}',
+                 CORES_CLASSE.get(cb, T.FG))
+        card_res(2, 'Z calculado', z_txt, cor_z)
+        card_res(3, 'Z critico (95%)', '1.96', T.FG_MUTED)
+        card_res(4, 'Veredito',
+                 'SIGNIFICATIVA' if sig else 'NAO SIGNIFICATIVA', cor_z)
+
+        # Memoria de calculo + conclusao
+        den_txt = ('0 (variancias nulas)'
+                   if (var_a + var_b) < 1e-24
+                   else f'{math.sqrt(var_a + var_b):.8f}')
+        memoria = (
+            f'Z = (K_{ca} - K_{cb}) / sqrt(Var_{ca} + Var_{cb})\n'
+            f'  = ({k_a:.6f} - {k_b:.6f}) / sqrt({var_a:.8f} + {var_b:.8f})\n'
+            f'  = {k_a - k_b:+.6f} / {den_txt}   =   {z_txt}'
+        )
+        tk.Label(outer, text=memoria, bg=T.BG_PANEL, fg=T.FG,
+                 font=T.FONT_MONO_SM, justify='left', anchor='w',
+                 highlightthickness=1, highlightbackground=T.BORDER
+                ).pack(fill='x', ipadx=10, ipady=8, pady=(0, 6))
+
+        if sig:
+            conclusao = (
+                f'Como |Z| > 1.96, ha diferenca SIGNIFICATIVA entre os Kappas '
+                f'das classes {ca.capitalize()} e {cb.capitalize()} ao nivel '
+                f'de 5% — rejeita-se H0: o classificador "{nome_modelo}" nao '
+                f'trata as duas classes com a mesma qualidade.'
+            )
+        else:
+            conclusao = (
+                f'Como |Z| <= 1.96, a diferenca entre os Kappas das classes '
+                f'{ca.capitalize()} e {cb.capitalize()} NAO e significativa '
+                f'a 95% — nao se rejeita H0: o classificador "{nome_modelo}" '
+                f'apresenta qualidade equivalente nas duas classes.'
+            )
+        tk.Label(outer, text=conclusao,
+                 bg=T.BG_CARD, fg=T.DANGER if sig else T.SUCCESS,
+                 font=T.FONT_BODY, justify='left', anchor='w', wraplength=820
+                ).pack(fill='x')
+
+    # -----------------------------------------------------------------------
+    # Aba Exercicios PR51 — Item 3 (Slide 15 da Aula PR51)
+    # Matrizes A e B editaveis + todos os calculos em Python puro
+    # -----------------------------------------------------------------------
+    _PR51_CLASSES = ['w1', 'w2', 'w3', 'w4']
+    _PR51_MATRIZ_A = [[140, 20, 0, 0],
+                      [10, 130, 0, 0],
+                      [5, 0, 150, 10],
+                      [15, 10, 0, 120]]
+    _PR51_MATRIZ_B = [[140, 30, 2, 0],
+                      [10, 110, 5, 0],
+                      [0, 10, 140, 0],
+                      [20, 10, 3, 140]]
+
+    def _construir_aba_pr51(self):
+        outer = tk.Frame(self._aba_pr51, bg=T.BG_CARD)
+        outer.pack(fill='both', expand=True, padx=14, pady=10)
+
+        tk.Label(outer,
+                 text='ITEM 3 — Exercicios da Aula PR51 (Slide 15)  ·  '
+                      'Prof. Robson Pequeno de Sousa',
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
+                ).pack(fill='x', pady=(0, 2))
+        tk.Label(outer,
+                 text='Duas classificacoes (A e B) com 4 classes. As celulas sao '
+                      'editaveis: altere os valores e clique em "Recalcular" para '
+                      'refazer Kappa, Tau, variancias e o teste Z em Python puro.',
+                 bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_LABEL,
+                 justify='left', anchor='w', wraplength=860
+                ).pack(fill='x', pady=(0, 10))
+
+        # --- duas matrizes editaveis lado a lado ---
+        faixa = tk.Frame(outer, bg=T.BG_CARD)
+        faixa.pack(fill='x')
+
+        self._pr51_entries = {}   # ('A'|'B', i, j) -> tk.Entry
+        for rot, dados, col in [('A', self._PR51_MATRIZ_A, 0),
+                                ('B', self._PR51_MATRIZ_B, 1)]:
+            bloco = tk.Frame(faixa, bg=T.BG_PANEL,
+                             highlightthickness=1, highlightbackground=T.BORDER)
+            bloco.grid(row=0, column=col, sticky='n', padx=(0 if col == 0 else 16, 0))
+            tk.Label(bloco, text=f'Classificacao {rot}',
+                     bg=T.BG_PANEL, fg=T.FG,
+                     font=(T.FONT_FAMILY_TITLE, 11, 'bold')
+                    ).grid(row=0, column=0, columnspan=6, sticky='w',
+                           padx=8, pady=(6, 4))
+
+            tk.Label(bloco, text='Real \\ Pred', bg=T.BG_PANEL, fg=T.FG_MUTED,
+                     font=T.FONT_KICKER, width=9, anchor='center'
+                    ).grid(row=1, column=0, padx=2, pady=2)
+            for j, c in enumerate(self._PR51_CLASSES):
+                tk.Label(bloco, text=c, bg=T.BG_HOVER, fg=T.FG,
+                         font=T.FONT_KICKER, width=7, anchor='center'
+                        ).grid(row=1, column=j + 1, padx=2, pady=2)
+
+            for i, c in enumerate(self._PR51_CLASSES):
+                tk.Label(bloco, text=c, bg=T.BG_HOVER, fg=T.FG,
+                         font=T.FONT_KICKER, width=9, anchor='center'
+                        ).grid(row=i + 2, column=0, padx=2, pady=2)
+                for j in range(4):
+                    e = tk.Entry(bloco, width=7, justify='center',
+                                 font=T.FONT_MONO_SM, relief='flat',
+                                 bg=T.BG_CARD, fg=T.FG,
+                                 insertbackground=T.ACCENT,
+                                 highlightthickness=1,
+                                 highlightbackground=T.BORDER_HARD,
+                                 highlightcolor=T.ACCENT)
+                    e.insert(0, str(dados[i][j]))
+                    e.grid(row=i + 2, column=j + 1, padx=2, pady=2)
+                    self._pr51_entries[(rot, i, j)] = e
+            tk.Frame(bloco, bg=T.BG_PANEL, height=6).grid(row=6, column=0)
+
+        botoes = tk.Frame(faixa, bg=T.BG_CARD)
+        botoes.grid(row=0, column=2, sticky='n', padx=(16, 0))
+        ttk.Button(botoes, text='Recalcular  >', style='Primary.TButton',
+                   command=self._calcular_pr51).pack(fill='x')
+        ttk.Button(botoes, text='Restaurar slide',
+                   command=self._restaurar_pr51).pack(fill='x', pady=(6, 0))
+
+        # --- container dos resultados (refeito a cada recalculo) ---
+        self._pr51_resultados = tk.Frame(outer, bg=T.BG_CARD)
+        self._pr51_resultados.pack(fill='both', expand=True, pady=(12, 0))
+        self._calcular_pr51()
+
+    def _restaurar_pr51(self):
+        for rot, dados in [('A', self._PR51_MATRIZ_A), ('B', self._PR51_MATRIZ_B)]:
+            for i in range(4):
+                for j in range(4):
+                    e = self._pr51_entries[(rot, i, j)]
+                    e.delete(0, 'end')
+                    e.insert(0, str(dados[i][j]))
+        self._calcular_pr51()
+
+    def _ler_matriz_pr51(self, rot):
+        """Le as entries e devolve matriz dict {real: {pred: int}}."""
+        W = self._PR51_CLASSES
+        matriz = {ci: {cj: 0 for cj in W} for ci in W}
+        for i, ci in enumerate(W):
+            for j, cj in enumerate(W):
+                txt = self._pr51_entries[(rot, i, j)].get().strip()
+                try:
+                    v = int(txt)
+                    if v < 0:
+                        raise ValueError
+                except ValueError:
+                    raise ValueError(
+                        f'Matriz {rot}, linha {ci}, coluna {cj}: '
+                        f'valor invalido "{txt}" (use inteiros >= 0).')
+                matriz[ci][cj] = v
+        return matriz
+
+    def _calcular_pr51(self):
+        for w in self._pr51_resultados.winfo_children():
+            w.destroy()
+        outer = self._pr51_resultados
+        W = self._PR51_CLASSES
+
+        try:
+            mat_a = self._ler_matriz_pr51('A')
+            mat_b = self._ler_matriz_pr51('B')
+        except ValueError as err:
+            tk.Label(outer, text=str(err), bg=T.BG_CARD, fg=T.DANGER,
+                     font=T.FONT_BODY, anchor='w').pack(fill='x')
+            return
+
+        res = {}
+        for rot, mat in [('A', mat_a), ('B', mat_b)]:
+            m  = sum(mat[r][p] for r in W for p in W)
+            ag = acerto_global(mat, W)
+            k  = kappa(mat, W)
+            t  = tau(mat, W)
+            vk = variancia_kappa(mat, W)
+            vt = variancia_tau(mat, W)
+            res[rot] = {'m': m, 'ag': ag, 'k': k, 't': t, 'vk': vk, 'vt': vt,
+                        'mat': mat}
+
+        zk  = z_kappa(res['A']['k'], res['A']['vk'], res['B']['k'], res['B']['vk'])
+        zt  = z_tau(res['A']['t'], res['A']['vt'], res['B']['t'], res['B']['vt'])
+        pzk = p_valor_z(zk)
+        pzt = p_valor_z(zt)
+        sig_k = pzk < 0.05
+        sig_t = pzt < 0.05
+
+        # --- tabela consolidada A vs B ---
+        tk.Label(outer, text='RESULTADOS CONSOLIDADOS',
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
+                ).pack(fill='x', pady=(0, 4))
+
+        tab = tk.Frame(outer, bg=T.BG_CARD)
+        tab.pack(anchor='w', pady=(0, 12))
+
+        def cel(row, col, texto, cor=T.FG, bold=False, larg=20):
+            bg = T.BG_PANEL if row == 0 else (T.BG_CARD if row % 2 else T.BG_PANEL)
+            f  = T.FONT_CELL_BOLD if bold else T.FONT_MONO_SM
+            tk.Label(tab, text=texto, bg=bg, fg=cor, font=f,
+                     width=larg, anchor='center',
+                     highlightthickness=1, highlightbackground=T.BORDER
+                    ).grid(row=row, column=col, padx=1, pady=1, sticky='nsew')
+
+        for col, h in enumerate(['Metrica', 'Classificacao A', 'Classificacao B']):
+            cel(0, col, h, cor=T.ACCENT_DEEP, bold=True)
+
+        def cor_k(v):
+            return T.SUCCESS if v > 0.80 else T.ACCENT if v > 0.40 else T.DANGER
+
+        linhas = [
+            ('Total de amostras (m)', f"{res['A']['m']}", f"{res['B']['m']}",
+             T.FG, T.FG),
+            ('Acerto Global (Ag)',
+             f"{res['A']['ag']*100:.4f}%", f"{res['B']['ag']*100:.4f}%",
+             T.SUCCESS if res['A']['ag'] >= 0.8 else T.ACCENT,
+             T.SUCCESS if res['B']['ag'] >= 0.8 else T.ACCENT),
+            ('Kappa (K)', f"{res['A']['k']:.6f}", f"{res['B']['k']:.6f}",
+             cor_k(res['A']['k']), cor_k(res['B']['k'])),
+            ('Interpretacao K',
+             interpretar_kappa(res['A']['k']), interpretar_kappa(res['B']['k']),
+             cor_k(res['A']['k']), cor_k(res['B']['k'])),
+            ('Tau (t)', f"{res['A']['t']:.6f}", f"{res['B']['t']:.6f}",
+             cor_k(res['A']['t']), cor_k(res['B']['t'])),
+            ('Var(Kappa)', f"{res['A']['vk']:.8f}", f"{res['B']['vk']:.8f}",
+             T.FG_MUTED, T.FG_MUTED),
+            ('Var(Tau)', f"{res['A']['vt']:.8f}", f"{res['B']['vt']:.8f}",
+             T.FG_MUTED, T.FG_MUTED),
+        ]
+        for r, (nome, va, vb, ca, cb) in enumerate(linhas):
+            cel(r + 1, 0, nome, T.FG_MUTED)
+            cel(r + 1, 1, va, ca)
+            cel(r + 1, 2, vb, cb)
+
+        # --- acuracia do produtor e do usuario por classe ---
+        tk.Label(outer, text='ACURACIA DO PRODUTOR E DO USUARIO POR CLASSE',
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
+                ).pack(fill='x', pady=(0, 4))
+
+        tab2 = tk.Frame(outer, bg=T.BG_CARD)
+        tab2.pack(anchor='w', pady=(0, 12))
+
+        def cel2(row, col, texto, cor=T.FG, bold=False):
+            bg = T.BG_PANEL if row == 0 else (T.BG_CARD if row % 2 else T.BG_PANEL)
+            f  = T.FONT_CELL_BOLD if bold else T.FONT_MONO_SM
+            tk.Label(tab2, text=texto, bg=bg, fg=cor, font=f,
+                     width=14, anchor='center',
+                     highlightthickness=1, highlightbackground=T.BORDER
+                    ).grid(row=row, column=col, padx=1, pady=1, sticky='nsew')
+
+        for col, h in enumerate(['Classe', 'A · Produtor', 'A · Usuario',
+                                  'B · Produtor', 'B · Usuario']):
+            cel2(0, col, h, cor=T.ACCENT_DEEP, bold=True)
+        for r, c in enumerate(W):
+            cel2(r + 1, 0, c, T.FG_MUTED)
+            cel2(r + 1, 1, f"{acuracia_produtor(res['A']['mat'], c)*100:.2f}%")
+            cel2(r + 1, 2, f"{acuracia_usuario(res['A']['mat'], c)*100:.2f}%")
+            cel2(r + 1, 3, f"{acuracia_produtor(res['B']['mat'], c)*100:.2f}%")
+            cel2(r + 1, 4, f"{acuracia_usuario(res['B']['mat'], c)*100:.2f}%")
+
+        # --- teste de significancia ---
+        tk.Label(outer, text='TESTE DE SIGNIFICANCIA  A vs B   '
+                             '(H0: nao ha diferenca  ·  regiao critica |Z| > 1.96, a = 5%)',
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
+                ).pack(fill='x', pady=(0, 4))
+
+        memoria = (
+            f"Z_k = (K_A - K_B) / sqrt(Var(K_A) + Var(K_B))\n"
+            f"    = ({res['A']['k']:.6f} - {res['B']['k']:.6f}) / "
+            f"sqrt({res['A']['vk']:.8f} + {res['B']['vk']:.8f})\n"
+            f"    = {res['A']['k'] - res['B']['k']:+.6f} / "
+            f"{math.sqrt(res['A']['vk'] + res['B']['vk']):.8f}"
+            f"  =  {zk:+.4f}   ==>   p-valor = {pzk:.4f}  "
+            f"({'rejeita H0' if sig_k else 'nao rejeita H0'})\n\n"
+            f"Z_t = (t_A - t_B) / sqrt(Var(t_A) + Var(t_B))\n"
+            f"    = ({res['A']['t']:.6f} - {res['B']['t']:.6f}) / "
+            f"sqrt({res['A']['vt']:.8f} + {res['B']['vt']:.8f})\n"
+            f"    = {res['A']['t'] - res['B']['t']:+.6f} / "
+            f"{math.sqrt(res['A']['vt'] + res['B']['vt']):.8f}"
+            f"  =  {zt:+.4f}   ==>   p-valor = {pzt:.4f}  "
+            f"({'rejeita H0' if sig_t else 'nao rejeita H0'})"
+        )
+        tk.Label(outer, text=memoria, bg=T.BG_PANEL, fg=T.FG,
+                 font=T.FONT_MONO_SM, justify='left', anchor='w',
+                 highlightthickness=1, highlightbackground=T.BORDER
+                ).pack(fill='x', ipadx=10, ipady=8, pady=(0, 8))
+
+        if sig_k or sig_t:
+            conclusao = (
+                'Conclusao: ha diferenca ESTATISTICAMENTE SIGNIFICATIVA entre as '
+                'classificacoes A e B ao nivel de 5% '
+                f"(rejeita-se H0 pelo {'Kappa' if sig_k else ''}"
+                f"{' e ' if sig_k and sig_t else ''}{'Tau' if sig_t else ''})."
+            )
+            cor_c = T.DANGER
+        else:
+            conclusao = (
+                'Conclusao: como |Z| < 1.96 e p > 0.05 em ambos os testes, NAO se '
+                'rejeita H0 — nao ha evidencia estatistica suficiente para afirmar '
+                'que as classificacoes A e B sao diferentes. A vantagem de A no '
+                'Kappa pode ser atribuida a variacao amostral.'
+            )
+            cor_c = T.SUCCESS
+        tk.Label(outer, text=conclusao, bg=T.BG_CARD, fg=cor_c,
+                 font=T.FONT_BODY, justify='left', anchor='w', wraplength=860
                 ).pack(fill='x')
 
     # -----------------------------------------------------------------------

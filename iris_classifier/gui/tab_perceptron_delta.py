@@ -33,7 +33,7 @@ from delta_rule import (treinar_delta_iris, treinar_delta_xor,
                         acuracia_delta_ova)
 
 from . import theme as T
-from .widgets import Card, MetricBlock
+from .widgets import Card, MetricBlock, separador
 from .janela_calculos import JanelaMemoriaCalculoPD
 
 
@@ -173,12 +173,12 @@ class TabPerceptronDelta(tk.Frame):
     def _coluna_controles(self):
         self._wrap_esq = tk.Frame(self, bg=T.BG)
         self._wrap_esq.grid(row=0, column=0, sticky='nsew',
-                            padx=(20, 10), pady=12)
+                            padx=(T.PAD_PAGE, T.GAP), pady=12)
         self._wrap_esq.columnconfigure(0, weight=1)
 
         # --- Seletor de dataset (sempre visivel, fora do relayoutar) ---
         fds = tk.Frame(self._wrap_esq, bg=T.BG)
-        fds.pack(fill='x', pady=(0, 6))
+        fds.pack(fill='x', pady=(0, T.GAP_SM))
         tk.Label(fds, text='Dataset:', bg=T.BG, fg=T.FG_MUTED,
                  font=T.FONT_LABEL).pack(side='left', padx=(0, 8))
         self._combo_dataset = ttk.Combobox(
@@ -194,7 +194,7 @@ class TabPerceptronDelta(tk.Frame):
         for val, label in [
             ('perceptron', 'Perceptron'),
             ('delta',      'Regra Delta  (Adaline)'),
-            ('delta_ova',  'Regra Delta  ·  OvA (3 classes)'),
+            ('delta_ova',  'Regra Delta  ·  OvA (comparativo)'),
             ('xor',        'XOR  —  Regra Delta'),
         ]:
             tk.Radiobutton(
@@ -202,7 +202,7 @@ class TabPerceptronDelta(tk.Frame):
                 value=val, variable=self.var_algo,
                 bg=T.BG_CARD, fg=T.FG,
                 selectcolor=T.BG_HOVER,
-                activebackground=T.BG_CARD, activeforeground=T.ACCENT,
+                activebackground=T.BG_CARD, activeforeground=T.ACCENT_DEEP,
                 font=T.FONT_BODY, anchor='w',
                 borderwidth=0, highlightthickness=0,
                 command=self._ao_trocar_algo,
@@ -219,7 +219,7 @@ class TabPerceptronDelta(tk.Frame):
                 value=chave, variable=self.var_par,
                 bg=T.BG_CARD, fg=T.FG,
                 selectcolor=T.BG_HOVER,
-                activebackground=T.BG_CARD, activeforeground=T.ACCENT,
+                activebackground=T.BG_CARD, activeforeground=T.ACCENT_DEEP,
                 font=T.FONT_BODY, anchor='w',
                 borderwidth=0, highlightthickness=0,
                 command=self._ao_mudar_config,
@@ -233,7 +233,7 @@ class TabPerceptronDelta(tk.Frame):
                 value=chave, variable=self.var_attr,
                 bg=T.BG_CARD, fg=T.FG,
                 selectcolor=T.BG_HOVER,
-                activebackground=T.BG_CARD, activeforeground=T.ACCENT,
+                activebackground=T.BG_CARD, activeforeground=T.ACCENT_DEEP,
                 font=T.FONT_BODY, anchor='w',
                 borderwidth=0, highlightthickness=0,
                 command=self._ao_mudar_config,
@@ -322,8 +322,7 @@ class TabPerceptronDelta(tk.Frame):
                   ).pack(fill='x', padx=14, pady=(8, 6))
 
         # Divisor sutil
-        self.sep_pred = tk.Frame(self.card_testar, bg=T.BORDER, height=1)
-        self.sep_pred.pack(fill='x', padx=14, pady=4)
+        self.sep_pred = separador(self.card_testar, padx=14, pady=4)
 
         # Predição (dentro do mesmo card)
         self.lbl_pred_pd = tk.Label(self.card_testar, text='—',
@@ -400,7 +399,7 @@ class TabPerceptronDelta(tk.Frame):
         self.btn_memoria_pd.pack_forget()
 
         algo = self.var_algo.get()
-        GAP = (6, 0)   # espacamento compacto entre cards
+        GAP = (T.GAP_SM, 0)   # espacamento compacto entre cards
         self.card_algo.pack(fill='x')
 
         show_par = algo not in ('xor', 'delta_ova')
@@ -436,7 +435,8 @@ class TabPerceptronDelta(tk.Frame):
     # -----------------------------------------------------------------------
     def _coluna_visualizacao(self):
         wrap = tk.Frame(self, bg=T.BG)
-        wrap.grid(row=0, column=1, sticky='nsew', padx=(10, 20), pady=20)
+        wrap.grid(row=0, column=1, sticky='nsew',
+                  padx=(T.GAP, T.PAD_PAGE), pady=T.PAD_PAGE)
         wrap.columnconfigure(0, weight=1)
         wrap.rowconfigure(0, weight=3)
         wrap.rowconfigure(1, weight=2)
@@ -452,7 +452,7 @@ class TabPerceptronDelta(tk.Frame):
         painel.rowconfigure(1, weight=0)   # toolbar — altura fixa
 
         self.figura = Figure(figsize=(9.5, 4.2), dpi=100,
-                             facecolor=T.BG_PANEL)
+                             facecolor=T.BG_CARD)
         self.ax_sc = None
         self.ax_cv = None
         self._montar_subplots(com_convergencia=True)
@@ -483,7 +483,7 @@ class TabPerceptronDelta(tk.Frame):
         self.metric_epocas = MetricBlock(col_m, 'epocas treinadas', '—')
         self.metric_epocas.grid(row=0, column=0, sticky='ew')
         self.metric_conv   = MetricBlock(col_m, 'convergencia', '—')
-        self.metric_conv.grid(row=1, column=0, sticky='ew', pady=(10, 0))
+        self.metric_conv.grid(row=1, column=0, sticky='ew', pady=(T.GAP, 0))
 
         # Cartao de analise textual
         card = Card(inferior, titulo='analise')
@@ -498,12 +498,12 @@ class TabPerceptronDelta(tk.Frame):
             spacing1=2, spacing3=4,
         )
         self.txt_analise.pack(fill='both', expand=True, padx=14, pady=(2, 14))
-        self.txt_analise.tag_configure('hl',   foreground=T.ACCENT,
-                                       font=('Segoe UI Semibold', 10))
+        self.txt_analise.tag_configure('hl',   foreground=T.ACCENT_DEEP,
+                                       font=T.FONT_TEXT_HL)
         self.txt_analise.tag_configure('ok',   foreground=T.SUCCESS,
-                                       font=('Segoe UI Semibold', 10))
+                                       font=T.FONT_TEXT_HL)
         self.txt_analise.tag_configure('err',  foreground=T.DANGER,
-                                       font=('Segoe UI Semibold', 10))
+                                       font=T.FONT_TEXT_HL)
         self.txt_analise.tag_configure('mono', foreground=T.FG,
                                        font=T.FONT_MONO)
         self.txt_analise.configure(state='disabled')
@@ -668,7 +668,7 @@ class TabPerceptronDelta(tk.Frame):
         cfg = CONF_ATTR[self.var_attr.get()]
         ativos = set(cfg['indices'])   # ex: {2, 3} para petalas
         for chave, _nome, idx in FEATURES:
-            cor = T.ACCENT if idx in ativos else T.FG_DIM
+            cor = T.ACCENT_DEEP if idx in ativos else T.FG_DIM
             self.lbls_test[chave].configure(fg=cor)
 
     def _ler_amostra_4features(self):

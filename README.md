@@ -1,112 +1,124 @@
-# Classificador de Distância Mínima - Iris Dataset
+# Reconhecimento de Padrões - Iris Dataset (Laboratório de Inteligência Artificial)
 
-Este projeto implementa um **Classificador de Distância Mínima** a partir do zero (usando apenas Python puro e Álgebra Linear, sem bibliotecas de Machine Learning como Scikit-Learn ou NumPy). O objetivo é classificar amostras do famoso conjunto de dados Iris.
+Este projeto é uma aplicação científica completa para modelagem, visualização e classificação de padrões sobre o famoso conjunto de dados **Iris**. Ele implementa diversos classificadores clássicos a partir do zero (usando apenas **Python puro e Álgebra Linear**, sem bibliotecas de Machine Learning como Scikit-Learn ou NumPy).
+
+O projeto é equipado com uma interface gráfica rica e interativa desenvolvida em Tkinter e integrada ao ambiente R para testes de hipóteses avançados.
+
+---
 
 ## 📂 Estrutura do Projeto
 
 ```text
 .
 ├── data/
-│   └── Iris data.xls             # Base de dados original
+│   └── Iris data.xls               # Base de dados original
 ├── docs/
-│   └── guia_professor.md         # Explicação detalhada da matemática e do código
+│   ├── formulario.md               # Formulário resumo de todas as equações do projeto
+│   ├── guia_professor.md           # Roteiro didático e guia de defesa do projeto
+│   ├── teoria_completa.md          # Manual teórico completo sobre os classificadores lineares
+│   ├── lab_03/                     # Documentação específica de métricas avançadas (Lab 3)
+│   │   ├── teoria_lab03.md
+│   │   ├── item_02.md
+│   │   └── item_03.md
+│   └── lab_04/                     # Documentação específica de Bayes & Normalidade (Lab 4)
+│       ├── teoria_lab04.md
+│       └── relatorio_experimentos.md
 ├── iris_classifier/
-│   ├── classifier.py             # Lógica de treinamento e predição
-│   ├── data_loader.py            # Leitura do Excel e separação estratificada dos dados
-│   ├── evaluator.py              # Cálculo de acurácia e matriz de confusão
-│   ├── main.py                   # Ponto de entrada CLI (orquestra os experimentos)
-│   ├── math_utils.py             # Operações matemáticas puras (vetores, médias, etc)
-│   ├── visualizer.py             # Geração de gráficos (Matplotlib)
-│   ├── run_gui.py                # Ponto de entrada da interface gráfica (Tkinter)
-│   └── gui/                      # Pacote da GUI — preparado para novas abas
-│       ├── app.py                # Janela principal (cabeçalho + notebook + rodapé)
-│       ├── theme.py              # Paleta editorial escura, tipografia, estilos ttk
-│       ├── widgets.py            # Cartões e blocos de métrica reutilizáveis
-│       ├── tab_distancia_minima.py  # Aba do Classificador de Distância Mínima
-│       └── janela_calculos.py    # Janela secundária — fórmulas LaTeX + substituição numérica
-├── outputs/                      # Pasta onde os gráficos são salvos automaticamente
-├── README.md                     # Este arquivo
-└── requirements.txt              # Dependências do projeto
+│   ├── classifier.py               # Lógica de treino/predição (Distância Mínima)
+│   ├── perceptron.py               # Algoritmo de aprendizado do Perceptron de Rosenblatt
+│   ├── delta_rule.py               # Algoritmo da Regra Delta (Widrow-Hoff / Adaline)
+│   ├── bayes_classifier.py         # Classificador Bayes Ótimo (QDA) e Naive Bayes (Python puro)
+│   ├── mvn_tester.py               # Integração com R (pacote MVN) para testes de normalidade
+│   ├── metricas_avancadas.py       # Cálculo de Kappa, Tau, variâncias, Z-test, Fb, MCC
+│   ├── data_loader.py              # Leitura do Excel e separação estratificada dos dados
+│   ├── evaluator.py                # Cálculo de acurácia básica e matriz de confusão
+│   ├── main.py                     # Ponto de entrada CLI (orquestra todos os experimentos)
+│   ├── math_utils.py               # Álgebra Linear do zero (inversão Gauss-Jordan, det, cov)
+│   ├── visualizer.py               # Geração de gráficos e contours de decisão (Matplotlib)
+│   ├── run_gui.py                  # Inicialização da Interface Gráfica (Tkinter)
+│   └── gui/                        # Interface Gráfica do Usuário (GUI)
+│       ├── app.py                  # Janela principal e controle de abas
+│       ├── theme.py                # Design System (Slate Light, tipografia e estilos ttk)
+│       ├── widgets.py              # Componentes visuais personalizados (Cards, KPI blocks)
+│       ├── tab_distancia_minima.py # Painel do Classificador de Distância Mínima
+│       ├── tab_perceptron_delta.py  # Painel de Perceptron e Regra Delta (convergência, XOR)
+│       ├── tab_metricas_avancadas.py# Painel com simulações, matrizes editáveis e teste Z
+│       ├── tab_bayes.py            # Painel dos Classificadores Probabilísticos de Bayes
+│       └── janela_calculos.py      # Memória de Cálculo LaTeX dinâmica por aba
+├── outputs/                        # Gráficos e resultados gerados automaticamente
+└── requirements.txt                # Dependências básicas de execução (xlrd, matplotlib, pillow)
 ```
+
+---
 
 ## ⚙️ Pré-requisitos e Instalação
 
-As únicas bibliotecas externas utilizadas são o `xlrd` (para ler o arquivo `.xls` antigo) e o `matplotlib` (exclusivamente para a geração dos gráficos).
+As únicas bibliotecas externas em Python são o `xlrd` (leitura do `.xls`), `matplotlib` (plotagem) e `pillow` (renderização de imagens). O laboratório opcionalmente requer uma instalação funcional de **R** com o pacote **MVN** instalado para os testes de normalidade multivariada (caso não esteja instalado, o programa usa um fallback seguro de resultados pré-calculados).
 
-Para evitar conflitos com outras bibliotecas na sua máquina, é recomendado o uso de um ambiente virtual (venv).
-
-### 1. Criar e Ativar o Ambiente Virtual
-
-**No Windows:**
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
-
-**No Linux/macOS:**
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 2. Instalar as Dependências
-
-Com o ambiente virtual ativado, instale as bibliotecas necessárias:
+Para instalar as dependências de Python:
 
 ```bash
 pip install -r requirements.txt
 ```
 
+---
+
 ## 🚀 Como Executar
 
-### Modo CLI (terminal)
-
-Para rodar todos os experimentos e gerar os gráficos no terminal:
+### 1. Modo CLI (Terminal)
+Para rodar todos os experimentos sequenciais de todos os laboratórios (incluindo cálculo de matrizes, acurácias, curvas de erro, testes de normalidade no R e teste Z de Kappa), gerando os gráficos de fronteira na pasta `outputs/`:
 
 ```bash
 python iris_classifier/main.py
 ```
 
-### Modo GUI (interface gráfica — Tkinter)
-
-Para abrir a interface visual com tema escuro, métricas em tempo real, gráficos interativos e classificação manual:
+### 2. Modo GUI (Interface Gráfica)
+Para abrir o laboratório interativo multimapas de visualização:
 
 ```bash
 python iris_classifier/run_gui.py
 ```
 
-A janela já está estruturada com **abas** prontas para receber implementações futuras (Aba 2, Aba 3, Aba 4). A aba **Distância Mínima** continua usando exclusivamente Python puro.
+---
 
-#### Recursos da aba Distância Mínima
+## 🖥️ Recursos e Abas da Interface Gráfica
 
-- **Atributos:** alterna entre Pétalas `[2,3]` e Sépalas `[0,1]` — todo o painel atualiza em tempo real
-- **Visualização:** dispersão geral ou fronteira de decisão de cada par de classes
-- **Classificar amostra:** entrada manual `(x₁, x₂)` com resultado destacado e scores `d_j(x)` de cada classe
-- **Memória de Cálculo:** botão dedicado abre janela secundária com **fórmulas matemáticas em LaTeX** (renderizadas via mathtext) e **substituição numérica passo a passo** com os valores reais do modelo:
-  - Cálculo dos protótipos $m_j$
-  - Função discriminante $d_j(x) = x^T m_j - \frac{1}{2} m_j^T m_j$ aplicada à amostra atual
-  - Equivalência $\arg\max_j d_j(x) \equiv \arg\min_j \|x - m_j\|$
-  - Coeficientes da fronteira $w$, $b$ para os 3 pares de classes
-- **Métricas:** acurácia teste (com cor dinâmica), split treino·teste, erros na base completa
-- **Análise:** texto explicativo gerado dinamicamente sobre separabilidade vs sobreposição
+A GUI do projeto foi projetada seguindo regras estéticas premium (**Slate Light Mode**, tipografia refinada e transições suaves), dividindo-se em:
 
-**Grupo:** Erick Nathan · Laura Barbosa · Pedro Lucas
+### **Aba 1: Distância Mínima**
+*   Classificação baseada em protótipos de classes.
+*   Alterna entre pétalas `[2,3]` e sépalas `[0,1]` em tempo real.
+*   Interface para classificar amostra manual e plot de retas de fronteiras de decisão.
 
-## 🔄 Fluxo de Execução (`main.py`)
+### **Aba 2: Perceptron & Regra Delta**
+*   Treinamento interativo iterativo de classificadores lineares.
+*   Exibição em tempo real da curva de convergência (Erros/Época ou MSE/Época).
+*   Demonstração prática da separabilidade linear vs sobreposição de classes e a impossibilidade teórica da resolução do **XOR** sob um limite linear (MSE estacionando em $0.25$).
 
-O código segue o seguinte pipeline:
+### **Aba 3: Métricas Avançadas**
+*   Cálculo automático de estatísticas robustas: Coeficientes **Kappa ($K$)** e **Tau ($\tau$)**, suas variâncias e teste de hipóteses Z.
+*   Métricas binárias detalhadas: Sensibilidade, Especificidade, F1-Score, F2-Score e Coeficiente de Matthews (MCC).
+*   Sub-aba interativa para auditar e testar o exercício clássico do slide 15 do Prof. Robson (comparando Matrizes de Confusão A e B em tempo real).
 
-1. **Carregamento:** Lê o arquivo `Iris data.xls` ignorando o cabeçalho.
-2. **Separação (Split Estratificado):** Divide os dados em **70% para treino** e **30% para teste**, garantindo que a proporção de cada classe seja mantida (35 amostras de treino e 15 de teste para cada uma das 3 classes).
-3. **Experimentos i e ii (Classificação Multiclasse):**
-   - Calcula os protótipos (vetores médios) das 3 classes usando os dados de treino.
-   - Aplica a Função Discriminante para todas as amostras de teste.
-   - Retorna a predição (classe com maior valor de função discriminante), a acurácia geral e a Matriz de Confusão.
-4. **Visualização Geral:** Plota e salva um gráfico de dispersão com todas as amostras.
-5. **Experimento iii (Superfícies de Decisão):**
-   - Isola as classes em pares (A vs B, B vs C, C vs A).
-   - Recalcula os protótipos apenas para os dados daquele par.
-   - Calcula os coeficientes da reta de decisão ($w^T \cdot x + b = 0$).
-   - Avalia a acurácia binária e gera/salva o gráfico da fronteira de decisão.
+### **Aba 4: Bayes & Normalidade**
+*   Classificação Bayesianas Probabilística por meio do **Bayes Ótimo (QDA)** e do **Naive Bayes**.
+*   Conexão em tempo real ao R para testar a Aderência à Normalidade Multivariada das classes via testes de **Henze-Zirkler** e **Mardia**.
+*   Superfícies de decisão não-lineares (parabólicas e hiperbólicas) geradas dinamicamente via contour lines de log-probabilidade.
 
-Para uma explicação aprofundada das fórmulas matemáticas e de como apresentar este projeto, consulte o arquivo **[docs/guia_professor.md](docs/guia_professor.md)**.
+---
+
+## 📐 Janela de Memória de Cálculo (LaTeX)
+Cada aba possui um botão dedicado para abrir a **Janela de Memória de Cálculo**. Ela renderiza, utilizando a sintaxe **LaTeX** e o motor mathtext do Matplotlib:
+1. As fórmulas teóricas do laboratório.
+2. A referência exata ao arquivo e linha de código (via módulo `inspect`) onde a função matemática está programada.
+3. A substituição passo a passo dos parâmetros do modelo com os valores reais da base Iris e o cálculo final da predição.
+
+---
+
+## 👥 Grupo e Autores
+
+*   **Erick Nathan**
+*   **Laura Barbosa**
+*   **Pedro Lucas**
+
+*Universidade Estadual da Paraíba (UEPB) · Tópicos Especiais em Inteligência Artificial · 2026*

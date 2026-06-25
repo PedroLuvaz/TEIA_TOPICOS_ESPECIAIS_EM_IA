@@ -23,8 +23,11 @@ from PIL import Image, ImageTk
 
 from math_utils import (produto_escalar, distancia_euclidiana,
                         coeficientes_superficie_decisao,
-                        discriminante, calcular_media)
+                        discriminante, calcular_media,
+                        det_matriz, inv_matriz, calcular_covariancia,
+                        calcular_covariancia_diagonal, distancia_mahalanobis_quad)
 from classifier import treinar, predizer_todas_classes
+from bayes_classifier import treinar_bayes, predizer_todas_classes_bayes, predizer_binario_bayes
 from perceptron import treinar_perceptron, predizer_perceptron, _sgn
 from delta_rule import treinar_delta_iris, predizer_delta, _treinar_delta
 from metricas_avancadas import (
@@ -83,13 +86,13 @@ class JanelaMemoriaCalculo(tk.Toplevel):
 
     # ------------------------------------------------------------------
     def _construir(self):
-        tk.Frame(self, bg=T.ACCENT, height=2).pack(fill='x', side='top')
+        tk.Frame(self, bg=T.ACCENT, height=3).pack(fill='x', side='top')
 
         head = tk.Frame(self, bg=T.BG, height=78)
         head.pack(fill='x', side='top')
         head.pack_propagate(False)
         tk.Label(head, text='MEMORIA DE CALCULO',
-                 bg=T.BG, fg=T.ACCENT, font=T.FONT_KICKER
+                 bg=T.BG, fg=T.ACCENT_DEEP, font=T.FONT_KICKER
                 ).pack(anchor='w', padx=24, pady=(16, 0))
         tk.Label(head, text='Substituicao numerica das formulas com os '
                             'valores atuais do modelo treinado',
@@ -162,7 +165,7 @@ class JanelaMemoriaCalculo(tk.Toplevel):
                 ).pack(anchor='w', padx=18, pady=1)
 
     def _add_subkicker(self, parent, texto):
-        tk.Label(parent, text=texto.upper(), bg=T.BG_CARD, fg=T.ACCENT,
+        tk.Label(parent, text=texto.upper(), bg=T.BG_CARD, fg=T.ACCENT_DEEP,
                  font=T.FONT_KICKER, anchor='w'
                 ).pack(anchor='w', padx=18, pady=(10, 4))
 
@@ -182,7 +185,7 @@ class JanelaMemoriaCalculo(tk.Toplevel):
         tk.Label(parent,
                  text=f'  →  {nome}  :  linha {linha}',
                  bg=T.BG_CARD, fg=T.FG_DIM,
-                 font=('Consolas', 8, 'normal'), anchor='w'
+                 font=T.FONT_REF, anchor='w'
                 ).pack(anchor='w', padx=18, pady=(0, 4))
 
     def _respiro(self, parent):
@@ -395,13 +398,13 @@ class JanelaMemoriaCalculoPD(tk.Toplevel):
         nome_algo = ('Perceptron de Rosenblatt' if self.algo == 'perceptron'
                      else 'Regra Delta  (Adaline / Widrow-Hoff)')
 
-        tk.Frame(self, bg=T.ACCENT, height=2).pack(fill='x', side='top')
+        tk.Frame(self, bg=T.ACCENT, height=3).pack(fill='x', side='top')
 
         head = tk.Frame(self, bg=T.BG, height=90)
         head.pack(fill='x', side='top')
         head.pack_propagate(False)
         tk.Label(head, text='MEMORIA DE CALCULO',
-                 bg=T.BG, fg=T.ACCENT, font=T.FONT_KICKER
+                 bg=T.BG, fg=T.ACCENT_DEEP, font=T.FONT_KICKER
                 ).pack(anchor='w', padx=24, pady=(16, 0))
         tk.Label(head, text=nome_algo,
                  bg=T.BG, fg=T.FG, font=T.FONT_TITLE
@@ -483,7 +486,7 @@ class JanelaMemoriaCalculoPD(tk.Toplevel):
                 ).pack(anchor='w', padx=18, pady=1)
 
     def _add_subkicker(self, parent, texto):
-        tk.Label(parent, text=texto.upper(), bg=T.BG_CARD, fg=T.ACCENT,
+        tk.Label(parent, text=texto.upper(), bg=T.BG_CARD, fg=T.ACCENT_DEEP,
                  font=T.FONT_KICKER, anchor='w'
                 ).pack(anchor='w', padx=18, pady=(10, 4))
 
@@ -502,7 +505,7 @@ class JanelaMemoriaCalculoPD(tk.Toplevel):
         tk.Label(parent,
                  text=f'  →  {nome}  :  linha {linha}',
                  bg=T.BG_CARD, fg=T.FG_DIM,
-                 font=('Consolas', 8, 'normal'), anchor='w'
+                 font=T.FONT_REF, anchor='w'
                 ).pack(anchor='w', padx=18, pady=(0, 4))
 
     def _respiro(self, parent):
@@ -819,13 +822,13 @@ class JanelaMemoriaCalculoMetricas(tk.Toplevel):
 
     # ------------------------------------------------------------------
     def _construir(self):
-        tk.Frame(self, bg=T.ACCENT, height=2).pack(fill='x', side='top')
+        tk.Frame(self, bg=T.ACCENT, height=3).pack(fill='x', side='top')
 
         head = tk.Frame(self, bg=T.BG, height=90)
         head.pack(fill='x', side='top')
         head.pack_propagate(False)
         tk.Label(head, text='MEMORIA DE CALCULO  ·  METRICAS DE QUALIDADE',
-                 bg=T.BG, fg=T.ACCENT, font=T.FONT_KICKER
+                 bg=T.BG, fg=T.ACCENT_DEEP, font=T.FONT_KICKER
                 ).pack(anchor='w', padx=24, pady=(16, 0))
         tk.Label(head, text=f'Modelo: {self.nome_modelo}',
                  bg=T.BG, fg=T.FG, font=T.FONT_TITLE
@@ -911,7 +914,7 @@ class JanelaMemoriaCalculoMetricas(tk.Toplevel):
                 ).pack(anchor='w', padx=18, pady=1)
 
     def _add_subkicker(self, parent, texto):
-        tk.Label(parent, text=texto.upper(), bg=T.BG_CARD, fg=T.ACCENT,
+        tk.Label(parent, text=texto.upper(), bg=T.BG_CARD, fg=T.ACCENT_DEEP,
                  font=T.FONT_KICKER, anchor='w'
                 ).pack(anchor='w', padx=18, pady=(10, 4))
 
@@ -930,7 +933,7 @@ class JanelaMemoriaCalculoMetricas(tk.Toplevel):
         tk.Label(parent,
                  text=f'  →  {nome}  :  linha {linha}',
                  bg=T.BG_CARD, fg=T.FG_DIM,
-                 font=('Consolas', 8, 'normal'), anchor='w'
+                 font=T.FONT_REF, anchor='w'
                 ).pack(anchor='w', padx=18, pady=(0, 4))
 
     def _respiro(self, parent):
@@ -954,7 +957,7 @@ class JanelaMemoriaCalculoMetricas(tk.Toplevel):
         grid.pack(anchor='w', padx=18, pady=(6, 6))
 
         def cel(r, c, texto, bg=T.BG_CARD, fg=T.FG, bold=False):
-            f = ('Consolas', 9, 'bold') if bold else T.FONT_MONO_SM
+            f = T.FONT_CELL_BOLD if bold else T.FONT_MONO_SM
             tk.Label(grid, text=texto, bg=bg, fg=fg, font=f,
                      width=14, anchor='center',
                      highlightthickness=1, highlightbackground=T.BORDER
@@ -965,7 +968,7 @@ class JanelaMemoriaCalculoMetricas(tk.Toplevel):
             cel(0, j + 1, c.capitalize(),
                 bg=CORES_CLASSE.get(c, T.BG_PANEL), fg='white', bold=True)
         cel(0, len(self.classes) + 1, 'a_{i+} (Pred)',
-            bg=T.BG_PANEL, fg=T.ACCENT, bold=True)
+            bg=T.BG_PANEL, fg=T.ACCENT_DEEP, bold=True)
 
         for i, pred in enumerate(self.classes):
             cel(i + 1, 0, pred.capitalize(),
@@ -976,15 +979,15 @@ class JanelaMemoriaCalculoMetricas(tk.Toplevel):
                 bg = T.BG_HOVER if i == j else T.BG_CARD
                 cel(i + 1, j + 1, str(v), bg=bg)
             cel(i + 1, len(self.classes) + 1, str(linha_total),
-                bg=T.BG_PANEL, fg=T.ACCENT, bold=True)
+                bg=T.BG_PANEL, fg=T.ACCENT_DEEP, bold=True)
 
         cel(len(self.classes) + 1, 0, 'a_{+j} (Real)',
-            bg=T.BG_PANEL, fg=T.ACCENT, bold=True)
+            bg=T.BG_PANEL, fg=T.ACCENT_DEEP, bold=True)
         m = 0
         for j, real in enumerate(self.classes):
             col_total = sum(matriz[p][real] for p in self.classes)
             cel(len(self.classes) + 1, j + 1, str(col_total),
-                bg=T.BG_PANEL, fg=T.ACCENT, bold=True)
+                bg=T.BG_PANEL, fg=T.ACCENT_DEEP, bold=True)
             m += col_total
         cel(len(self.classes) + 1, len(self.classes) + 1, f'm={m}',
             bg=T.BG_PANEL, fg=T.SUCCESS, bold=True)
@@ -1371,3 +1374,273 @@ class JanelaMemoriaCalculoMetricas(tk.Toplevel):
         self._add_resultado(card,
             f'  MCC = {mv:.4f}    F1 = {f1:.4f}    F2 = {f2:.4f}',
             cor=cor_mcc)
+
+
+# ===========================================================================
+# Aba 4 — Classificadores Bayes Ótimo e Naive Bayes (Nova Feature)
+# ===========================================================================
+class JanelaMemoriaCalculoBayes(tk.Toplevel):
+    def __init__(self, parent, model_bayes, model_naive, active_attr_name, indices_sel,
+                 amostra=None, rel_bayes=None, rel_naive=None):
+        super().__init__(parent)
+        self.title('Memoria de Calculo  ·  Bayes & Naive Bayes')
+        self.geometry('980x820')
+        self.minsize(820, 600)
+        self.configure(bg=T.BG)
+        self.transient(parent)
+
+        self.model_bayes = model_bayes
+        self.model_naive = model_naive
+        self.attr_name = active_attr_name
+        self.indices = indices_sel
+        # amostra completa de 4 atributos
+        self.amostra = list(amostra) if amostra else [5.8, 3.0, 4.5, 1.5]
+        self.rel_bayes = rel_bayes
+        self.rel_naive = rel_naive
+        self._imagens_ref = []
+
+        self._construir()
+
+    def _construir(self):
+        tk.Frame(self, bg=T.ACCENT, height=3).pack(fill='x', side='top')
+
+        head = tk.Frame(self, bg=T.BG, height=78)
+        head.pack(fill='x', side='top')
+        head.pack_propagate(False)
+        tk.Label(head, text='MEMORIA DE CALCULO  ·  BAYES & NAIVE BAYES',
+                 bg=T.BG, fg=T.ACCENT_DEEP, font=T.FONT_KICKER
+                ).pack(anchor='w', padx=24, pady=(16, 0))
+        tk.Label(head, text='Substituicao numerica das formulas com os valores atuais dos classificadores',
+                 bg=T.BG, fg=T.FG, font=T.FONT_TITLE
+                ).pack(anchor='w', padx=24)
+        tk.Label(head,
+                 text=f'Atributos: {self.attr_name}  ·  Indices selecionados: {self.indices}',
+                 bg=T.BG, fg=T.FG_MUTED, font=T.FONT_SUBTITLE
+                ).pack(anchor='w', padx=24, pady=(2, 0))
+
+        tk.Frame(self, bg=T.BORDER, height=1).pack(fill='x', side='top')
+
+        rod = tk.Frame(self, bg=T.BG_PANEL, height=44)
+        rod.pack(fill='x', side='bottom')
+        rod.pack_propagate(False)
+        tk.Frame(self, bg=T.BORDER, height=1).pack(fill='x', side='bottom')
+        ttk.Button(rod, text='Fechar', command=self.destroy
+                  ).pack(side='right', padx=20, pady=8)
+        tk.Label(rod, text='Formulas via matplotlib mathtext  ·  calculos em Python puro',
+                 bg=T.BG_PANEL, fg=T.FG_DIM, font=T.FONT_SUBTITLE
+                ).pack(side='left', padx=20, pady=11)
+
+        canvas = tk.Canvas(self, bg=T.BG, highlightthickness=0, borderwidth=0)
+        scroll = ttk.Scrollbar(self, orient='vertical', command=canvas.yview)
+        canvas.configure(yscrollcommand=scroll.set)
+        scroll.pack(side='right', fill='y')
+        canvas.pack(side='left', fill='both', expand=True)
+
+        wrap = tk.Frame(canvas, bg=T.BG)
+        win_id = canvas.create_window((0, 0), window=wrap, anchor='nw')
+        wrap.bind('<Configure>',
+                  lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+        canvas.bind('<Configure>',
+                    lambda e: canvas.itemconfigure(win_id, width=e.width))
+
+        def _wheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), 'units')
+        canvas.bind_all('<MouseWheel>', _wheel)
+        self.protocol('WM_DELETE_WINDOW',
+                      lambda: (canvas.unbind_all('<MouseWheel>'), self.destroy()))
+
+        self._secao_parametros_estimados(wrap)
+        self._secao_bayes_otimo(wrap)
+        self._secao_naive_bayes(wrap)
+        self._secao_significancia_kappa(wrap)
+        tk.Frame(wrap, bg=T.BG, height=24).pack()
+
+    # Helpers de formatacao e visualizacao
+    def _formula(self, latex, fontsize=16, bg=T.BG_CARD):
+        fig = Figure(figsize=(0.1, 0.1), dpi=120, facecolor=bg)
+        fig.text(0, 0, latex, fontsize=fontsize, color=T.FG,
+                 va='bottom', ha='left')
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', bbox_inches='tight',
+                    pad_inches=0.18, facecolor=bg)
+        buf.seek(0)
+        photo = ImageTk.PhotoImage(Image.open(buf))
+        self._imagens_ref.append(photo)
+        return photo
+
+    def _add_formula(self, parent, latex, fontsize=16, bg=T.BG_CARD, pady=(6, 6)):
+        photo = self._formula(latex, fontsize=fontsize, bg=bg)
+        tk.Label(parent, image=photo, bg=bg).pack(anchor='w', padx=18, pady=pady)
+
+    def _add_step(self, parent, texto):
+        tk.Label(parent, text=texto, bg=T.BG_CARD, fg=T.FG,
+                 font=T.FONT_MONO_SM, anchor='w', justify='left'
+                ).pack(anchor='w', padx=18, pady=1)
+
+    def _add_subkicker(self, parent, texto):
+        tk.Label(parent, text=texto.upper(), bg=T.BG_CARD, fg=T.ACCENT_DEEP,
+                 font=T.FONT_KICKER, anchor='w'
+                ).pack(anchor='w', padx=18, pady=(10, 4))
+
+    def _add_explain(self, parent, texto, pady=(2, 4)):
+        tk.Label(parent, text=texto, bg=T.BG_CARD, fg=T.FG_MUTED,
+                 font=T.FONT_LABEL, wraplength=900, justify='left'
+                ).pack(anchor='w', padx=18, pady=pady)
+
+    def _add_resultado(self, parent, texto, cor):
+        tk.Label(parent, text=texto, bg=T.BG_CARD, fg=cor,
+                 font=T.FONT_TITLE, anchor='w'
+                ).pack(anchor='w', padx=18, pady=(10, 14))
+
+    def _add_ref(self, parent, func):
+        nome, linha = _ref_funcao(func)
+        tk.Label(parent,
+                 text=f'  →  {nome}  :  linha {linha}',
+                 bg=T.BG_CARD, fg=T.FG_DIM,
+                 font=T.FONT_REF, anchor='w'
+                ).pack(anchor='w', padx=18, pady=(0, 4))
+
+    def _respiro(self, parent):
+        tk.Frame(parent, bg=T.BG_CARD, height=10).pack()
+
+    def _format_vetor(self, v):
+        return "[" + ", ".join(f"{x:.4f}" for x in v) + "]"
+
+    def _format_matriz(self, M):
+        lines = []
+        for r in M:
+            lines.append("    [ " + "  ".join(f"{x:8.4f}" for x in r) + " ]")
+        return "\n".join(lines)
+
+    # Secoes
+    def _secao_parametros_estimados(self, parent):
+        card = Card(parent, titulo='1. Parametros Estimados (Media e Covariancia)')
+        card.pack(fill='x', padx=22, pady=(20, 0))
+
+        self._add_explain(card,
+            'Os parametros da densidade condicional P(x|C_j) sao estimados a partir do treino:\n'
+            ' - Vetor medio (m_j): a media amostral das amostras de cada classe.\n'
+            ' - Matriz de covariancia (Sigma_j): dispersao conjunta das caracteristicas.')
+        
+        self._add_formula(card,
+            r'$m_j = \dfrac{1}{N_j}\sum_{x \in \omega_j} x \quad\quad \Sigma_j = \dfrac{1}{N_j - 1}\sum_{x \in \omega_j} (x - m_j)(x - m_j)^T$',
+            fontsize=15)
+        self._add_ref(card, treinar_bayes)
+        self._add_ref(card, calcular_covariancia)
+
+        for c in CLASSES:
+            self._add_subkicker(card, f'classe: {c}')
+            params = self.model_bayes[c]
+            self._add_step(card, f'  Vetor de Medias m_j: {self._format_vetor(params["media"])}')
+            self._add_step(card, f'  Matriz de Covariancia Sigma_j:\n{self._format_matriz(params["cov"])}')
+            self._add_step(card, f'  Determinante |Sigma_j|: {params["det"]:.8e}')
+            self._add_step(card, f'  Covariancia Inversa Sigma_j^-1:\n{self._format_matriz(params["inv_cov"])}')
+            self._respiro(card)
+
+    def _secao_bayes_otimo(self, parent):
+        card = Card(parent, titulo='2. Classificador Bayes Otimo (QDA)')
+        card.pack(fill='x', padx=22, pady=(22, 0))
+
+        self._add_explain(card,
+            'Sob priori iguais P(C_j), o classificador MAP maximiza o log-discriminante quadratico:\n'
+            'd_j(x) = -0.5 * ln|Sigma_j| - 0.5 * d_M^2(x, m_j)  onde  d_M^2 e a distancia de Mahalanobis.')
+        
+        self._add_formula(card,
+            r'$d_j(x) = -\frac{1}{2} \ln |\Sigma_j| - \frac{1}{2} (x - m_j)^T \Sigma_j^{-1} (x - m_j)$',
+            fontsize=16)
+        self._add_ref(card, predizer_todas_classes_bayes)
+        self._add_ref(card, distancia_mahalanobis_quad)
+
+        # Amostra reduzida/selecionada
+        x_sel = [self.amostra[i] for i in self.indices]
+        self._add_subkicker(card, f'amostra avaliada: x = {self._format_vetor(x_sel)}')
+
+        scores = {}
+        for c in CLASSES:
+            params = self.model_bayes[c]
+            diff = [x_sel[i] - params['media'][i] for i in range(len(x_sel))]
+            dm_sq = distancia_mahalanobis_quad(x_sel, params['media'], params['inv_cov'])
+            score = -0.5 * math.log(params['det']) - 0.5 * dm_sq
+            scores[c] = score
+            
+            self._add_subkicker(card, f'calculo para classe: {c}')
+            self._add_step(card, f'  Diferenca (x - m_j) = {self._format_vetor(diff)}')
+            self._add_step(card, f'  Dist. Mahalanobis d_M^2 = {dm_sq:.6f}')
+            self._add_step(card, f'  d_{c[:3]}(x) = -0.5 * ln({params["det"]:.3e}) - 0.5 * {dm_sq:.4f}')
+            self._add_step(card, f'             = -0.5 * ({math.log(params["det"]):.4f}) - {0.5*dm_sq:.4f}')
+            self._add_step(card, f'             = {(-0.5*math.log(params["det"])):.4f} - {0.5*dm_sq:.4f} = {score:.6f}')
+            self._respiro(card)
+
+        vencedor = max(scores, key=scores.get)
+        self._add_resultado(card, f'Predicao final Bayes Otimo: {vencedor.upper()} (score maximo = {scores[vencedor]:.4f})', CORES_CLASSE[vencedor])
+
+    def _secao_naive_bayes(self, parent):
+        card = Card(parent, titulo='3. Classificador Naive Bayes')
+        card.pack(fill='x', padx=22, pady=(22, 0))
+
+        self._add_explain(card,
+            'Naive Bayes assume independencia de atributos. A covariancia e forcada a ser diagonal.\n'
+            'Isso simplifica a distancia de Mahalanobis para a soma das diferencas quadraticas normalizadas pelas variancias.')
+        
+        self._add_formula(card,
+            r'$d_j(x) = -\frac{1}{2} \sum_{i=1}^d \ln(\sigma_{ji}^2) - \frac{1}{2} \sum_{i=1}^d \frac{(x_i - m_{ji})^2}{\sigma_{ji}^2}$',
+            fontsize=16)
+        
+        x_sel = [self.amostra[i] for i in self.indices]
+        self._add_subkicker(card, f'amostra avaliada: x = {self._format_vetor(x_sel)}')
+
+        scores = {}
+        for c in CLASSES:
+            params = self.model_naive[c]
+            dm_sq = distancia_mahalanobis_quad(x_sel, params['media'], params['inv_cov'])
+            score = -0.5 * math.log(params['det']) - 0.5 * dm_sq
+            scores[c] = score
+            
+            # Pegar as variâncias (diagonal de cov)
+            vars_c = [params['cov'][i][i] for i in range(len(x_sel))]
+            self._add_subkicker(card, f'calculo para classe: {c}')
+            self._add_step(card, f'  Variancias estimadas: {self._format_vetor(vars_c)}')
+            self._add_step(card, f'  Soma termo logaritmico  = {sum(math.log(v) for v in vars_c):.4f}')
+            self._add_step(card, f'  Soma termo quadratico   = {dm_sq:.4f}')
+            self._add_step(card, f'  d_{c[:3]}(x) = {score:.6f}')
+            self._respiro(card)
+
+        vencedor = max(scores, key=scores.get)
+        self._add_resultado(card, f'Predicao final Naive Bayes: {vencedor.upper()} (score maximo = {scores[vencedor]:.4f})', CORES_CLASSE[vencedor])
+
+    def _secao_significancia_kappa(self, parent):
+        if not self.rel_bayes or not self.rel_naive:
+            return
+            
+        card = Card(parent, titulo='4. Teste de Significancia de Kappa (Comparativo)')
+        card.pack(fill='x', padx=22, pady=(22, 0))
+
+        self._add_explain(card,
+            'O teste Z compara se a diferenca entre o Kappa do Bayes Otimo (K1) e do Naive Bayes (K2) '
+            'e estatisticamente significativa no conjunto de teste.')
+        
+        self._add_formula(card,
+            r'$Z = \dfrac{K_1 - K_2}{\sqrt{\mathrm{Var}(K_1) + \mathrm{Var}(K_2)}}$',
+            fontsize=17)
+        self._add_ref(card, z_kappa)
+        self._add_ref(card, p_valor_z)
+
+        k1 = self.rel_bayes['kappa']
+        var1 = self.rel_bayes['variancia_kappa']
+        k2 = self.rel_naive['kappa']
+        var2 = self.rel_naive['variancia_kappa']
+        
+        z_stat = z_kappa(k1, var1, k2, var2)
+        p_val = p_valor_z(z_stat)
+
+        self._add_subkicker(card, 'estatisticas obtidas')
+        self._add_step(card, f'  Bayes Otimo:  K1 = {k1:.6f}   Var(K1) = {var1:.8f}')
+        self._add_step(card, f'  Naive Bayes:  K2 = {k2:.6f}   Var(K2) = {var2:.8f}')
+        self._add_step(card, f'  Z = ({k1:.4f} - {k2:.4f}) / sqrt({var1:.6f} + {var2:.6f})')
+        self._add_step(card, f'    = {k1 - k2:.6f} / {math.sqrt(var1 + var2):.6f} = {z_stat:.4f}')
+        self._add_step(card, f'  p-valor bilateral = {p_val:.6f}')
+        
+        sig = "E SIGNIFICATIVA" if p_val < 0.05 else "NAO E SIGNIFICATIVA"
+        cor_sig = T.SUCCESS if p_val >= 0.05 else T.DANGER
+        self._add_resultado(card, f'Diferenca de desempenho {sig} no nivel de 5% (p = {p_val:.4f})', cor_sig)
+

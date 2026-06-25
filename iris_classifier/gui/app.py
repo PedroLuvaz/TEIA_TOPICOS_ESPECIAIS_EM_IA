@@ -13,6 +13,7 @@ from . import theme as T
 from .tab_distancia_minima import TabDistanciaMinima
 from .tab_perceptron_delta import TabPerceptronDelta
 from .tab_metricas_avancadas import TabMetricasAvancadas
+from .tab_bayes import TabBayes
 
 _SCROLL_UNIT = 3
 
@@ -28,7 +29,7 @@ DISCIPLINA = 'Topicos Especiais em Inteligencia Artificial'
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title('IRIS  ·  Classificador de Distancia Minima')
+        self.title('IRIS  ·  Classificadores Lineares  ·  TEIA')
         self.geometry('1320x900')
         self.minsize(1180, 620)
 
@@ -74,31 +75,51 @@ class App(tk.Tk):
                                   'units')
 
     # ------------------------------------------------------------------
+    def _chip(self, master, texto, fg=None, bg=None):
+        """Pequena etiqueta arredondada-aparente com informacao do estudo."""
+        chip = tk.Label(master, text=texto,
+                        bg=bg or T.BG_PANEL, fg=fg or T.FG_MUTED,
+                        font=(T.FONT_FAMILY, 8, 'bold'),
+                        padx=10, pady=3,
+                        highlightthickness=1,
+                        highlightbackground=T.BORDER)
+        chip.pack(side='left', padx=(0, 6))
+        return chip
+
     def _construir_cabecalho(self):
-        tk.Frame(self._inner, bg=T.ACCENT, height=2).pack(fill='x')
+        tk.Frame(self._inner, bg=T.ACCENT, height=3).pack(fill='x')
 
-        cab = tk.Frame(self._inner, bg=T.BG, height=96)
+        cab = tk.Frame(self._inner, bg=T.BG_CARD)
         cab.pack(fill='x')
-        cab.pack_propagate(False)
 
-        esq = tk.Frame(cab, bg=T.BG)
-        esq.pack(side='left', fill='y', padx=(28, 0), pady=18)
-        tk.Label(esq, text='IRIS  ·  TEIA  ·  2026',
-                 bg=T.BG, fg=T.ACCENT, font=T.FONT_KICKER).pack(anchor='w')
-        tk.Label(esq, text='Classificador de Distancia Minima',
-                 bg=T.BG, fg=T.FG, font=T.FONT_DISPLAY).pack(anchor='w', pady=(2, 0))
-        tk.Label(esq,
-                 text='Python puro  ·  sem numpy  ·  sem scikit-learn',
-                 bg=T.BG, fg=T.FG_MUTED, font=T.FONT_SUBTITLE).pack(anchor='w', pady=(2, 0))
+        topo = tk.Frame(cab, bg=T.BG_CARD)
+        topo.pack(fill='x', padx=28, pady=(16, 0))
 
-        dir_ = tk.Frame(cab, bg=T.BG)
-        dir_.pack(side='right', fill='y', padx=(0, 28), pady=18)
-        tk.Label(dir_, text='GRUPO', bg=T.BG, fg=T.ACCENT,
-                 font=T.FONT_KICKER).pack(anchor='e')
-        tk.Label(dir_, text=GRUPO, bg=T.BG, fg=T.FG,
-                 font=(T.FONT_FAMILY_TITLE, 12, 'bold')).pack(anchor='e', pady=(2, 0))
-        tk.Label(dir_, text=DISCIPLINA, bg=T.BG, fg=T.FG_MUTED,
-                 font=T.FONT_SUBTITLE).pack(anchor='e', pady=(2, 0))
+        esq = tk.Frame(topo, bg=T.BG_CARD)
+        esq.pack(side='left', fill='y')
+        tk.Label(esq, text='ESTUDO EXPERIMENTAL  ·  BASE IRIS  ·  UEPB 2026',
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP,
+                 font=T.FONT_KICKER).pack(anchor='w')
+        tk.Label(esq, text='Classificadores Lineares — Iris',
+                 bg=T.BG_CARD, fg=T.FG,
+                 font=T.FONT_DISPLAY).pack(anchor='w', pady=(2, 0))
+
+        dir_ = tk.Frame(topo, bg=T.BG_CARD)
+        dir_.pack(side='right', fill='y')
+        tk.Label(dir_, text=DISCIPLINA, bg=T.BG_CARD, fg=T.FG_MUTED,
+                 font=T.FONT_SUBTITLE).pack(anchor='e')
+        tk.Label(dir_, text=GRUPO, bg=T.BG_CARD, fg=T.FG,
+                 font=(T.FONT_FAMILY_TITLE, 11, 'bold')).pack(anchor='e', pady=(2, 0))
+
+        chips = tk.Frame(cab, bg=T.BG_CARD)
+        chips.pack(fill='x', padx=28, pady=(10, 14))
+        self._chip(chips, 'Python puro', fg=T.ACCENT_DEEP, bg=T.ACCENT_SOFT)
+        self._chip(chips, '150 amostras')
+        self._chip(chips, '4 atributos')
+        self._chip(chips, '3 classes')
+        self._chip(chips, 'split 70/30 estratificado')
+        self._chip(chips, 'seed 42')
+        self._chip(chips, 'sem numpy · sem scikit-learn')
 
         tk.Frame(self._inner, bg=T.BORDER, height=1).pack(fill='x')
 
@@ -121,6 +142,10 @@ class App(tk.Tk):
         # Aba 3 — NOVA: Metricas Avancadas
         aba3 = TabMetricasAvancadas(self.notebook)
         self.notebook.add(aba3, text='   Metricas Avancadas   ')
+
+        # Aba 4 — NOVA: Bayes & Normalidade
+        aba4 = TabBayes(self.notebook)
+        self.notebook.add(aba4, text='   Bayes & Normalidade   ')
 
         # Abas placeholder
         # for nome, status in ABAS_FUTURAS:
@@ -148,17 +173,17 @@ class App(tk.Tk):
     # ------------------------------------------------------------------
     def _construir_rodape(self):
         tk.Frame(self._inner, bg=T.BORDER, height=1).pack(fill='x')
-        rod = tk.Frame(self._inner, bg=T.BG_PANEL, height=30)
+        rod = tk.Frame(self._inner, bg=T.BG_CARD, height=30)
         rod.pack(fill='x')
         rod.pack_propagate(False)
         tk.Label(rod,
-                 text='Iris  ·  150 amostras  ·  4 atributos  ·  3 classes  ·  '
-                      'split 70/30  ·  seed 42',
-                 bg=T.BG_PANEL, fg=T.FG_MUTED,
+                 text='Fisher (1936)  ·  Iris flower data set  ·  '
+                      'matematica em Python puro (math_utils.py)',
+                 bg=T.BG_CARD, fg=T.FG_MUTED,
                  font=T.FONT_SUBTITLE).pack(side='left', padx=20, pady=5)
         tk.Label(rod,
                  text='UEPB  ·  Topicos Especiais em IA  ·  2026',
-                 bg=T.BG_PANEL, fg=T.FG_DIM,
+                 bg=T.BG_CARD, fg=T.FG_DIM,
                  font=T.FONT_SUBTITLE).pack(side='right', padx=20, pady=5)
 
 

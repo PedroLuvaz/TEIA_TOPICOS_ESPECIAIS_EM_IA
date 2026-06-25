@@ -29,7 +29,7 @@ from evaluator import acuracia
 from math_utils import coeficientes_superficie_decisao
 
 from . import theme as T
-from .widgets import Card, MetricBlock
+from .widgets import Card, MetricBlock, separador
 from .janela_calculos import JanelaMemoriaCalculo
 
 
@@ -63,6 +63,15 @@ CONFIGURACOES_ATRIBUTOS = {
         'indices': [0, 1],
         'eixo_x': 'Comp. Sepala',
         'eixo_y': 'Larg. Sepala',
+        'unidade': 'cm',
+    },
+    'todas': {
+        'rotulo': 'Todas',
+        'rotulo_ui': 'Todas (4 Features) · [0,1,2,3]',
+        'indices': [0, 1, 2, 3],
+        # Para visualizacao usa-se a projecao nas petalas (modelo e 4D)
+        'eixo_x': 'Comp. Petala',
+        'eixo_y': 'Larg. Petala',
         'unidade': 'cm',
     },
 }
@@ -104,6 +113,9 @@ class TabDistanciaMinima(tk.Frame):
         self.modo_grafico = tk.StringVar(value='dispersao')
         self.var_x = tk.StringVar(value='4.5')
         self.var_y = tk.StringVar(value='1.5')
+        # Campos extras de sepala (usados apenas no modo 'todas')
+        self.var_sx = tk.StringVar(value='5.8')
+        self.var_sy = tk.StringVar(value='3.0')
 
         self._construir_layout()
         self._carregar_dados()
@@ -124,7 +136,8 @@ class TabDistanciaMinima(tk.Frame):
     # ---- Coluna esquerda ----
     def _coluna_controles(self):
         wrap = tk.Frame(self, bg=T.BG)
-        wrap.grid(row=0, column=0, sticky='nsew', padx=(20, 10), pady=12)
+        wrap.grid(row=0, column=0, sticky='nsew',
+                  padx=(T.PAD_PAGE, T.GAP), pady=12)
         wrap.columnconfigure(0, weight=1)
 
         # 0. Seletor de dataset
@@ -142,87 +155,114 @@ class TabDistanciaMinima(tk.Frame):
 
         # 1. Atributos
         card = Card(wrap, titulo='atributos do modelo')
-        card.grid(row=1, column=0, sticky='ew', pady=(6, 0))
+        card.grid(row=1, column=0, sticky='ew', pady=(T.GAP_SM, 0))
         for chave, cfg in CONFIGURACOES_ATRIBUTOS.items():
             tk.Radiobutton(card, text=cfg['rotulo_ui'],
                            value=chave, variable=self.atributos_ativos,
                            bg=T.BG_CARD, fg=T.FG,
                            selectcolor=T.BG_HOVER,
                            activebackground=T.BG_CARD,
-                           activeforeground=T.ACCENT,
+                           activeforeground=T.ACCENT_DEEP,
                            font=T.FONT_BODY, anchor='w',
                            borderwidth=0, highlightthickness=0,
                            command=self._ao_trocar_atributos
-                          ).pack(fill='x', padx=14, pady=2)
+                          ).pack(fill='x', padx=T.CARD_PADX, pady=2)
         # respiro inferior
         tk.Frame(card, bg=T.BG_CARD, height=4).pack()
 
         # 2. Modo do grafico
         card = Card(wrap, titulo='visualizacao')
-        card.grid(row=2, column=0, sticky='ew', pady=(6, 0))
+        card.grid(row=2, column=0, sticky='ew', pady=(T.GAP_SM, 0))
         for rotulo, valor in MODOS_GRAFICO:
             tk.Radiobutton(card, text=rotulo,
                            value=valor, variable=self.modo_grafico,
                            bg=T.BG_CARD, fg=T.FG,
                            selectcolor=T.BG_HOVER,
                            activebackground=T.BG_CARD,
-                           activeforeground=T.ACCENT,
+                           activeforeground=T.ACCENT_DEEP,
                            font=T.FONT_BODY, anchor='w',
                            borderwidth=0, highlightthickness=0,
                            command=self._desenhar_grafico
-                          ).pack(fill='x', padx=14, pady=2)
+                          ).pack(fill='x', padx=T.CARD_PADX, pady=2)
         tk.Frame(card, bg=T.BG_CARD, height=4).pack()
 
         # 3. Classificacao manual e predicao agrupadas
         card_classif = Card(wrap, titulo='classificacao & predicao')
-        card_classif.grid(row=3, column=0, sticky='ew', pady=(6, 0))
+        card_classif.grid(row=3, column=0, sticky='ew', pady=(T.GAP_SM, 0))
 
         form = tk.Frame(card_classif, bg=T.BG_CARD)
-        form.pack(fill='x', padx=14, pady=(2, 0))
+        form.pack(fill='x', padx=T.CARD_PADX, pady=(2, 0))
         form.columnconfigure(1, weight=1)
 
+        # Linhas 0-1: sepalas (visiveis apenas no modo 'todas')
+        lbl_sx = tk.Label(form, text='Comp. Sepala',
+                          bg=T.BG_CARD, fg=T.FG_MUTED,
+                          font=T.FONT_LABEL, anchor='w')
+        lbl_sx.grid(row=0, column=0, sticky='w', pady=(0, 2))
+        ent_sx = ttk.Entry(form, textvariable=self.var_sx,
+                           font=T.FONT_MONO, width=10)
+        ent_sx.grid(row=0, column=1, sticky='ew', padx=(8, 0))
+
+        lbl_sy = tk.Label(form, text='Larg. Sepala',
+                          bg=T.BG_CARD, fg=T.FG_MUTED,
+                          font=T.FONT_LABEL, anchor='w')
+        lbl_sy.grid(row=1, column=0, sticky='w', pady=(6, 2))
+        ent_sy = ttk.Entry(form, textvariable=self.var_sy,
+                           font=T.FONT_MONO, width=10)
+        ent_sy.grid(row=1, column=1, sticky='ew', padx=(8, 0))
+
+        self._widgets_sepala = [lbl_sx, ent_sx, lbl_sy, ent_sy]
+        for w in self._widgets_sepala:
+            w.grid_remove()   # ocultos por padrao (pares 2D)
+
+        # Linhas 2-3: par de atributos ativo (sempre visiveis)
         self.lbl_x = tk.Label(form, text='Comp. Petala',
                               bg=T.BG_CARD, fg=T.FG_MUTED,
                               font=T.FONT_LABEL, anchor='w')
-        self.lbl_x.grid(row=0, column=0, sticky='w', pady=(0, 2))
+        self.lbl_x.grid(row=2, column=0, sticky='w', pady=(6, 2))
         ttk.Entry(form, textvariable=self.var_x,
                   font=T.FONT_MONO, width=10
-                 ).grid(row=0, column=1, sticky='ew', padx=(8, 0))
+                 ).grid(row=2, column=1, sticky='ew', padx=(8, 0))
 
         self.lbl_y = tk.Label(form, text='Larg. Petala',
                               bg=T.BG_CARD, fg=T.FG_MUTED,
                               font=T.FONT_LABEL, anchor='w')
-        self.lbl_y.grid(row=1, column=0, sticky='w', pady=(6, 2))
+        self.lbl_y.grid(row=3, column=0, sticky='w', pady=(6, 2))
         ttk.Entry(form, textvariable=self.var_y,
                   font=T.FONT_MONO, width=10
-                 ).grid(row=1, column=1, sticky='ew', padx=(8, 0))
+                 ).grid(row=3, column=1, sticky='ew', padx=(8, 0))
 
         ttk.Button(card_classif, text='Classificar Amostra  >',
                    style='Primary.TButton',
                    command=self._classificar_amostra
-                  ).pack(fill='x', padx=14, pady=(8, 6))
+                  ).pack(fill='x', padx=T.CARD_PADX, pady=(8, 6))
 
         # Divisor sutil
-        tk.Frame(card_classif, bg=T.BORDER, height=1).pack(fill='x', padx=14, pady=4)
+        separador(card_classif)
 
         # Predicao
         self.lbl_pred = tk.Label(card_classif, text='—',
                                  bg=T.BG_CARD, fg=T.FG_DIM,
                                  font=T.FONT_VALUE_BIG, anchor='w')
-        self.lbl_pred.pack(fill='x', padx=14, pady=(2, 1))
+        self.lbl_pred.pack(fill='x', padx=T.CARD_PADX, pady=(2, 1))
         
         self.lbl_pred_sub = tk.Label(card_classif,
                                      text='aguardando entrada',
                                      bg=T.BG_CARD, fg=T.FG_MUTED,
                                      font=T.FONT_MONO_SM, anchor='w',
                                      justify='left', wraplength=280)
-        self.lbl_pred_sub.pack(fill='x', padx=14, pady=(0, 6))
+        self.lbl_pred_sub.pack(fill='x', padx=T.CARD_PADX, pady=(0, 6))
 
         # Memoria de calculo (abre janela com formulas + substituicao)
-        ttk.Button(card_classif, text='Abrir memoria de calculo  >',
-                   style='Primary.TButton',
-                   command=self._abrir_memoria_calculo
-                  ).pack(fill='x', padx=14, pady=(2, 10))
+        self.btn_memoria = ttk.Button(
+            card_classif, text='Abrir memoria de calculo  >',
+            style='Primary.TButton',
+            command=self._abrir_memoria_calculo)
+        self.btn_memoria.pack(fill='x', padx=T.CARD_PADX, pady=(2, 2))
+        self.lbl_memoria_hint = tk.Label(card_classif, text='',
+                                         bg=T.BG_CARD, fg=T.FG_MUTED,
+                                         font=T.FONT_MONO_SM, anchor='w')
+        self.lbl_memoria_hint.pack(fill='x', padx=T.CARD_PADX, pady=(0, 10))
 
         # spacer no fundo
         wrap.rowconfigure(4, weight=1)
@@ -230,13 +270,14 @@ class TabDistanciaMinima(tk.Frame):
     # ---- Coluna direita ----
     def _coluna_visualizacao(self):
         wrap = tk.Frame(self, bg=T.BG)
-        wrap.grid(row=0, column=1, sticky='nsew', padx=(10, 20), pady=20)
+        wrap.grid(row=0, column=1, sticky='nsew',
+                  padx=(T.GAP, T.PAD_PAGE), pady=T.PAD_PAGE)
         wrap.columnconfigure(0, weight=1)
         wrap.rowconfigure(0, weight=3)
         wrap.rowconfigure(1, weight=2)
 
         # ---- Grafico ----
-        painel = tk.Frame(wrap, bg=T.BG_PANEL,
+        painel = tk.Frame(wrap, bg=T.BG_CARD,
                           highlightthickness=1,
                           highlightbackground=T.BORDER,
                           highlightcolor=T.BORDER)
@@ -245,7 +286,7 @@ class TabDistanciaMinima(tk.Frame):
         painel.rowconfigure(0, weight=1)
         painel.rowconfigure(1, weight=0)   # toolbar — altura fixa
 
-        self.figura = Figure(figsize=(7, 4.2), dpi=100, facecolor=T.BG_PANEL)
+        self.figura = Figure(figsize=(7, 4.2), dpi=100, facecolor=T.BG_CARD)
         self.ax = self.figura.add_subplot(111)
         self.canvas = FigureCanvasTkAgg(self.figura, master=painel)
         self.canvas.get_tk_widget().grid(row=0, column=0, sticky='nsew',
@@ -260,7 +301,7 @@ class TabDistanciaMinima(tk.Frame):
 
         # ---- Painel inferior ----
         inferior = tk.Frame(wrap, bg=T.BG)
-        inferior.grid(row=1, column=0, sticky='nsew', pady=(6, 0))
+        inferior.grid(row=1, column=0, sticky='nsew', pady=(T.GAP_SM, 0))
         inferior.columnconfigure(0, weight=1)
         inferior.columnconfigure(1, weight=2)
         inferior.rowconfigure(0, weight=1)
@@ -273,7 +314,7 @@ class TabDistanciaMinima(tk.Frame):
         self.metric_split = MetricBlock(col_m, 'treino  ·  teste', '—')
         self.metric_split.grid(row=0, column=0, sticky='ew')
         self.metric_erros = MetricBlock(col_m, 'erros base completa', '—')
-        self.metric_erros.grid(row=1, column=0, sticky='ew', pady=(10, 0))
+        self.metric_erros.grid(row=1, column=0, sticky='ew', pady=(T.GAP, 0))
 
         # Analise textual
         card = Card(inferior, titulo='analise')
@@ -283,12 +324,12 @@ class TabDistanciaMinima(tk.Frame):
                                    font=T.FONT_BODY,
                                    relief='flat', borderwidth=0,
                                    highlightthickness=0,
-                                   padx=14, pady=2,
+                                   padx=T.CARD_PADX, pady=2,
                                    spacing1=2, spacing3=4)
         self.txt_analise.pack(fill='both', expand=True,
-                              padx=14, pady=(2, 14))
-        self.txt_analise.tag_configure('hl', foreground=T.ACCENT,
-                                        font=('Segoe UI Semibold', 10))
+                              padx=T.CARD_PADX, pady=(2, 14))
+        self.txt_analise.tag_configure('hl', foreground=T.ACCENT_DEEP,
+                                        font=T.FONT_TEXT_HL)
         self.txt_analise.tag_configure('mono', foreground=T.FG,
                                         font=T.FONT_MONO)
         self.txt_analise.configure(state='disabled')
@@ -299,10 +340,10 @@ class TabDistanciaMinima(tk.Frame):
     @staticmethod
     def _estilizar_toolbar(toolbar):
         """Aplica o tema escuro a barra de ferramentas do matplotlib."""
-        toolbar.configure(background=T.BG_PANEL)
+        toolbar.configure(background=T.BG_CARD)
         for child in toolbar.winfo_children():
             try:
-                child.configure(background=T.BG_PANEL,
+                child.configure(background=T.BG_CARD,
                                 activebackground=T.BG_HOVER,
                                 relief='flat', borderwidth=0)
             except Exception:
@@ -343,11 +384,24 @@ class TabDistanciaMinima(tk.Frame):
             f'{len(self.dados_treino)}  ·  {len(self.dados_teste)}')
         self.metric_erros.set(
             f'{erros_total}  /  {len(self.dados)}',
-            cor=T.SUCCESS if erros_total == 0 else T.ACCENT)
+            cor=T.SUCCESS if erros_total == 0 else T.ACCENT_DEEP)
 
         # Atualizar rotulos do form de classificacao
         self.lbl_x.configure(text=cfg['eixo_x'])
         self.lbl_y.configure(text=cfg['eixo_y'])
+
+        # Modo 'todas': exibe os 4 campos e desabilita a memoria de calculo
+        if self.atributos_ativos.get() == 'todas':
+            for w in self._widgets_sepala:
+                w.grid()
+            self.btn_memoria.state(['disabled'])
+            self.lbl_memoria_hint.configure(
+                text='disponivel apenas para pares 2D')
+        else:
+            for w in self._widgets_sepala:
+                w.grid_remove()
+            self.btn_memoria.state(['!disabled'])
+            self.lbl_memoria_hint.configure(text='')
 
         self._atualizar_analise(acc_teste, erros_total, erros_vv)
         self._desenhar_grafico()
@@ -378,10 +432,14 @@ class TabDistanciaMinima(tk.Frame):
         self._atualizar_modelo()
 
     def _classificar_amostra(self):
-        cfg = CONFIGURACOES_ATRIBUTOS[self.atributos_ativos.get()]
+        chave = self.atributos_ativos.get()
+        cfg = CONFIGURACOES_ATRIBUTOS[chave]
         try:
             v1 = float(self.var_x.get().replace(',', '.'))
             v2 = float(self.var_y.get().replace(',', '.'))
+            if chave == 'todas':
+                vs1 = float(self.var_sx.get().replace(',', '.'))
+                vs2 = float(self.var_sy.get().replace(',', '.'))
         except ValueError:
             self.lbl_pred.configure(text='—', fg=T.DANGER)
             self.lbl_pred_sub.configure(
@@ -389,8 +447,12 @@ class TabDistanciaMinima(tk.Frame):
             return
 
         x = [0.0] * 4
-        x[cfg['indices'][0]] = v1
-        x[cfg['indices'][1]] = v2
+        if chave == 'todas':
+            # Ordem do dataset: [comp.sepala, larg.sepala, comp.petala, larg.petala]
+            x = [vs1, vs2, v1, v2]
+        else:
+            x[cfg['indices'][0]] = v1
+            x[cfg['indices'][1]] = v2
         scores, vencedor = predizer_todas_classes(x, self.prototipos,
                                                   cfg['indices'])
 
@@ -406,6 +468,8 @@ class TabDistanciaMinima(tk.Frame):
         if not self.prototipos:
             return
         cfg = CONFIGURACOES_ATRIBUTOS[self.atributos_ativos.get()]
+        if len(cfg['indices']) != 2:
+            return   # janela de calculos so cobre pares 2D
         # Numero de amostras de treino por classe (todas tem o mesmo)
         n_treino = sum(1 for d in self.dados_treino
                        if d['classe'] == 'setosa')
@@ -444,6 +508,26 @@ class TabDistanciaMinima(tk.Frame):
                 ' deles entre essas duas. No teste com seed 42 a separacao '
                 'cai exatamente fora da zona de overlap, atingindo ',
                 (f'{acc_teste * 100:.2f}%', 'hl'), '.',
+            ]
+        elif atrib == 'todas':
+            partes = [
+                'Usando as ',
+                ('4 caracteristicas', 'hl'),
+                ' (sepalas + petalas), o classificador opera em um ',
+                ('espaco 4D', 'hl'),
+                ' — cada prototipo e um vetor medio de 4 componentes e as '
+                'fronteiras de decisao sao hiperplanos, ',
+                ('nao plotaveis em 2D', 'hl'),
+                '. O grafico mostra apenas a projecao nas petalas.\n\n',
+                'A informacao extra das sepalas mantem o desempenho alto: '
+                'acuracia de ',
+                (f'{acc_teste * 100:.2f}%', 'hl'),
+                ' no teste, com ',
+                (f'{erros_total}', 'hl'),
+                ' erro(s) na base completa — ',
+                (f'{erros_vv}', 'hl'),
+                ' deles entre versicolor e virginica, o par com maior '
+                'sobreposicao.',
             ]
         else:
             partes = [
@@ -491,7 +575,7 @@ class TabDistanciaMinima(tk.Frame):
         modo = self.modo_grafico.get()
 
         self.figura.clear()
-        self.figura.set_facecolor(T.BG_PANEL)
+        self.figura.set_facecolor(T.BG_CARD)
         self.ax = self.figura.add_subplot(111, facecolor=T.BG_CARD)
 
         for spine in self.ax.spines.values():
@@ -502,7 +586,12 @@ class TabDistanciaMinima(tk.Frame):
         self.ax.grid(True, color=T.BORDER, linestyle=':',
                      linewidth=0.6, alpha=0.7)
 
-        if modo == 'dispersao':
+        if self.atributos_ativos.get() == 'todas':
+            # Modelo 4D: fronteiras sao hiperplanos, nao plotaveis em 2D.
+            # Mostra a projecao nas petalas, sem linhas de fronteira.
+            self._desenhar_dispersao([2, 3], cfg, prot_pos=(2, 3),
+                                     nota_4d=True)
+        elif modo == 'dispersao':
             self._desenhar_dispersao(indices, cfg)
         else:
             self._desenhar_par(indices, cfg, PAR_POR_MODO[modo])
@@ -513,7 +602,8 @@ class TabDistanciaMinima(tk.Frame):
         self.figura.tight_layout(pad=1.2)
         self.canvas.draw()
 
-    def _desenhar_dispersao(self, indices, cfg):
+    def _desenhar_dispersao(self, indices, cfg, prot_pos=(0, 1),
+                            nota_4d=False):
         ids_treino = set(id(d) for d in self.dados_treino)
         # Setosa por ultimo (pequena, ficaria encoberta)
         for classe in ['virginica', 'versicolor', 'setosa']:
@@ -530,17 +620,23 @@ class TabDistanciaMinima(tk.Frame):
 
         for classe, p in self.prototipos.items():
             cor = CORES_CLASSE[classe]
-            self.ax.scatter(p[0], p[1], color=cor, marker='X', s=260,
+            px, py = p[prot_pos[0]], p[prot_pos[1]]
+            self.ax.scatter(px, py, color=cor, marker='X', s=260,
                             edgecolors='white', linewidths=1.6,
                             zorder=6)
-            self.ax.annotate(f'm_{classe[:3]}', (p[0], p[1]),
+            self.ax.annotate(f'm_{classe[:3]}', (px, py),
                              xytext=(10, 8), textcoords='offset points',
                              color=T.FG, fontsize=9,
                              fontweight='bold', fontfamily=T.FONT_FAMILY_NAME)
 
         self.ax.set_xlabel(f"{cfg['eixo_x']} ({cfg['unidade']})")
         self.ax.set_ylabel(f"{cfg['eixo_y']} ({cfg['unidade']})")
-        self.ax.set_title('Distribuicao completa  ·  teste destacado',
+        if nota_4d:
+            titulo = ('projecao 2D (petalas)  —  '
+                      'modelo treinado em 4D')
+        else:
+            titulo = 'Distribuicao completa  ·  teste destacado'
+        self.ax.set_title(titulo,
                           color=T.FG, fontsize=11, pad=10, loc='left',
                           fontfamily=T.FONT_FAMILY_NAME, fontweight='bold')
         self._legenda()

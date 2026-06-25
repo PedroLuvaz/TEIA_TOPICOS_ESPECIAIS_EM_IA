@@ -17,6 +17,9 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from data_loader import carregar_dados_iris, split_estratificado, filtrar_por_classes
 from classifier import treinar, predizer_todas_classes, predizer_binario
+from bayes_classifier import treinar_bayes, predizer_todas_classes_bayes, predizer_binario_bayes
+from mvn_tester import executar_analise_mvn
+from metricas_avancadas import relatorio_completo, z_kappa, p_valor_z
 from evaluator import (
     acuracia,
     matriz_confusao,
@@ -27,6 +30,7 @@ from visualizer import (
     plotar_superficie_decisao,
     plotar_dispersao_todas_classes,
     plotar_matriz_confusao,
+    plotar_superficie_decisao_bayes,
 )
 from math_utils import coeficientes_superficie_decisao, distancia_euclidiana
 
@@ -36,6 +40,7 @@ PASTA_OUTPUTS = os.path.join(RAIZ_PROJETO, "outputs")
 
 INDICES_PETALA = [2, 3]
 INDICES_SEPALA = [0, 1]
+INDICES_TODAS  = [0, 1, 2, 3]
 CLASSES = ['setosa', 'versicolor', 'virginica']
 PARES_BINARIOS = [('virginica', 'setosa'), ('setosa', 'versicolor'), ('versicolor', 'virginica')]
 
@@ -104,7 +109,7 @@ def experimento_multiclasse(dados_treino, dados_teste, dados_todos):
     print(f"\nAcuracia Geral: {acc:.2%}")
 
     # --- Matriz de Confusao ---
-    print("\n--- Matriz de Confusao (Linhas = Real, Colunas = Predito) ---")
+    print("\n--- Matriz de Confusao (Linhas = Predito, Colunas = Real) ---")
     matriz = matriz_confusao(predicoes_dist, gabarito, CLASSES)
     imprimir_matriz_confusao(matriz, CLASSES)
 
@@ -211,6 +216,39 @@ def experimento_comparativo(dados_treino, dados_teste):
 
 
 # ---------------------------------------------------------------------------
+# Experimento comparativo — Todas as 4 caracteristicas [0,1,2,3]
+# ---------------------------------------------------------------------------
+
+def experimento_todas_caracteristicas(dados_treino, dados_teste):
+    secao("EXPERIMENTO COMPARATIVO: Todas as 4 Caracteristicas [0,1,2,3]")
+    print("Classificador de distancia minima usando sepalas + petalas (espaco 4D).")
+    print("Mesmo split 70/30 estratificado (semente 42). Sem grafico de fronteira:")
+    print("a superficie de decisao em 4D nao e plotavel em um plano.\n")
+
+    prototipos_4d = treinar(dados_treino, INDICES_TODAS)
+
+    print("Prototipos (Vetores Medios) nas 4 dimensoes:")
+    for classe, proto in prototipos_4d.items():
+        print(f"  {classe:10}: {[round(v, 4) for v in proto]}")
+
+    preds = [predizer_todas_classes(a['atributos'], prototipos_4d, INDICES_TODAS)[1]
+             for a in dados_teste]
+    gab   = [a['classe'] for a in dados_teste]
+    erros = sum(p != g for p, g in zip(preds, gab))
+
+    acc = acuracia(preds, gab)
+    print(f"\n  [Todas] Sepalas + Petalas (4 atributos)    | {acc:.2%}  ({erros} erro(s) em {len(dados_teste)} amostras)")
+
+    print("\n--- Matriz de Confusao (Linhas = Predito, Colunas = Real) ---")
+    matriz_4d = matriz_confusao(preds, gab, CLASSES)
+    imprimir_matriz_confusao(matriz_4d, CLASSES)
+
+    print("\n  Conclusao: usar as 4 caracteristicas mantem desempenho alto, mas a")
+    print("  sobreposicao das sepalas (versicolor x virginica) pode introduzir")
+    print("  pequeno ruido em relacao ao uso exclusivo das petalas.")
+
+
+# ---------------------------------------------------------------------------
 # Classificação interativa — exibe discriminante E distância euclidiana
 # ---------------------------------------------------------------------------
 
@@ -272,6 +310,148 @@ def _output(nome_arquivo):
     return os.path.join(PASTA_OUTPUTS, nome_arquivo)
 
 
+# ---------------------------------------------------------------------------
+# Experimentos com Bayes Ótimo e Naive Bayes (Nova Feature)
+# ---------------------------------------------------------------------------
+
+def experimento_bayes(dados_treino, dados_teste, dados_todos):
+    secao("EXPERIMENTOS DE BAYES OTIMO E NAIVE BAYES")
+    
+    # 1. Verificação de Normalidade Multivariada com R
+    print("1. VERIFICACAO DE NORMALIDADE MULTIVARIADA (R - Pacote MVN)\n")
+    relatorio_r, dados_mvn, r_ok = executar_analise_mvn(CAMINHO_DADOS, PASTA_OUTPUTS)
+    print(relatorio_r)
+    
+    # 2. Treinamento dos Classificadores Bayes Ótimo (QDA) e Naive Bayes (4 features)
+    print("2. CLASSIFICACAO MULTICLASSE (3 Classes, 4 atributos)")
+    
+    model_bayes = treinar_bayes(dados_treino, INDICES_TODAS, naive=False)
+    model_naive = treinar_bayes(dados_treino, INDICES_TODAS, naive=True)
+    
+    # Avaliar Bayes Ótimo
+    preds_bayes = []
+    gab = [d['classe'] for d in dados_teste]
+    for d in dados_teste:
+        _, pred = predizer_todas_classes_bayes(d['atributos'], model_bayes, INDICES_TODAS)
+        preds_bayes.append(pred)
+        
+    # Avaliar Naive Bayes
+    preds_naive = []
+    for d in dados_teste:
+        _, pred = predizer_todas_classes_bayes(d['atributos'], model_naive, INDICES_TODAS)
+        preds_naive.append(pred)
+        
+    # Calcular métricas completas usando metricas_avancadas
+    rel_bayes = relatorio_completo(preds_bayes, gab, CLASSES, "Bayes Otimo")
+    rel_naive = relatorio_completo(preds_naive, gab, CLASSES, "Naive Bayes")
+    
+    # Exibir relatório de Bayes Ótimo
+    print("\n>>> CLASSIFICADOR BAYES OTIMO (QDA) <<<")
+    print(f"  Acuracia Global: {rel_bayes['acerto_global']:.2%}")
+    print(f"  Indice Kappa:    {rel_bayes['kappa']:.4f} (Var: {rel_bayes['variancia_kappa']:.6f})")
+    print("\nMatriz de Confusao:")
+    imprimir_matriz_confusao(rel_bayes['matriz'], CLASSES)
+    print("\nMetricas por Classe:")
+    for c in CLASSES:
+        mc = rel_bayes['por_classe'][c]
+        print(f"  Classe {c:10}: Produtor (Sens.): {mc['acuracia_produtor']:.4f} | Usuario (Prec.): {mc['acuracia_usuario']:.4f} | F1: {mc['f1']:.4f}")
+        
+    # Exibir relatório de Naive Bayes
+    print("\n>>> CLASSIFICADOR NAIVE BAYES <<<")
+    print(f"  Acuracia Global: {rel_naive['acerto_global']:.2%}")
+    print(f"  Indice Kappa:    {rel_naive['kappa']:.4f} (Var: {rel_naive['variancia_kappa']:.6f})")
+    print("\nMatriz de Confusao:")
+    imprimir_matriz_confusao(rel_naive['matriz'], CLASSES)
+    print("\nMetricas por Classe:")
+    for c in CLASSES:
+        mc = rel_naive['por_classe'][c]
+        print(f"  Classe {c:10}: Produtor (Sens.): {mc['acuracia_produtor']:.4f} | Usuario (Prec.): {mc['acuracia_usuario']:.4f} | F1: {mc['f1']:.4f}")
+        
+    # Teste de significância de Kappa entre os dois
+    z_stat = z_kappa(rel_bayes['kappa'], rel_bayes['variancia_kappa'], rel_naive['kappa'], rel_naive['variancia_kappa'])
+    p_val = p_valor_z(z_stat)
+    
+    print("\n>>> COMPARACAO E SIGNIFICANCIA DE KAPPA (Item e) <<<")
+    print(f"  Estatistica Z: {z_stat:.4f}")
+    print(f"  p-valor:       {p_val:.6f}")
+    if p_val < 0.05:
+        print("  Resultado: Existe diferenca estatisticamente significativa entre as acuracias dos classificadores (ao nivel de 5%).")
+        if rel_bayes['kappa'] > rel_naive['kappa']:
+            print("  O Classificador de Bayes Otimo e estatisticamente superior.")
+        else:
+            print("  O Classificador Naive Bayes e estatisticamente superior.")
+    else:
+        print("  Resultado: Nao existe diferenca estatisticamente significativa entre as acuracias dos classificadores (ao nivel de 5%).")
+        if rel_bayes['acerto_global'] > rel_naive['acerto_global']:
+            print(f"  Numericamente, o Bayes Otimo teve maior acuracia ({rel_bayes['acerto_global']:.2%} vs {rel_naive['acerto_global']:.2%}), mas a diferenca nao e significativa.")
+        elif rel_bayes['acerto_global'] < rel_naive['acerto_global']:
+            print(f"  Numericamente, o Naive Bayes teve maior acuracia ({rel_naive['acerto_global']:.2%} vs {rel_naive['acerto_global']:.2%}), mas a diferenca nao e significativa.")
+        else:
+            print("  Os dois classificadores apresentaram acuracia identica no conjunto de teste.")
+            
+    # 3. Superfícies de Decisão (Pares de classes, usando Pétalas [2,3])
+    print("\n3. SUPERFICIES DE DECISAO E CLASSIFICACAO BINARIA (Pares de Classes, Petalas [2,3])")
+    
+    for classe_i, classe_j in PARES_BINARIOS:
+        print(f"\n------------------------------------------")
+        print(f"Par: {classe_i} vs {classe_j}")
+        print(f"------------------------------------------")
+        
+        # Filtrar dados para o par
+        treino_par = filtrar_por_classes(dados_treino, [classe_i, classe_j])
+        teste_par  = filtrar_por_classes(dados_teste,  [classe_i, classe_j])
+        todos_par  = filtrar_por_classes(dados_todos,  [classe_i, classe_j])
+        
+        # Treinar modelos locais 2D nas pétalas
+        model_bayes_2d = treinar_bayes(treino_par, INDICES_PETALA, naive=False)
+        model_naive_2d = treinar_bayes(treino_par, INDICES_PETALA, naive=True)
+        
+        # Predições
+        preds_bayes_par = [predizer_binario_bayes(a['atributos'], model_bayes_2d, classe_i, classe_j, INDICES_PETALA) for a in teste_par]
+        preds_naive_par = [predizer_binario_bayes(a['atributos'], model_naive_2d, classe_i, classe_j, INDICES_PETALA) for a in teste_par]
+        gab_par = [a['classe'] for a in teste_par]
+        
+        # Relatórios de Métricas
+        classes_par = [classe_i, classe_j]
+        rel_b = relatorio_completo(preds_bayes_par, gab_par, classes_par, "Bayes Otimo 2D")
+        rel_n = relatorio_completo(preds_naive_par, gab_par, classes_par, "Naive Bayes 2D")
+        
+        print("\n--> Bayes Otimo (QDA):")
+        print(f"  Acuracia: {rel_b['acerto_global']:.2%}")
+        print(f"  Kappa:    {rel_b['kappa']:.4f}")
+        imprimir_matriz_confusao(rel_b['matriz'], classes_par)
+        
+        print("\n--> Naive Bayes:")
+        print(f"  Acuracia: {rel_n['acerto_global']:.2%}")
+        print(f"  Kappa:    {rel_n['kappa']:.4f}")
+        imprimir_matriz_confusao(rel_n['matriz'], classes_par)
+        
+        # Plotar superfícies de decisão
+        plotar_superficie_decisao_bayes(
+            model_bayes_2d,
+            [d for d in todos_par if d['classe'] == classe_i],
+            [d for d in todos_par if d['classe'] == classe_j],
+            classe_i, classe_j, INDICES_PETALA,
+            dados_treino=treino_par,
+            dados_teste=teste_par,
+            nomes_atributos=NOMES_ATRIBUTOS,
+            titulo=f"Bayes Otimo: {classe_i} vs {classe_j}",
+            caminho_salvar=_output(f"bayes_otimo_superficie_{classe_i}_{classe_j}.png"),
+        )
+        
+        plotar_superficie_decisao_bayes(
+            model_naive_2d,
+            [d for d in todos_par if d['classe'] == classe_i],
+            [d for d in todos_par if d['classe'] == classe_j],
+            classe_i, classe_j, INDICES_PETALA,
+            dados_treino=treino_par,
+            dados_teste=teste_par,
+            nomes_atributos=NOMES_ATRIBUTOS,
+            titulo=f"Naive Bayes: {classe_i} vs {classe_j}",
+            caminho_salvar=_output(f"naive_bayes_superficie_{classe_i}_{classe_j}.png"),
+        )
+
+
 def executar_experimentos():
     os.makedirs(PASTA_OUTPUTS, exist_ok=True)
 
@@ -289,6 +469,11 @@ def executar_experimentos():
     prototipos = experimento_multiclasse(dados_treino, dados_teste, dados)
     experimento_superficies(dados_treino, dados_teste, dados)
     experimento_comparativo(dados_treino, dados_teste)
+    experimento_todas_caracteristicas(dados_treino, dados_teste)
+    
+    # Executar os experimentos de Bayes & Naive Bayes (Nova Feature)
+    experimento_bayes(dados_treino, dados_teste, dados)
+    
     modo_interativo(prototipos)
 
 

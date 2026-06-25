@@ -394,3 +394,48 @@ w = [wi + taxa_aprendizado * erro * xi for wi, xi in zip(w, x_aug)]
 4. **XOR como ponte:** A demonstração experimental do MSE = 0,25 valida matematicamente a prova teórica de inseparabilidade — conecta teoria à prática
 
 5. **Mesmo dataset, resultados diferentes:** Usar o Iris em ambas as abas mostra como o mesmo problema pode ser abordado com algoritmos distintos, facilitando comparação direta
+
+---
+
+## 15. Classificadores Probabilísticos (Aba 4 — Bayes & Naive Bayes)
+
+**Ponto Chave de Apresentação:** Explique que saímos dos classificadores lineares baseados puramente em distâncias rígidas ou hiperplanos de separação e entramos no domínio dos **classificadores baseados em densidades de probabilidade**.
+
+### Passo A: Aderência à Normalidade Multivariada
+*   **A premissa:** Para usar a densidade condicional normal, precisamos verificar se os dados de cada classe $C_j$ de fato seguem uma distribuição normal multivariada.
+*   **O Teste:** Usamos o ambiente R (via pacote `MVN`) para rodar os testes de **Henze-Zirkler** (HZ) e **Mardia** (assimetria e curtose).
+*   **O Resultado no Iris:** 
+    *   *Setosa* rejeita levemente a normalidade multivariada estrita ($p = 0.0496$), embora passe em assimetria e curtose.
+    *   *Versicolor* e *Virginica* têm forte aderência ($p$-valores $> 0.05$).
+*   **O Fallback:** Se o R não estiver instalado no computador atual, o sistema detecta isso dinamicamente e exibe os resultados reais precalculados gerados pelo R, mantendo a experiência fluida sem quebrar a execução.
+
+### Passo B: Bayes Ótimo (QDA) vs Naive Bayes
+*   **Bayes Ótimo:** Estima a matriz de covariância completa $\Sigma_j$ para cada classe. A fronteira de decisão resultante é **quadrática** (curva não-linear) porque cada classe tem sua própria covariância.
+*   **Naive Bayes:** Assume independência condicional completa entre as variáveis, o que zera todos os termos fora da diagonal principal de $\Sigma_j$. A fronteira resultante torna-se elipsoidal e ortogonal aos eixos.
+*   **Implementação em Python Puro:** Mostre ao professor que a inversão de matrizes e determinantes foi feita à mão usando **eliminação de Gauss-Jordan com pivotamento parcial** e **expansão de cofatores de Laplace** em `math_utils.py` (sem NumPy).
+
+---
+
+## 16. Teste de Significância de Kappa (Item e)
+
+**Onde encontrar no código:** `metricas_avancadas.py` e `main.py`
+
+**Como funciona:**
+Para verificar se um classificador é estatisticamente melhor que outro, não basta comparar a acurácia bruta, pois a diferença pode ser fruto do acaso. Usamos o **Teste Z de diferença de Kappas** (Congalton & Green, 2009):
+
+$$Z = \frac{K_1 - K_2}{\sqrt{\text{Var}(K_1) + \text{Var}(K_2)}}$$
+
+No conjunto de teste (split 70/30):
+*   Ambos os modelos obtiveram acurácia de **$97.78\%$** e Kappa $K = 0.9667$ no teste.
+*   A estatística $Z = 0.0000$, com $p\text{-valor} = 1.0000$.
+*   **Veredito:** Não há diferença estatisticamente significativa entre as duas acurácias ao nível de 5%. Ambos os modelos são equivalentes para esta partição.
+
+---
+
+## 17. Defesa do Projeto ao Professor (Novos Pontos)
+
+1.  **Matemática Linear e Inversão Matricial em Python Puro:** Mostre a implementação de `inv_matriz` usando pivotamento parcial. Isso prova que o grupo compreende álgebra linear computacional avançada, fundamental para processamento numérico estável.
+2.  **Integração Multilinguagem (Python + R):** O projeto conecta-se ao R escrevendo scripts intermediários e executando-os em subprocessos, consumindo arquivos CSV de intercâmbio. Essa integração dinâmica é valorizada na prática científica.
+3.  **Fronteiras de Decisão Não-Lineares no Plano (Contour Plots):** Exiba os gráficos da pasta `outputs/` mostrando as fronteiras parabólicas e hiperbólicas geradas pelos contornos das funções de decisão log-probabilísticas de Bayes. Isso contrasta perfeitamente com as fronteiras retas das abas anteriores.
+4.  **Memória de Cálculo LaTeX Dinâmica:** A janela secundária de memória de cálculo para a aba Bayes apresenta no formato LaTeX os vetores de médias calculados e as matrizes de covariância estimadas da classe, permitindo ao professor auditar as contas.
+

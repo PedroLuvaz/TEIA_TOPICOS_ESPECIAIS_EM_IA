@@ -92,3 +92,134 @@ def coeficientes_superficie_decisao(mi, mj):
     w = subtrair_vetores(mi, mj)
     b = -0.5 * (produto_escalar(mi, mi) - produto_escalar(mj, mj))
     return w, b
+
+
+# ===========================================================================
+# Operacoes de Matriz para Bayes e Naive Bayes (Python Puro)
+# ===========================================================================
+
+def calcular_covariancia(amostras, media):
+    """
+    Calcula a matriz de covariancia de uma lista de vetores amostras de dimensao d.
+    Formula: Sigma = (1 / (N - 1)) * sum( (x - m)(x - m)^T )
+    """
+    n = len(amostras)
+    d = len(media)
+    cov = [[0.0 for _ in range(d)] for _ in range(d)]
+    if n <= 1:
+        return cov
+    for x in amostras:
+        diff = [x[i] - media[i] for i in range(d)]
+        for i in range(d):
+            for j in range(d):
+                cov[i][j] += diff[i] * diff[j]
+    for i in range(d):
+        for j in range(d):
+            cov[i][j] /= (n - 1)
+    return cov
+
+
+def calcular_covariancia_diagonal(amostras, media):
+    """
+    Calcula a matriz de covariancia diagonal (utilizada no Naive Bayes).
+    Garante que os elementos fora da diagonal principal sejam zero.
+    """
+    cov = calcular_covariancia(amostras, media)
+    d = len(media)
+    for i in range(d):
+        for j in range(d):
+            if i != j:
+                cov[i][j] = 0.0
+    return cov
+
+
+def regularizar_covariancia(cov, eps=1e-9):
+    """
+    Adiciona um pequeno valor regularizador a diagonal principal para
+    garantir que a matriz seja estritamente positiva-definida e inversivel.
+    """
+    d = len(cov)
+    cov_reg = [row[:] for row in cov]
+    for i in range(d):
+        cov_reg[i][i] += eps
+    return cov_reg
+
+
+def det_matriz(M):
+    """
+    Calcula o determinante de uma matriz quadrada M (lista de listas) recursivamente
+    usando a expansao de cofatores de Laplace. Funciona para qualquer dimensao d.
+    """
+    n = len(M)
+    if n == 1:
+        return M[0][0]
+    if n == 2:
+        return M[0][0] * M[1][1] - M[0][1] * M[1][0]
+    det = 0.0
+    for c in range(n):
+        # Submatriz excluindo linha 0 e coluna c
+        sub_M = [row[:c] + row[c+1:] for row in M[1:]]
+        det += ((-1) ** c) * M[0][c] * det_matriz(sub_M)
+    return det
+
+
+def inv_matriz(M):
+    """
+    Calcula a inversa de uma matriz quadrada M (lista de listas)
+    usando o algoritmo de eliminacao de Gauss-Jordan com pivotamento parcial.
+    Retorna a matriz inversa (lista de listas).
+    """
+    n = len(M)
+    # Criar matriz identidade I de mesma dimensao n x n
+    I = [[1.0 if i == j else 0.0 for j in range(n)] for i in range(n)]
+    # Fazer copia de trabalho da matriz M
+    A = [row[:] for row in M]
+    
+    for i in range(n):
+        # Pivotamento parcial: encontrar linha com maior valor absoluto na coluna i
+        max_row = i
+        for r in range(i + 1, n):
+            if abs(A[r][i]) > abs(A[max_row][i]):
+                max_row = r
+        # Trocar linhas em A e I
+        A[i], A[max_row] = A[max_row], A[i]
+        I[i], I[max_row] = I[max_row], I[i]
+        
+        pivot = A[i][i]
+        if abs(pivot) < 1e-15:
+            raise ValueError("Matriz singular ou quase-singular, nao pode ser invertida.")
+            
+        # Normalizar a linha do pivo (dividir todos os elementos pelo pivo)
+        for j in range(i, n):
+            A[i][j] /= pivot
+        for j in range(n):
+            I[i][j] /= pivot
+            
+        # Eliminar os elementos nas outras linhas para a coluna i
+        for r in range(n):
+            if r == i:
+                continue
+            factor = A[r][i]
+            for j in range(i, n):
+                A[r][j] -= factor * A[i][j]
+            for j in range(n):
+                I[r][j] -= factor * I[i][j]
+    return I
+
+
+def distancia_mahalanobis_quad(x, media, inv_cov):
+    """
+    Calcula o quadrado da distancia de Mahalanobis:
+    d_M^2(x, m) = (x - m)^T * Sigma^-1 * (x - m)
+    """
+    d = len(media)
+    diff = [x[i] - media[i] for i in range(d)]
+    
+    # Calcular diff^T * Sigma^-1
+    temp = [0.0] * d
+    for j in range(d):
+        temp[j] = sum(diff[i] * inv_cov[i][j] for i in range(d))
+        
+    # Calcular (diff^T * Sigma^-1) * diff
+    return sum(temp[j] * diff[j] for j in range(d))
+

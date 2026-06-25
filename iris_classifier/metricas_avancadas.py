@@ -202,6 +202,89 @@ def z_tau(t1, var1, t2, var2):
     return (t1 - t2) / den
 
 
+def matriz_binaria_ovr(matriz, classe):
+    """
+    Colapsa a matriz de confusao multiclasse em uma matriz 2x2 One-vs-Rest
+    (OvR) para a classe indicada, mantendo a convencao Linha = Predito,
+    Coluna = Real:
+
+        m2[classe][classe]   = VP  (predito classe,  real classe)
+        m2[classe]['resto']  = FP  (predito classe,  real outra)
+        m2['resto'][classe]  = FN  (predito outra,   real classe)
+        m2['resto']['resto'] = VN  (predito outra,   real outra)
+
+    Retorna dict de dicts com chaves [classe, 'resto'].
+    """
+    classes = list(matriz.keys())
+    vp = matriz[classe][classe]
+    fp = sum(matriz[classe][r] for r in classes if r != classe)
+    fn = sum(matriz[p][classe] for p in classes if p != classe)
+    vn = sum(matriz[p][r] for p in classes for r in classes
+             if p != classe and r != classe)
+    return {
+        classe:  {classe: vp, 'resto': fp},
+        'resto': {classe: fn, 'resto': vn},
+    }
+
+
+def kappa_por_classe(matriz, classe):
+    """
+    Kappa da classe em visao One-vs-Rest (OvR).
+
+    A matriz multiclasse e colapsada para 2x2 (classe vs 'resto') por
+    matriz_binaria_ovr() e entao aplicam-se as formulas usuais:
+
+        K = (Ag - Aa) / (1 - Aa)
+
+    com Ag e Aa calculados sobre a matriz 2x2. A variancia segue
+    Congalton & Green (2009) sobre a mesma matriz 2x2.
+
+    Reutiliza kappa(matriz, classes) e variancia_kappa(matriz, classes),
+    que ja aceitam qualquer matriz dict quadrada.
+
+    Observacao: a formula da variancia (metodo delta) pode produzir um
+    valor levemente NEGATIVO em amostras pequenas — como variancia
+    negativa nao tem sentido, o valor e truncado em 0.0.
+
+    Retorna a tupla (kappa, variancia).
+    """
+    m2 = matriz_binaria_ovr(matriz, classe)
+    classes_2 = [classe, 'resto']
+    var = variancia_kappa(m2, classes_2)
+    return kappa(m2, classes_2), max(0.0, var)
+
+
+def z_classes(matriz, classe_a, classe_b):
+    """
+    Teste Z de significancia entre os Kappas OvR de duas classes da
+    mesma matriz de confusao:
+
+        Z = (K_a - K_b) / sqrt(Var(K_a) + Var(K_b))
+
+    onde K_a, Var(K_a) vem de kappa_por_classe(matriz, classe_a) e
+    K_b, Var(K_b) de kappa_por_classe(matriz, classe_b).
+
+    Tratamento de divisao por zero (variancias nulas):
+      - se K_a == K_b  → retorna 0.0  (nenhuma diferenca, Z nulo);
+      - se K_a != K_b  → retorna float('inf') com o sinal de (K_a - K_b),
+        pois com variancia zero qualquer diferenca e "infinitamente"
+        significativa.
+
+    Retorna a tupla (z, kappa_a, var_a, kappa_b, var_b).
+    """
+    k_a, var_a = kappa_por_classe(matriz, classe_a)
+    k_b, var_b = kappa_por_classe(matriz, classe_b)
+    den = math.sqrt(var_a + var_b)
+    if den < 1e-12:
+        if abs(k_a - k_b) < 1e-12:
+            z = 0.0
+        else:
+            z = float('inf') if (k_a - k_b) > 0 else float('-inf')
+    else:
+        z = (k_a - k_b) / den
+    return z, k_a, var_a, k_b, var_b
+
+
 def p_valor_z(z):
     """
     p-valor bilateral: P(|Z| > z) = 2*(1 - Phi(|z|))

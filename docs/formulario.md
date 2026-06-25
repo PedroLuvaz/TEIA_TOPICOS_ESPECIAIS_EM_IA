@@ -291,3 +291,49 @@ Somando as duas $< 0$: $w_0 + (w_0 + w_1 + w_2) < 0 \Rightarrow 2w_0 + w_1 + w_2
 | Máx. épocas Perceptron | 100 |
 | Máx. épocas Delta (Iris) | 200 |
 | Máx. épocas Delta (XOR) | 300 |
+
+---
+
+## Bayes Ótimo e Naive Bayes
+
+### Vetor de Médias (Centróide)
+
+$$\boxed{m_j = \frac{1}{N_j} \sum_{x \in \omega_j} x}$$
+
+### Matriz de Covariância Estimada
+
+$$\boxed{\Sigma_j = \frac{1}{N_j - 1} \sum_{x \in \omega_j} (x - m_j)(x - m_j)^T}$$
+
+### Covariância Regularizada (Ridge)
+
+$$\boxed{\Sigma'_j = \Sigma_j + \epsilon \cdot I}$$
+
+*(Evita matrizes singulares não-inversíveis, adicionando $\epsilon = 10^{-9}$ à diagonal principal)*
+
+### Determinante de $\Sigma'_j$
+
+$$\boxed{|\Sigma'_j| = \det(\Sigma'_j)}$$
+
+### Distância de Mahalanobis Quadrada
+
+$$\boxed{d_M^2(x, m_j) = (x - m_j)^T (\Sigma'_j)^{-1} (x - m_j)}$$
+
+### Função Discriminante de Bayes Ótimo (QDA)
+
+$$\boxed{d_j(x) = -\frac{1}{2} \ln |\Sigma'_j| - \frac{1}{2} (x - m_j)^T (\Sigma'_j)^{-1} (x - m_j)}$$
+
+### Função Discriminante de Naive Bayes
+
+$$\boxed{d_j(x) = -\frac{1}{2} \sum_{i=1}^d \ln(\sigma_{ji}^2) - \frac{1}{2} \sum_{i=1}^d \frac{(x_i - m_{ji})^2}{\sigma_{ji}^2}}$$
+
+### Regra de Decisão MAP (Priors Iguais)
+
+$$\boxed{\hat{y} = \arg\max_j \; d_j(x)}$$
+
+### Teste de Significância de Kappa (Z-test)
+
+$$\boxed{Z = \frac{K_1 - K_2}{\sqrt{\text{Var}(K_1) + \text{Var}(K_2)}}}$$
+
+- $H_0$: $K_1 = K_2$ (desempenho idêntico).
+- Rejeita-se $H_0$ se $|Z| > 1{,}96$ (nível de significância de $5\%$, p-valor $< 0{,}05$).
+
