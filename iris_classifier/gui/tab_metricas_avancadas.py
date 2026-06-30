@@ -38,12 +38,12 @@ for p in (PROJETO_ROOT, IRIS_ROOT):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from data_loader import carregar_dados_iris, split_estratificado, filtrar_por_classes
-from classifier  import treinar, predizer_todas_classes, predizer_binario
-from math_utils  import distancia_euclidiana
-from perceptron  import treinar_perceptron, predizer_perceptron
-from delta_rule  import (treinar_delta_iris, treinar_delta_ova, predizer_delta_ova)
-from metricas_avancadas import (
+from data.data_loader import carregar_dados_iris, split_estratificado, filtrar_por_classes
+from models.classifier  import treinar, predizer_todas_classes, predizer_binario
+from core.math_utils  import distancia_euclidiana
+from models.perceptron  import treinar_perceptron, predizer_perceptron
+from models.delta_rule  import (treinar_delta_iris, treinar_delta_ova, predizer_delta_ova)
+from evaluation.metricas_avancadas import (
     relatorio_completo, relatorio_binario,
     kappa, tau, variancia_kappa, variancia_tau,
     z_kappa, z_tau, p_valor_z,

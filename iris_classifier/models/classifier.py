@@ -12,7 +12,7 @@ CLASSIFICACAO BINARIA — Distancia Euclidiana (argmin):
     classe* = argmin_{i,j}  ||x - m_{i,j}||
 """
 
-from math_utils import calcular_media, discriminante, distancia_euclidiana
+from core.math_utils import calcular_media, discriminante, distancia_euclidiana
 
 
 def treinar(dados_treino, indices_atributos):

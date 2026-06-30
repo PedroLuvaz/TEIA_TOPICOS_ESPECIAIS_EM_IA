@@ -6,7 +6,7 @@ Caso R nao esteja instalado, gera um fallback com os resultados reais do R para 
 import os
 import subprocess
 import glob
-from data_loader import carregar_dados_iris
+from data.data_loader import carregar_dados_iris
 
 def encontrar_rscript():
     """Tenta localizar o Rscript.exe no PATH ou em locais padroes do Windows."""

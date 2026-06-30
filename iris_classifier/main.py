@@ -15,24 +15,24 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from data_loader import carregar_dados_iris, split_estratificado, filtrar_por_classes
-from classifier import treinar, predizer_todas_classes, predizer_binario
-from bayes_classifier import treinar_bayes, predizer_todas_classes_bayes, predizer_binario_bayes
-from mvn_tester import executar_analise_mvn
-from metricas_avancadas import relatorio_completo, z_kappa, p_valor_z
-from evaluator import (
+from data.data_loader import carregar_dados_iris, split_estratificado, filtrar_por_classes
+from models.classifier import treinar, predizer_todas_classes, predizer_binario
+from models.bayes_classifier import treinar_bayes, predizer_todas_classes_bayes, predizer_binario_bayes
+from evaluation.mvn_tester import executar_analise_mvn
+from evaluation.metricas_avancadas import relatorio_completo, z_kappa, p_valor_z
+from evaluation.evaluator import (
     acuracia,
     matriz_confusao,
     imprimir_matriz_confusao,
     imprimir_metricas_por_classe,
 )
-from visualizer import (
+from visualization.visualizer import (
     plotar_superficie_decisao,
     plotar_dispersao_todas_classes,
     plotar_matriz_confusao,
     plotar_superficie_decisao_bayes,
 )
-from math_utils import coeficientes_superficie_decisao, distancia_euclidiana
+from core.math_utils import coeficientes_superficie_decisao, distancia_euclidiana
 
 RAIZ_PROJETO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CAMINHO_DADOS = os.path.join(RAIZ_PROJETO, "data", "Iris data.xls")

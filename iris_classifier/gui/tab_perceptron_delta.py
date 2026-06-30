@@ -25,12 +25,12 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
 from matplotlib.figure import Figure
 
-from data_loader import carregar_dados_iris, split_estratificado
-from perceptron import treinar_perceptron, acuracia_binaria_perceptron
-from delta_rule import (treinar_delta_iris, treinar_delta_xor,
-                        acuracia_binaria_delta,
-                        treinar_delta_ova, predizer_delta_ova,
-                        acuracia_delta_ova)
+from data.data_loader import carregar_dados_iris, split_estratificado
+from models.perceptron import treinar_perceptron, acuracia_binaria_perceptron
+from models.delta_rule import (treinar_delta_iris, treinar_delta_xor,
+                               acuracia_binaria_delta,
+                               treinar_delta_ova, predizer_delta_ova,
+                               acuracia_delta_ova)
 
 from . import theme as T
 from .widgets import Card, MetricBlock, separador

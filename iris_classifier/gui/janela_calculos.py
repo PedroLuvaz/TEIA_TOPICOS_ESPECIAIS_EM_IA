@@ -21,16 +21,16 @@ matplotlib.rcParams['mathtext.fontset'] = 'stix'
 from matplotlib.figure import Figure
 from PIL import Image, ImageTk
 
-from math_utils import (produto_escalar, distancia_euclidiana,
-                        coeficientes_superficie_decisao,
-                        discriminante, calcular_media,
-                        det_matriz, inv_matriz, calcular_covariancia,
-                        calcular_covariancia_diagonal, distancia_mahalanobis_quad)
-from classifier import treinar, predizer_todas_classes
-from bayes_classifier import treinar_bayes, predizer_todas_classes_bayes, predizer_binario_bayes
-from perceptron import treinar_perceptron, predizer_perceptron, _sgn
-from delta_rule import treinar_delta_iris, predizer_delta, _treinar_delta
-from metricas_avancadas import (
+from core.math_utils import (produto_escalar, distancia_euclidiana,
+                             coeficientes_superficie_decisao,
+                             discriminante, calcular_media,
+                             det_matriz, inv_matriz, calcular_covariancia,
+                             calcular_covariancia_diagonal, distancia_mahalanobis_quad)
+from models.classifier import treinar, predizer_todas_classes
+from models.bayes_classifier import treinar_bayes, predizer_todas_classes_bayes, predizer_binario_bayes
+from models.perceptron import treinar_perceptron, predizer_perceptron, _sgn
+from models.delta_rule import treinar_delta_iris, predizer_delta, _treinar_delta
+from evaluation.metricas_avancadas import (
     acerto_global, acuracia_produtor, acuracia_usuario,
     _acerto_casual, kappa, variancia_kappa, tau, variancia_tau,
     z_kappa, z_tau, p_valor_z,

@@ -22,11 +22,11 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
 from matplotlib.figure import Figure
 
-from data_loader import (carregar_dados_iris, split_estratificado,
-                         filtrar_por_classes)
-from classifier import treinar, predizer_todas_classes
-from evaluator import acuracia
-from math_utils import coeficientes_superficie_decisao
+from data.data_loader import (carregar_dados_iris, split_estratificado,
+                              filtrar_por_classes)
+from models.classifier import treinar, predizer_todas_classes
+from evaluation.evaluator import acuracia
+from core.math_utils import coeficientes_superficie_decisao
 
 from . import theme as T
 from .widgets import Card, MetricBlock, separador

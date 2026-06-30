@@ -19,11 +19,11 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
 from matplotlib.figure import Figure
 
-from data_loader import carregar_dados_iris, split_estratificado, filtrar_por_classes
-from bayes_classifier import treinar_bayes, predizer_todas_classes_bayes, predizer_binario_bayes
-from mvn_tester import executar_analise_mvn
-from metricas_avancadas import relatorio_completo, z_kappa, p_valor_z
-from math_utils import distancia_mahalanobis_quad
+from data.data_loader import carregar_dados_iris, split_estratificado, filtrar_por_classes
+from models.bayes_classifier import treinar_bayes, predizer_todas_classes_bayes, predizer_binario_bayes
+from evaluation.mvn_tester import executar_analise_mvn
+from evaluation.metricas_avancadas import relatorio_completo, z_kappa, p_valor_z
+from core.math_utils import distancia_mahalanobis_quad
 
 from . import theme as T
 from .widgets import Card, MetricBlock, separador
@@ -271,13 +271,22 @@ class TabBayes(tk.Frame):
                                      font=T.FONT_KICKER, anchor='w')
         self.lbl_r_status.pack(fill='x', padx=T.CARD_PADX, pady=(2, 4))
         
-        self.txt_mvn = tk.Text(card_mvn, height=6, wrap='word',
+        frame_txt_mvn = tk.Frame(card_mvn, bg=T.BG_PANEL,
+                                 highlightthickness=1,
+                                 highlightbackground=T.BORDER)
+        frame_txt_mvn.pack(fill='x', padx=T.CARD_PADX, pady=(2, 6))
+
+        self.txt_mvn = tk.Text(frame_txt_mvn, height=14, wrap='word',
                                bg=T.BG_PANEL, fg=T.FG_MUTED,
                                font=T.FONT_MONO_SM,
-                               relief='flat', borderwidth=1,
-                               highlightbackground=T.BORDER,
+                               relief='flat', borderwidth=0,
+                               highlightthickness=0,
                                padx=8, pady=6)
-        self.txt_mvn.pack(fill='x', padx=T.CARD_PADX, pady=(2, 6))
+        sb_mvn = tk.Scrollbar(frame_txt_mvn, orient='vertical',
+                              command=self.txt_mvn.yview)
+        self.txt_mvn.configure(yscrollcommand=sb_mvn.set)
+        self.txt_mvn.pack(side='left', fill='both', expand=True)
+        sb_mvn.pack(side='right', fill='y')
         self.txt_mvn.configure(state='disabled')
         
         ttk.Button(card_mvn, text='Recalcular Normalidade no R',

@@ -3,7 +3,7 @@ Logica de treinamento e predicao dos classificadores Bayes Otimo (QDA) e Naive B
 Implementado do zero em Python puro, sem bibliotecas de ML.
 """
 import math
-from math_utils import (
+from core.math_utils import (
     calcular_media,
     calcular_covariancia,
     calcular_covariancia_diagonal,
