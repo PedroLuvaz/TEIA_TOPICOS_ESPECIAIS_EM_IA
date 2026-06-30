@@ -23,7 +23,7 @@ from data.data_loader import carregar_dados_iris, split_estratificado, filtrar_p
 from models.bayes_classifier import treinar_bayes, predizer_todas_classes_bayes, predizer_binario_bayes
 from evaluation.mvn_tester import executar_analise_mvn
 from evaluation.metricas_avancadas import relatorio_completo, z_kappa, z_tau, p_valor_z
-from core.math_utils import distancia_mahalanobis_quad
+from core.math_utils import distancia_mahalanobis_quad, calcular_media, inv_matriz, inv_chi2
 
 from . import theme as T
 from .widgets import Card, MetricBlock, separador
@@ -269,29 +269,18 @@ class TabBayes(tk.Frame):
         
         self.lbl_r_status = tk.Label(card_mvn, text='Verificando R...', bg=T.BG_CARD, fg=T.FG_MUTED,
                                      font=T.FONT_KICKER, anchor='w')
-        self.lbl_r_status.pack(fill='x', padx=T.CARD_PADX, pady=(2, 4))
+        self.lbl_r_status.pack(fill='x', padx=T.CARD_PADX, pady=(2, 2))
         
-        frame_txt_mvn = tk.Frame(card_mvn, bg=T.BG_PANEL,
-                                 highlightthickness=1,
-                                 highlightbackground=T.BORDER)
-        frame_txt_mvn.pack(fill='x', padx=T.CARD_PADX, pady=(2, 6))
-
-        self.txt_mvn = tk.Text(frame_txt_mvn, height=14, wrap='word',
-                               bg=T.BG_PANEL, fg=T.FG_MUTED,
-                               font=T.FONT_MONO_SM,
-                               relief='flat', borderwidth=0,
-                               highlightthickness=0,
-                               padx=8, pady=6)
-        sb_mvn = tk.Scrollbar(frame_txt_mvn, orient='vertical',
-                              command=self.txt_mvn.yview)
-        self.txt_mvn.configure(yscrollcommand=sb_mvn.set)
-        self.txt_mvn.pack(side='left', fill='both', expand=True)
-        sb_mvn.pack(side='right', fill='y')
-        self.txt_mvn.configure(state='disabled')
+        lbl_expl = tk.Label(card_mvn, text='Avalia a aderência à população normal de cada classe usando Henze-Zirkler e Mardia.',
+                            bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_BODY_SM, wraplength=280, justify='left', anchor='w')
+        lbl_expl.pack(fill='x', padx=T.CARD_PADX, pady=(0, 8))
         
-        ttk.Button(card_mvn, text='Recalcular Normalidade no R',
-                   style='Ghost.TButton',
-                   command=self._executar_analise_normalidade
+        def ir_para_normalidade():
+            self._nb_metricas.select(self._aba_mvn_tab)
+            
+        ttk.Button(card_mvn, text='Acessar Relatório e Q-Q Plots  >',
+                   style='Primary.TButton',
+                   command=ir_para_normalidade
                   ).pack(fill='x', padx=T.CARD_PADX, pady=(2, 8))
 
         wrap.rowconfigure(4, weight=1)
@@ -348,12 +337,14 @@ class TabBayes(tk.Frame):
         self._aba_metricas_tab = tk.Frame(self._nb_metricas, bg=T.BG_CARD)
         self._aba_matriz_tab   = tk.Frame(self._nb_metricas, bg=T.BG_CARD)
         self._aba_kappa_tab    = tk.Frame(self._nb_metricas, bg=T.BG_CARD)
+        self._aba_mvn_tab      = tk.Frame(self._nb_metricas, bg=T.BG_CARD)
 
         self._nb_metricas.add(self._aba_metricas_tab, text='  Metricas Completas (d)  ')
         self._nb_metricas.add(self._aba_matriz_tab,   text='  Matriz de Confusao  ')
         self._nb_metricas.add(self._aba_kappa_tab,    text='  Comparacao Kappa (e)  ')
+        self._nb_metricas.add(self._aba_mvn_tab,      text='  Normalidade (HZ & Mardia)  ')
 
-        for aba in [self._aba_metricas_tab, self._aba_matriz_tab, self._aba_kappa_tab]:
+        for aba in [self._aba_metricas_tab, self._aba_matriz_tab, self._aba_kappa_tab, self._aba_mvn_tab]:
             tk.Label(aba, text='Aguardando dados...',
                      bg=T.BG_CARD, fg=T.FG_DIM, font=T.FONT_BODY
                     ).place(relx=0.5, rely=0.5, anchor='center')
@@ -387,20 +378,25 @@ class TabBayes(tk.Frame):
         caminho_dados = CAMINHOS_DADOS[self.var_dataset.get()]
         pasta_out = os.path.join(PROJETO_ROOT, 'outputs')
         
+        attr_key = self.var_attr.get()
+        indices_sel = CONFIGURACOES_ATRIBUTOS[attr_key]['indices']
+        
         # Executar analise MVN
-        relatorio, dados_mvn, r_ok = executar_analise_mvn(caminho_dados, pasta_out)
+        relatorio, dados_mvn, r_ok = executar_analise_mvn(caminho_dados, pasta_out, indices_sel, attr_key)
         self.dados_mvn = dados_mvn
         self.r_disponivel = r_ok
         
         # Atualizar UI
-        status_text = "R-MVN STATUS: " + ("R DISPONIVEL (MVN OK)" if r_ok else "R NAO DISPONIVEL (FALLBACK REAL)")
+        status_text = "R-MVN STATUS: " + ("R DISPONIVEL (MVN OK)" if r_ok else "R NAO DISPONIVEL (DINA-FALLBACK)")
         status_color = T.SUCCESS if r_ok else T.ACCENT_DEEP
         self.lbl_r_status.configure(text=status_text, fg=status_color)
         
-        self.txt_mvn.configure(state='normal')
-        self.txt_mvn.delete('1.0', 'end')
-        self.txt_mvn.insert('1.0', relatorio)
-        self.txt_mvn.configure(state='disabled')
+        # Se txt_mvn existir (no painel esquerdo ou na aba)
+        if hasattr(self, 'txt_mvn') and self.txt_mvn.winfo_exists():
+            self.txt_mvn.configure(state='normal')
+            self.txt_mvn.delete('1.0', 'end')
+            self.txt_mvn.insert('1.0', relatorio)
+            self.txt_mvn.configure(state='disabled')
 
     def _atualizar_modelo(self):
         if not self.dados_treino:
@@ -477,6 +473,7 @@ class TabBayes(tk.Frame):
         
         self.lbl_pred.configure(text='—', fg=T.FG_DIM)
         self.lbl_pred_sub.configure(text='aguardando entrada')
+        self._executar_analise_normalidade()
         self._atualizar_modelo()
 
     def _ao_trocar_classificador(self):
@@ -547,6 +544,7 @@ class TabBayes(tk.Frame):
         self._preencher_metricas_completas()
         self._preencher_matriz_confusao()
         self._preencher_comparacao_kappa()
+        self._preencher_normalidade_tab()
 
     # ------------------------------------------------------------------
     # Plotagem Matplotlib
@@ -636,10 +634,24 @@ class TabBayes(tk.Frame):
         dados_c1 = [d for d in dados_par if d['classe'] == classe_i]
         dados_c2 = [d for d in dados_par if d['classe'] == classe_j]
         
-        x1_c1 = [d['atributos'][indices[0]] for d in dados_c1]
-        x2_c1 = [d['atributos'][indices[1]] for d in dados_c1]
-        x1_c2 = [d['atributos'][indices[0]] for d in dados_c2]
-        x2_c2 = [d['atributos'][indices[1]] for d in dados_c2]
+        is_4d = len(indices) == 4
+        if is_4d:
+            idx_x = indices[2]  # Petal Length
+            idx_y = indices[3]  # Petal Width
+            idx_const1 = indices[0] # Sepal Length
+            idx_const2 = indices[1] # Sepal Width
+            
+            # Constantes fixas nas medias do treino
+            val_const1 = sum(d['atributos'][idx_const1] for d in self.dados_treino) / len(self.dados_treino)
+            val_const2 = sum(d['atributos'][idx_const2] for d in self.dados_treino) / len(self.dados_treino)
+        else:
+            idx_x = indices[0]
+            idx_y = indices[1]
+            
+        x1_c1 = [d['atributos'][idx_x] for d in dados_c1]
+        x2_c1 = [d['atributos'][idx_y] for d in dados_c1]
+        x1_c2 = [d['atributos'][idx_x] for d in dados_c2]
+        x2_c2 = [d['atributos'][idx_y] for d in dados_c2]
 
         todos_x1 = x1_c1 + x1_c2
         todos_x2 = x2_c1 + x2_c2
@@ -663,7 +675,7 @@ class TabBayes(tk.Frame):
         Y = [[x2 for _ in range(resolucao)] for x2 in grid_x2]
         Z = [[0.0 for _ in range(resolucao)] for _ in range(resolucao)]
         
-        # Treinar modelo local 2D para as duas classes para gerar a fronteira local correta
+        # Treinar modelo local (seja 2D ou 4D) para as duas classes para gerar a fronteira
         local_model = treinar_bayes(treino_par, indices, naive=(self.var_classifier.get() == 'naive'))
         params_i = local_model[classe_i]
         params_j = local_model[classe_j]
@@ -672,7 +684,12 @@ class TabBayes(tk.Frame):
             x2 = grid_x2[r]
             for c in range(resolucao):
                 x1 = grid_x1[c]
-                pt = [x1, x2]
+                
+                if is_4d:
+                    # Vetor completo com Sepalas fixas nas médias e Petalas variando no grid
+                    pt = [val_const1, val_const2, x1, x2]
+                else:
+                    pt = [x1, x2]
                 
                 d_m_i = distancia_mahalanobis_quad(pt, params_i['media'], params_i['inv_cov'])
                 score_i = -0.5 * math.log(params_i['det']) - 0.5 * d_m_i
@@ -694,29 +711,43 @@ class TabBayes(tk.Frame):
             (classe_j, dados_c2, cor_j, marcador_j),
         ]:
             dados_tr = [d for d in dados_classe if id(d) in ids_treino]
-            x1_tr = [d['atributos'][indices[0]] for d in dados_tr]
-            x2_tr = [d['atributos'][indices[1]] for d in dados_tr]
+            x1_tr = [d['atributos'][idx_x] for d in dados_tr]
+            x2_tr = [d['atributos'][idx_y] for d in dados_tr]
             self.ax.scatter(x1_tr, x2_tr, color=cor, marker=marcador, label=f'{classe} (treino)',
                             edgecolors='white', linewidths=0.6, s=50, alpha=0.8, zorder=3)
 
             dados_te = [d for d in dados_classe if id(d) not in ids_treino]
-            x1_te = [d['atributos'][indices[0]] for d in dados_te]
-            x2_te = [d['atributos'][indices[1]] for d in dados_te]
+            x1_te = [d['atributos'][idx_x] for d in dados_te]
+            x2_te = [d['atributos'][idx_y] for d in dados_te]
             self.ax.scatter(x1_te, x2_te, color=cor, marker=marcador, label=f'{classe} (teste)',
                             edgecolors='black', linewidths=1.0, s=70, alpha=0.9, zorder=4)
 
-        # Médias (Centróides)
-        self.ax.scatter(params_i['media'][0], params_i['media'][1], color=cor_i, marker='X', s=200,
+        # Médias (Centróides) - Projetadas no espaço 2D
+        mean_i_x = params_i['media'][2] if is_4d else params_i['media'][0]
+        mean_i_y = params_i['media'][3] if is_4d else params_i['media'][1]
+        mean_j_x = params_j['media'][2] if is_4d else params_j['media'][0]
+        mean_j_y = params_j['media'][3] if is_4d else params_j['media'][1]
+
+        self.ax.scatter(mean_i_x, mean_i_y, color=cor_i, marker='X', s=200,
                         edgecolors='black', linewidths=1.5, label=f'Media {classe_i}', zorder=5)
-        self.ax.scatter(params_j['media'][0], params_j['media'][1], color=cor_j, marker='X', s=200,
+        self.ax.scatter(mean_j_x, mean_j_y, color=cor_j, marker='X', s=200,
                         edgecolors='black', linewidths=1.5, label=f'Media {classe_j}', zorder=5)
 
         self.ax.set_xlim(x1_min, x1_max)
         self.ax.set_ylim(x2_min, x2_max)
         
+        # Eixos corretos
+        if is_4d:
+            self.ax.set_xlabel('Comprimento da Pétala (Projeção Slice 2D)', fontsize=9)
+            self.ax.set_ylabel('Largura da Pétala (Projeção Slice 2D)', fontsize=9)
+        else:
+            self.ax.set_xlabel(cfg['eixo_x'], fontsize=9)
+            self.ax.set_ylabel(cfg['eixo_y'], fontsize=9)
+            
         # Nome do modelo no título
         nome_mod = "Bayes Otimo (QDA)" if self.var_classifier.get() == 'bayes' else "Naive Bayes"
-        self.ax.set_title(f"{nome_mod}: {classe_i} vs {classe_j}", fontsize=11, fontweight='bold')
+        proj_str = " (Projeção Slice 4D)" if is_4d else ""
+        self.ax.set_title(f"{nome_mod}: {classe_i} vs {classe_j}{proj_str}", fontsize=11, fontweight='bold')
         
         # Dummy line para legenda
         from matplotlib.lines import Line2D
@@ -1164,3 +1195,228 @@ class TabBayes(tk.Frame):
             rel_bayes=self.rel_bayes,
             rel_naive=self.rel_naive
         )
+
+    # ------------------------------------------------------------------
+    # Normalidade Multivariada (R & Python)
+    # ------------------------------------------------------------------
+    def _preencher_normalidade_tab(self):
+        for w in self._aba_mvn_tab.winfo_children():
+            w.destroy()
+
+        if not hasattr(self, 'dados_mvn') or not self.dados_mvn:
+            tk.Label(self._aba_mvn_tab, text='Aguardando dados de normalidade...',
+                     bg=T.BG_CARD, fg=T.FG_DIM, font=T.FONT_BODY
+                    ).place(relx=0.5, rely=0.5, anchor='center')
+            return
+
+        outer = tk.Frame(self._aba_mvn_tab, bg=T.BG_CARD)
+        outer.pack(fill='both', expand=True, padx=14, pady=10)
+
+        # Split em duas colunas: Esquerda (Tabela de Resumo) e Direita (Console R)
+        frame_cima = tk.Frame(outer, bg=T.BG_CARD)
+        frame_cima.pack(fill='x', expand=False, pady=(0, 6))
+        frame_cima.columnconfigure(0, weight=3) # Tabela
+        frame_cima.columnconfigure(1, weight=2) # Console R
+
+        # Painel Esquerda - Tabela
+        painel_tabela = tk.Frame(frame_cima, bg=T.BG_CARD)
+        painel_tabela.grid(row=0, column=0, sticky='nsew', padx=(0, 10))
+
+        tk.Label(painel_tabela, text='Resumo dos Testes de Normalidade Multivariada',
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
+                ).pack(fill='x', pady=(0, 4))
+
+        # Tabela
+        tab_mvn = tk.Frame(painel_tabela, bg=T.BG_CARD)
+        tab_mvn.pack(fill='x', pady=(2, 6))
+
+        def cel_cab(col, texto, larg=12):
+            tk.Label(tab_mvn, text=texto, bg=T.BG_PANEL, fg=T.ACCENT_DEEP,
+                     font=T.FONT_CELL_BOLD, anchor='center',
+                     width=larg, highlightthickness=1,
+                     highlightbackground=T.BORDER
+                    ).grid(row=0, column=col, padx=1, pady=1, sticky='nsew')
+
+        def cel_dado(row, col, texto, bg_c=T.BG_CARD, fg_c=T.FG, larg=12):
+            tk.Label(tab_mvn, text=texto, bg=bg_c, fg=fg_c,
+                     font=T.FONT_MONO_SM, anchor='center',
+                     width=larg, highlightthickness=1,
+                     highlightbackground=T.BORDER
+                    ).grid(row=row, column=col, padx=1, pady=1, sticky='nsew')
+
+        cel_cab(0, 'Classe', larg=10)
+        cel_cab(1, 'HZ Stat', larg=10)
+        cel_cab(2, 'HZ p-val', larg=12)
+        cel_cab(3, 'Skew p-val', larg=12)
+        cel_cab(4, 'Kurt p-val', larg=12)
+        cel_cab(5, 'Normalidade', larg=12)
+
+        for r, cl in enumerate(CLASSES):
+            res = self.dados_mvn.get(cl, {})
+            if not res:
+                continue
+
+            hz_p = res.get('hz_p', 0.0)
+            sk_p = res.get('mardia_skew_p', 0.0)
+            ku_p = res.get('mardia_kurt_p', 0.0)
+            is_normal = res.get('hz_normal', 'SIM') == 'SIM' and res.get('mardia_skew_normal', 'SIM') == 'SIM' and res.get('mardia_kurt_normal', 'SIM') == 'SIM'
+
+            bg_hz = T.SUCCESS_BG if hz_p > 0.05 else T.DANGER_BG
+            fg_hz = T.SUCCESS if hz_p > 0.05 else T.DANGER
+
+            bg_sk = T.SUCCESS_BG if sk_p > 0.05 else T.DANGER_BG
+            fg_sk = T.SUCCESS if sk_p > 0.05 else T.DANGER
+
+            bg_ku = T.SUCCESS_BG if ku_p > 0.05 else T.DANGER_BG
+            fg_ku = T.SUCCESS if ku_p > 0.05 else T.DANGER
+
+            bg_norm = T.SUCCESS_BG if is_normal else T.DANGER_BG
+            fg_norm = T.SUCCESS if is_normal else T.DANGER
+            txt_norm = "NORMAL" if is_normal else "REJEITADA"
+
+            bg_linha = T.BG_CARD if r % 2 else T.BG_PANEL
+
+            cel_dado(r + 1, 0, cl.capitalize(), bg_linha, T.FG_MUTED, larg=10)
+            cel_dado(r + 1, 1, f"{res.get('hz_stat', 0.0):.4f}", bg_linha, T.FG, larg=10)
+            cel_dado(r + 1, 2, f"{hz_p:.6f}", bg_hz, fg_hz, larg=12)
+            cel_dado(r + 1, 3, f"{sk_p:.6f}", bg_sk, fg_sk, larg=12)
+            cel_dado(r + 1, 4, f"{ku_p:.6f}", bg_ku, fg_ku, larg=12)
+            cel_dado(r + 1, 5, txt_norm, bg_norm, fg_norm, larg=12)
+
+        # Regra do Professor
+        lbl_regra = tk.Label(painel_tabela,
+                             text="Normas solicitadas:\n"
+                                  "i) Teste de Henze-Zirkler: se p-valor > 0.05, os dados vêm de uma população normal.\n"
+                                  "ii) Teste de Mardia: complementa com assimetria e curtose.",
+                             bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_BODY_XS,
+                             justify='left', anchor='w')
+        lbl_regra.pack(fill='x', pady=(4, 0))
+
+        # Painel Direita - Console R
+        painel_console = tk.Frame(frame_cima, bg=T.BG_CARD)
+        painel_console.grid(row=0, column=1, sticky='nsew')
+
+        lbl_console_title = tk.Label(painel_console, text="R Console / Output", bg=T.BG_CARD, fg=T.FG_MUTED,
+                                     font=T.FONT_LABEL, anchor='w')
+        lbl_console_title.pack(fill='x', pady=(0, 2))
+
+        frame_txt_mvn = tk.Frame(painel_console, bg=T.BG_PANEL,
+                                 highlightthickness=1, highlightbackground=T.BORDER)
+        frame_txt_mvn.pack(fill='both', expand=True)
+
+        self.txt_mvn = tk.Text(frame_txt_mvn, height=7, wrap='none',
+                               bg=T.BG_PANEL, fg=T.FG_MUTED, font=T.FONT_MONO_XS,
+                               relief='flat', borderwidth=0, highlightthickness=0,
+                               padx=5, pady=4)
+        sb_mvn_y = tk.Scrollbar(frame_txt_mvn, orient='vertical', command=self.txt_mvn.yview)
+        sb_mvn_x = tk.Scrollbar(painel_console, orient='horizontal', command=self.txt_mvn.xview)
+        self.txt_mvn.configure(yscrollcommand=sb_mvn_y.set, xscrollcommand=sb_mvn_x.set)
+        
+        self.txt_mvn.pack(side='left', fill='both', expand=True)
+        sb_mvn_y.pack(side='right', fill='y')
+        sb_mvn_x.pack(side='bottom', fill='x')
+
+        # Carregar texto de mvn_results.txt
+        caminho_resultados = os.path.join(PROJETO_ROOT, 'outputs', 'mvn_results.txt')
+        if os.path.exists(caminho_resultados):
+            with open(caminho_resultados, 'r', encoding='utf-8') as f_res:
+                conteudo = f_res.read()
+            self.txt_mvn.insert('1.0', conteudo)
+        else:
+            self.txt_mvn.insert('1.0', "Sem resultados carregados.")
+        self.txt_mvn.configure(state='disabled')
+
+        # Separador horizontal
+        tk.Frame(outer, bg=T.BORDER, height=1).pack(fill='x', pady=(6, 8))
+
+        # Painel Inferior - Plots Q-Q de Chi-Square
+        frame_plots = tk.Frame(outer, bg=T.BG_CARD)
+        frame_plots.pack(fill='both', expand=True)
+
+        # Plotar usando Matplotlib Canvas
+        fig_qq = Figure(figsize=(7.5, 2.5), dpi=100, facecolor=T.BG_CARD)
+        axes = fig_qq.subplots(1, 3)
+        fig_qq.patch.set_facecolor(T.BG_CARD)
+        
+        # Configurações de atributos ativos
+        attr_key = self.var_attr.get()
+        cfg = CONFIGURACOES_ATRIBUTOS[attr_key]
+        indices = cfg['indices']
+        df = len(indices)
+        
+        # Obter os dados corretos
+        for idx, cl in enumerate(CLASSES):
+            ax = axes[idx]
+            ax.set_facecolor(T.BG_CARD)
+            for spine in ax.spines.values():
+                spine.set_color(T.BORDER_HARD)
+                spine.set_linewidth(0.8)
+            ax.tick_params(colors=T.FG_MUTED, labelsize=7, length=3, width=0.8)
+            ax.grid(True, color=T.BORDER, linestyle=':', linewidth=0.5, alpha=0.7)
+            
+            # Filtrar amostras da classe
+            samples = [d['atributos'] for d in self.dados if d['classe'] == cl]
+            samples_sel = [[s[i] for i in indices] for s in samples]
+            N_cl = len(samples_sel)
+            
+            if N_cl < 3:
+                ax.text(0.5, 0.5, "Sem amostras suficientes", ha='center', va='center', color=T.FG_MUTED, transform=ax.transAxes)
+                continue
+                
+            media_cl = calcular_media(samples_sel)
+            cov_cl = [[0.0 for _ in range(df)] for _ in range(df)]
+            for x in samples_sel:
+                diff = [x[k] - media_cl[k] for k in range(df)]
+                for r in range(df):
+                    for c in range(df):
+                        cov_cl[r][c] += diff[r] * diff[c]
+            for r in range(df):
+                for c in range(df):
+                    cov_cl[r][c] /= N_cl
+            for r in range(df):
+                cov_cl[r][r] += 1e-9 # regularizacao
+                
+            try:
+                inv_cov_cl = inv_matriz(cov_cl)
+                dists = [distancia_mahalanobis_quad(x, media_cl, inv_cov_cl) for x in samples_sel]
+                dists.sort()
+                
+                # Quantis Chi-Quadrado teoricos
+                quantiles = []
+                for i in range(1, N_cl + 1):
+                    p_i = (i - 0.5) / N_cl
+                    q_i = inv_chi2(p_i, df)
+                    quantiles.append(q_i)
+                    
+                # Desenhar dispersao
+                cor = CORES_CLASSE[cl]
+                marcador = MARCADORES_CLASSE[cl]
+                ax.scatter(quantiles, dists, color=cor, marker=marcador, s=20, edgecolors='white', linewidths=0.4, alpha=0.8, zorder=3)
+                
+                # Linha y = x
+                max_val = max(max(quantiles), max(dists)) if dists and quantiles else 10.0
+                ax.plot([0, max_val], [0, max_val], color=T.FG_MUTED, linestyle='--', linewidth=1.0, zorder=2)
+                ax.set_xlim(0, max_val * 1.05)
+                ax.set_ylim(0, max_val * 1.05)
+            except Exception as e:
+                ax.text(0.5, 0.5, f"Erro: {str(e)}", ha='center', va='center', color=T.DANGER, transform=ax.transAxes)
+                continue
+                
+            ax.set_title(f"Q-Q Plot: {cl.capitalize()}", fontsize=8, fontweight='bold', color=T.FG)
+            ax.set_xlabel("Quantil Chi-Quadrado", fontsize=6, color=T.FG_MUTED)
+            ax.set_ylabel("Dist. Mahalanobis Sq", fontsize=6, color=T.FG_MUTED)
+            
+            # Anotacao simples de HZ p-val e Mardia p-val
+            res_mvn = self.dados_mvn.get(cl, {})
+            if res_mvn:
+                hz_p = res_mvn.get('hz_p', 0.0)
+                sk_p = res_mvn.get('mardia_skew_p', 0.0)
+                ku_p = res_mvn.get('mardia_kurt_p', 0.0)
+                info = f"HZ p={hz_p:.4f}\nSkew p={sk_p:.4f}\nKurt p={ku_p:.4f}"
+                ax.text(0.05, 0.65, info, fontsize=6, color=T.FG_MUTED, transform=ax.transAxes,
+                        bbox=dict(boxstyle="round,pad=0.2", facecolor=T.BG_PANEL, edgecolor=T.BORDER, alpha=0.8))
+                        
+        fig_qq.tight_layout(pad=0.8)
+        canvas_qq = FigureCanvasTkAgg(fig_qq, master=frame_plots)
+        canvas_qq.get_tk_widget().pack(fill='both', expand=True, padx=4, pady=4)
+        canvas_qq.draw()

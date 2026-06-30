@@ -282,7 +282,7 @@ def plotar_superficie_decisao_bayes(model_params, dados_c1, dados_c2, classe_i, 
     Marcadores distintos por classe + bordas distintas por split (treino/teste).
     """
     import math
-    from math_utils import distancia_mahalanobis_quad
+    from core.math_utils import distancia_mahalanobis_quad
     
     fig, ax = plt.subplots(figsize=(10, 6))
 

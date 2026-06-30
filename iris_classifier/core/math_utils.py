@@ -223,3 +223,47 @@ def distancia_mahalanobis_quad(x, media, inv_cov):
     # Calcular (diff^T * Sigma^-1) * diff
     return sum(temp[j] * diff[j] for j in range(d))
 
+
+def inv_chi2_4df(p):
+    """
+    Calcula o quantil da distribuicao Chi-Quadrado com 4 graus de liberdade.
+    Usa o metodo de Newton-Raphson para resolver:
+        1 - exp(-x/2) * (1 + x/2) - p = 0
+    """
+    if p <= 0:
+        return 0.0
+    if p >= 1:
+        return 40.0
+    # Chute inicial (media da chi2 com 4 gl e 4, variancia e 8)
+    x = 4.0
+    for _ in range(20):
+        exp_term = math.exp(-x / 2.0)
+        f_x = 1.0 - exp_term * (1.0 + x / 2.0) - p
+        df_x = 0.25 * x * exp_term  # derivada da CDF (PDF da Chi-Quadrado com 4 gl)
+        if abs(df_x) < 1e-15:
+            break
+        dx = f_x / df_x
+        x -= dx
+        if x < 0:
+            x = 1e-9
+        if abs(dx) < 1e-7:
+            break
+    return x
+
+
+def inv_chi2(p, df):
+    """
+    Calcula o quantil da distribuicao Chi-Quadrado para probabilidade p e df graus de liberdade.
+    Suporta df = 2 e df = 4.
+    """
+    if df == 2:
+        # CDF para df=2 e F(x) = 1 - exp(-x/2)
+        # Inversa analitica: x = -2 * ln(1 - p)
+        return -2.0 * math.log(1.0 - p)
+    elif df == 4:
+        return inv_chi2_4df(p)
+    else:
+        # Fallback razoavel para outros graus de liberdade
+        return -2.0 * math.log(1.0 - p)
+
+
