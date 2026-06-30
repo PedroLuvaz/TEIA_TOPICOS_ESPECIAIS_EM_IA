@@ -22,7 +22,7 @@ from matplotlib.figure import Figure
 from data.data_loader import carregar_dados_iris, split_estratificado, filtrar_por_classes
 from models.bayes_classifier import treinar_bayes, predizer_todas_classes_bayes, predizer_binario_bayes
 from evaluation.mvn_tester import executar_analise_mvn
-from evaluation.metricas_avancadas import relatorio_completo, z_kappa, p_valor_z
+from evaluation.metricas_avancadas import relatorio_completo, z_kappa, z_tau, p_valor_z
 from core.math_utils import distancia_mahalanobis_quad
 
 from . import theme as T
@@ -302,8 +302,9 @@ class TabBayes(tk.Frame):
         wrap.grid(row=0, column=1, sticky='nsew',
                   padx=(T.GAP, T.PAD_PAGE), pady=T.PAD_PAGE)
         wrap.columnconfigure(0, weight=1)
-        wrap.rowconfigure(0, weight=3)
-        wrap.rowconfigure(1, weight=2)
+        wrap.rowconfigure(0, weight=2)   # grafico
+        wrap.rowconfigure(1, weight=0)   # kpis
+        wrap.rowconfigure(2, weight=3)   # notebook metricas
 
         # Plot Canvas
         painel = tk.Frame(wrap, bg=T.BG_CARD,
@@ -326,41 +327,36 @@ class TabBayes(tk.Frame):
         self._estilizar_toolbar(self.toolbar)
         self.toolbar.grid(row=1, column=0, sticky='ew', padx=6, pady=(0, 6))
 
-        # Painel inferior (Métricas + Análise)
-        inferior = tk.Frame(wrap, bg=T.BG)
-        inferior.grid(row=1, column=0, sticky='nsew', pady=(T.GAP_SM, 0))
-        inferior.columnconfigure(0, weight=1)
-        inferior.columnconfigure(1, weight=2)
-        inferior.rowconfigure(0, weight=1)
+        # KPI blocks — linha horizontal (row=1)
+        kpi_frame = tk.Frame(wrap, bg=T.BG)
+        kpi_frame.grid(row=1, column=0, sticky='ew', pady=(T.GAP_SM, T.GAP_SM))
+        kpi_frame.columnconfigure(0, weight=1)
+        kpi_frame.columnconfigure(1, weight=1)
+        kpi_frame.columnconfigure(2, weight=1)
 
-        # Metricas KPI
-        col_m = tk.Frame(inferior, bg=T.BG)
-        col_m.grid(row=0, column=0, sticky='nsew', padx=(0, 14))
-        col_m.columnconfigure(0, weight=1)
-
-        self.metric_acc = MetricBlock(col_m, 'acuracia teste', '—')
+        self.metric_acc   = MetricBlock(kpi_frame, 'acuracia teste', '—')
+        self.metric_kappa = MetricBlock(kpi_frame, 'indice kappa', '—')
+        self.metric_z     = MetricBlock(kpi_frame, 'Z (comparativo Kappa)', '—')
         self.metric_acc.grid(row=0, column=0, sticky='ew')
-        self.metric_kappa = MetricBlock(col_m, 'indice kappa', '—')
-        self.metric_kappa.grid(row=1, column=0, sticky='ew', pady=(T.GAP_SM, 0))
-        self.metric_z = MetricBlock(col_m, 'Z (comparativo Kappa)', '—')
-        self.metric_z.grid(row=2, column=0, sticky='ew', pady=(T.GAP_SM, 0))
+        self.metric_kappa.grid(row=0, column=1, sticky='ew', padx=(T.GAP_SM, 0))
+        self.metric_z.grid(row=0, column=2, sticky='ew', padx=(T.GAP_SM, 0))
 
-        # Analise Textual
-        card = Card(inferior, titulo='analise e teste de significancia')
-        card.grid(row=0, column=1, sticky='nsew')
-        self.txt_analise = tk.Text(card, height=9, wrap='word',
-                                   bg=T.BG_CARD, fg=T.FG,
-                                   font=T.FONT_BODY,
-                                   relief='flat', borderwidth=0,
-                                   highlightthickness=0,
-                                   padx=T.CARD_PADX, pady=2,
-                                   spacing1=2, spacing3=4)
-        self.txt_analise.pack(fill='both', expand=True,
-                              padx=T.CARD_PADX, pady=(2, 14))
-        self.txt_analise.tag_configure('hl', foreground=T.ACCENT_DEEP, font=T.FONT_TEXT_HL)
-        self.txt_analise.tag_configure('mono', foreground=T.FG, font=T.FONT_MONO)
-        self.txt_analise.tag_configure('bold', font=(T.FONT_FAMILY, 10, 'bold'))
-        self.txt_analise.configure(state='disabled')
+        # Notebook de metricas completas (row=2)
+        self._nb_metricas = ttk.Notebook(wrap)
+        self._nb_metricas.grid(row=2, column=0, sticky='nsew')
+
+        self._aba_metricas_tab = tk.Frame(self._nb_metricas, bg=T.BG_CARD)
+        self._aba_matriz_tab   = tk.Frame(self._nb_metricas, bg=T.BG_CARD)
+        self._aba_kappa_tab    = tk.Frame(self._nb_metricas, bg=T.BG_CARD)
+
+        self._nb_metricas.add(self._aba_metricas_tab, text='  Metricas Completas (d)  ')
+        self._nb_metricas.add(self._aba_matriz_tab,   text='  Matriz de Confusao  ')
+        self._nb_metricas.add(self._aba_kappa_tab,    text='  Comparacao Kappa (e)  ')
+
+        for aba in [self._aba_metricas_tab, self._aba_matriz_tab, self._aba_kappa_tab]:
+            tk.Label(aba, text='Aguardando dados...',
+                     bg=T.BG_CARD, fg=T.FG_DIM, font=T.FONT_BODY
+                    ).place(relx=0.5, rely=0.5, anchor='center')
 
     @staticmethod
     def _estilizar_toolbar(toolbar):
@@ -528,61 +524,29 @@ class TabBayes(tk.Frame):
     def _atualizar_kpi_e_analise(self):
         cls_key = self.var_classifier.get()
         rel_atual = self.rel_bayes if cls_key == 'bayes' else self.rel_naive
-        
+
+        if not rel_atual:
+            return
+
         acc = rel_atual['acerto_global']
-        k = rel_atual['kappa']
-        
+        k   = rel_atual['kappa']
+
         # Calcular Z e p-valor entre os dois modelos
         z_stat = z_kappa(self.rel_bayes['kappa'], self.rel_bayes['variancia_kappa'],
-                         self.rel_naive['kappa'], self.rel_naive['variancia_kappa'])
-        p_val = p_valor_z(z_stat)
-        
-        # Setar KPIs
+                         self.rel_naive['kappa'],  self.rel_naive['variancia_kappa'])
+        p_val  = p_valor_z(z_stat)
+
+        # KPI blocks
         self.metric_acc.set(f"{acc:.2%}", T.SUCCESS if acc > 0.9 else T.ACCENT_DEEP)
-        self.metric_kappa.set(f"{k:.4f}")
-        self.metric_z.set(f"Z={z_stat:.3f} (p={p_val:.3f})")
-        
-        # Gerar Analise Textual
-        self.txt_analise.configure(state='normal')
-        self.txt_analise.delete('1.0', 'end')
-        
-        self.txt_analise.insert('end', "Normalidade Multivariada:\n", 'bold')
-        self.txt_analise.insert('end', " - Setosa: ", 'body')
-        self.txt_analise.insert('end', "HZ p=0.0496 (FALHA MVN)\n" if self.dados_mvn.get('setosa', {}).get('hz_normal') == 'NAO' else "Passa\n", 'hl' if self.dados_mvn.get('setosa', {}).get('hz_normal') == 'NAO' else 'body')
-        self.txt_analise.insert('end', " - Versicolor: Passa MVN (HZ p=0.3802)\n", 'body')
-        self.txt_analise.insert('end', " - Virginica: Passa MVN (HZ p=0.0882)\n\n", 'body')
-        
-        self.txt_analise.insert('end', "Teste de Significância de Kappa (Z-test):\n", 'bold')
-        self.txt_analise.insert('end', f"Comparando Bayes Otimo (K={self.rel_bayes['kappa']:.4f}) com Naive Bayes (K={self.rel_naive['kappa']:.4f}):\n", 'body')
-        self.txt_analise.insert('end', f" - Estatistica Z: {z_stat:.4f} | p-valor: {p_val:.6f}\n", 'mono')
-        
-        if p_val < 0.05:
-            self.txt_analise.insert('end', " - Conclusao: Existe diferenca estatisticamente significativa entre as acuracias dos classificadores (ao nivel de 5%). ", 'body')
-            melhor = "Bayes Otimo" if self.rel_bayes['kappa'] > self.rel_naive['kappa'] else "Naive Bayes"
-            self.txt_analise.insert('end', f"O classificador {melhor} e significativamente superior.\n\n", 'hl')
-        else:
-            self.txt_analise.insert('end', " - Conclusao: Nao existe diferenca estatisticamente significativa entre as acuracias dos classificadores (ao nivel de 5%). ", 'body')
-            if self.rel_bayes['acerto_global'] > self.rel_naive['acerto_global']:
-                self.txt_analise.insert('end', f"O Bayes Otimo e ligeiramente superior em acuracia ({self.rel_bayes['acerto_global']:.1%} vs {self.rel_naive['acerto_global']:.1%}), mas nao e significativa.\n\n", 'body')
-            elif self.rel_bayes['acerto_global'] < self.rel_naive['acerto_global']:
-                self.txt_analise.insert('end', f"O Naive Bayes e ligeiramente superior em acuracia ({self.rel_naive['acerto_global']:.1%} vs {self.rel_bayes['acerto_global']:.1%}), mas nao e significativa.\n\n", 'body')
-            else:
-                self.txt_analise.insert('end', "Ambos os classificadores tem desempenho identico.\n\n", 'body')
-                
-        # Matriz de Confusão do modelo atual
-        self.txt_analise.insert('end', f"Matriz de Confusao ({rel_atual['nome']}):\n", 'bold')
-        m = rel_atual['matriz']
-        # Cabeçalho
-        self.txt_analise.insert('end', f"  Pred \\ Real |   Setosa   | Versicolor |  Virginica \n", 'mono')
-        self.txt_analise.insert('end', f"  -----------+------------+------------+------------\n", 'mono')
-        for pred in CLASSES:
-            linha = f"  {pred:10} |"
-            for real in CLASSES:
-                count = m[pred][real]
-                linha += f" {count:10} |"
-            self.txt_analise.insert('end', f"{linha[:-1]}\n", 'mono')
-            
-        self.txt_analise.configure(state='disabled')
+        self.metric_kappa.set(f"{k:.4f}",
+                              T.SUCCESS if k > 0.80 else T.ACCENT if k > 0.40 else T.DANGER)
+        self.metric_z.set(f"Z={z_stat:.3f}  p={p_val:.3f}",
+                          T.DANGER if p_val < 0.05 else T.SUCCESS)
+
+        # Preencher abas do notebook
+        self._preencher_metricas_completas()
+        self._preencher_matriz_confusao()
+        self._preencher_comparacao_kappa()
 
     # ------------------------------------------------------------------
     # Plotagem Matplotlib
@@ -761,6 +725,411 @@ class TabBayes(tk.Frame):
         labels.append('Fronteira di(x)=dj(x)')
         
         self.ax.legend(handles, labels, loc='best', fontsize=8, framealpha=0.9)
+
+    # ------------------------------------------------------------------
+    # Item (d) — Metricas completas (tabela comparativa Bayes vs Naive)
+    # ------------------------------------------------------------------
+    def _preencher_metricas_completas(self):
+        for w in self._aba_metricas_tab.winfo_children():
+            w.destroy()
+
+        if not self.rel_bayes or not self.rel_naive:
+            tk.Label(self._aba_metricas_tab, text='Aguardando dados...',
+                     bg=T.BG_CARD, fg=T.FG_DIM, font=T.FONT_BODY
+                    ).place(relx=0.5, rely=0.5, anchor='center')
+            return
+
+        outer = tk.Frame(self._aba_metricas_tab, bg=T.BG_CARD)
+        outer.pack(fill='both', expand=True, padx=8, pady=6)
+
+        attr_key = self.var_attr.get()
+        tk.Label(outer,
+                 text=f'Item (d) — Metricas de Qualidade  |  '
+                      f'{CONFIGURACOES_ATRIBUTOS[attr_key]["rotulo_ui"]}',
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
+                ).pack(fill='x', pady=(0, 3))
+        tk.Label(outer,
+                 text='Verde = melhor entre os dois classificadores. '
+                      'Ac.Prod = Acuracia do Produtor (Sensibilidade). '
+                      'Ac.Usu = Acuracia do Usuario (Precisao).',
+                 bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_LABEL,
+                 justify='left', anchor='w', wraplength=680
+                ).pack(fill='x', pady=(0, 6))
+
+        frame = tk.Frame(outer, bg=T.BG_CARD)
+        frame.pack(fill='both', expand=True)
+
+        canvas = tk.Canvas(frame, bg=T.BG_CARD, highlightthickness=0)
+        sb_y   = ttk.Scrollbar(frame, orient='vertical', command=canvas.yview)
+        inner  = tk.Frame(canvas, bg=T.BG_CARD)
+        inner.bind('<Configure>',
+                   lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+        canvas.create_window((0, 0), window=inner, anchor='nw')
+        canvas.configure(yscrollcommand=sb_y.set)
+        canvas.pack(side='left', fill='both', expand=True)
+        sb_y.pack(side='right', fill='y')
+
+        def cel(row, col, texto, cor=T.FG, bg_c=T.BG_PANEL, larg=18, bold=False):
+            f = T.FONT_CELL_BOLD if bold else T.FONT_MONO_SM
+            tk.Label(inner, text=texto, bg=bg_c, fg=cor, font=f,
+                     width=larg, anchor='center',
+                     highlightthickness=1, highlightbackground=T.BORDER
+                    ).grid(row=row, column=col, sticky='nsew', padx=1, pady=1)
+
+        def melhor_cor(v1_str, v2_str):
+            try:
+                f1 = float(str(v1_str).replace('%', '')) / (100.0 if '%' in str(v1_str) else 1.0)
+                f2 = float(str(v2_str).replace('%', '')) / (100.0 if '%' in str(v2_str) else 1.0)
+                if f1 > f2: return T.SUCCESS, T.FG
+                if f2 > f1: return T.FG, T.SUCCESS
+            except Exception:
+                pass
+            return T.FG, T.FG
+
+        # Cabecalho
+        for j, h in enumerate(['Metrica / Classe', 'Bayes Otimo (QDA)', 'Naive Bayes']):
+            cel(0, j, h, cor=T.ACCENT_DEEP, bold=True)
+
+        row = 1
+
+        # Metricas globais
+        for label, v1, v2 in [
+            ('Acerto Global (Ag)',
+             f'{self.rel_bayes["acerto_global"]:.2%}',
+             f'{self.rel_naive["acerto_global"]:.2%}'),
+            ('Kappa',
+             f'{self.rel_bayes["kappa"]:.6f}',
+             f'{self.rel_naive["kappa"]:.6f}'),
+            ('Tau',
+             f'{self.rel_bayes["tau"]:.6f}',
+             f'{self.rel_naive["tau"]:.6f}'),
+            ('Var(Kappa)',
+             f'{self.rel_bayes["variancia_kappa"]:.8f}',
+             f'{self.rel_naive["variancia_kappa"]:.8f}'),
+        ]:
+            bg_r = T.BG_CARD if row % 2 == 0 else T.BG_PANEL
+            c1, c2 = melhor_cor(v1, v2)
+            cel(row, 0, label, cor=T.FG_MUTED, bg_c=bg_r)
+            cel(row, 1, v1, cor=c1, bg_c=bg_r)
+            cel(row, 2, v2, cor=c2, bg_c=bg_r)
+            row += 1
+
+        # Metricas por classe
+        for c in CLASSES:
+            pc_b = self.rel_bayes['por_classe'][c]
+            pc_n = self.rel_naive['por_classe'][c]
+            cor_c = CORES_CLASSE[c]
+
+            for label, v1, v2 in [
+                (f'{c.capitalize()}  Ac. Produtor',
+                 f'{pc_b["acuracia_produtor"]:.2%}',
+                 f'{pc_n["acuracia_produtor"]:.2%}'),
+                (f'{c.capitalize()}  Ac. Usuario',
+                 f'{pc_b["acuracia_usuario"]:.2%}',
+                 f'{pc_n["acuracia_usuario"]:.2%}'),
+                (f'{c.capitalize()}  Sensibilidade',
+                 f'{pc_b["sensibilidade"]:.2%}',
+                 f'{pc_n["sensibilidade"]:.2%}'),
+                (f'{c.capitalize()}  Especificidade',
+                 f'{pc_b["especificidade"]:.2%}',
+                 f'{pc_n["especificidade"]:.2%}'),
+                (f'{c.capitalize()}  F1 (b=1)',
+                 f'{pc_b["f1"]:.4f}',
+                 f'{pc_n["f1"]:.4f}'),
+                (f'{c.capitalize()}  F2 (b=2)',
+                 f'{pc_b["f2"]:.4f}',
+                 f'{pc_n["f2"]:.4f}'),
+                (f'{c.capitalize()}  MCC',
+                 f'{pc_b["mcc"]:.4f}',
+                 f'{pc_n["mcc"]:.4f}'),
+            ]:
+                bg_r = T.BG_CARD if row % 2 == 0 else T.BG_PANEL
+                c1, c2 = melhor_cor(v1, v2)
+                cel(row, 0, label, cor=cor_c, bg_c=bg_r)
+                cel(row, 1, v1, cor=c1, bg_c=bg_r)
+                cel(row, 2, v2, cor=c2, bg_c=bg_r)
+                row += 1
+
+    # ------------------------------------------------------------------
+    # Item (d) — Matriz de Confusao visual
+    # ------------------------------------------------------------------
+    def _preencher_matriz_confusao(self):
+        for w in self._aba_matriz_tab.winfo_children():
+            w.destroy()
+
+        cls_key = self.var_classifier.get()
+        rel     = self.rel_bayes if cls_key == 'bayes' else self.rel_naive
+        nome    = 'Bayes Otimo (QDA)' if cls_key == 'bayes' else 'Naive Bayes'
+
+        if not rel:
+            tk.Label(self._aba_matriz_tab, text='Aguardando dados...',
+                     bg=T.BG_CARD, fg=T.FG_DIM, font=T.FONT_BODY
+                    ).place(relx=0.5, rely=0.5, anchor='center')
+            return
+
+        outer = tk.Frame(self._aba_matriz_tab, bg=T.BG_CARD)
+        outer.pack(fill='both', expand=True, padx=12, pady=8)
+
+        tk.Label(outer,
+                 text=f'Matriz de Confusao — {nome}  |  Linhas = Predito  ·  Colunas = Real',
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
+                ).pack(fill='x', pady=(0, 8))
+
+        matriz  = rel['matriz']
+        classes = CLASSES
+        n       = len(classes)
+
+        grid  = tk.Frame(outer, bg=T.BG_CARD)
+        grid.pack(anchor='w')
+        vals  = [[matriz[pred][real] for real in classes] for pred in classes]
+        v_max = max(max(l) for l in vals) or 1
+
+        def bg_cel(v, diag):
+            t = v / v_max
+            if diag:
+                r = int(255 * (1 - 0.6 * t)); g = int(255 * (1 - 0.4 * t)); b = 255
+            else:
+                r = 255; g = int(255 * (1 - 0.7 * t)); b = int(255 * (1 - 0.7 * t))
+            return f'#{r:02x}{g:02x}{b:02x}'
+
+        tk.Label(grid, text='Pred \\ Real', bg=T.BG_PANEL, fg=T.FG_MUTED,
+                 font=T.FONT_KICKER, width=10, anchor='center',
+                 highlightthickness=1, highlightbackground=T.BORDER
+                ).grid(row=0, column=0, padx=2, pady=2)
+
+        for j, c in enumerate(classes):
+            tk.Label(grid, text=c.capitalize(), bg=CORES_CLASSE[c],
+                     fg='white', font=T.FONT_KICKER, width=10, anchor='center',
+                     highlightthickness=1, highlightbackground=T.BORDER
+                    ).grid(row=0, column=j + 1, padx=2, pady=2)
+
+        tk.Label(grid, text='Total', bg=T.BG_PANEL, fg=T.ACCENT_DEEP,
+                 font=T.FONT_KICKER, width=10, anchor='center',
+                 highlightthickness=1, highlightbackground=T.BORDER
+                ).grid(row=0, column=n + 1, padx=2, pady=2)
+
+        totais_colunas = {real: 0 for real in classes}
+        total_geral    = 0
+
+        for i, pred in enumerate(classes):
+            tk.Label(grid, text=pred.capitalize(), bg=CORES_CLASSE[pred],
+                     fg='white', font=T.FONT_KICKER, width=10, anchor='center',
+                     highlightthickness=1, highlightbackground=T.BORDER
+                    ).grid(row=i + 1, column=0, padx=2, pady=2)
+
+            total_linha = sum(matriz[pred][real] for real in classes)
+
+            for j, real in enumerate(classes):
+                v   = matriz[pred][real]
+                bg  = bg_cel(v, i == j)
+                cfg = 'white' if (v / v_max > 0.4) else T.FG
+                tk.Label(grid, text=str(v), bg=bg, fg=cfg,
+                         font=T.FONT_CELL_LG, width=10, anchor='center',
+                         highlightthickness=1, highlightbackground=T.BORDER
+                        ).grid(row=i + 1, column=j + 1, padx=2, pady=2)
+                totais_colunas[real] += v
+
+            tk.Label(grid, text=str(total_linha), bg=T.BG_PANEL, fg=T.FG,
+                     font=T.FONT_CELL_LG, width=10, anchor='center',
+                     highlightthickness=1, highlightbackground=T.BORDER
+                    ).grid(row=i + 1, column=n + 1, padx=2, pady=2)
+            total_geral += total_linha
+
+        tk.Label(grid, text='Total', bg=T.BG_PANEL, fg=T.ACCENT_DEEP,
+                 font=T.FONT_KICKER, width=10, anchor='center',
+                 highlightthickness=1, highlightbackground=T.BORDER
+                ).grid(row=n + 1, column=0, padx=2, pady=2)
+
+        for j, real in enumerate(classes):
+            tk.Label(grid, text=str(totais_colunas[real]),
+                     bg=T.BG_PANEL, fg=T.FG,
+                     font=T.FONT_CELL_LG, width=10, anchor='center',
+                     highlightthickness=1, highlightbackground=T.BORDER
+                    ).grid(row=n + 1, column=j + 1, padx=2, pady=2)
+
+        tk.Label(grid, text=str(total_geral), bg=T.BG_PANEL, fg=T.ACCENT_DEEP,
+                 font=T.FONT_CELL_LG, width=10, anchor='center',
+                 highlightthickness=1, highlightbackground=T.BORDER
+                ).grid(row=n + 1, column=n + 1, padx=2, pady=2)
+
+        # Acuracia produtor e usuario
+        info = tk.Frame(outer, bg=T.BG_CARD)
+        info.pack(fill='x', pady=(12, 0))
+        tk.Label(info, text='ACURACIA DO PRODUTOR (Sensibilidade — colunas)',
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
+                ).grid(row=0, column=0, columnspan=n, sticky='w', pady=(0, 4))
+        tk.Label(info, text='ACURACIA DO USUARIO (Precisao — linhas)',
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
+                ).grid(row=0, column=n, columnspan=n, sticky='w', pady=(0, 4), padx=(20, 0))
+
+        for col, c in enumerate(classes):
+            pc  = rel['por_classe'][c]
+            cor = CORES_CLASSE[c]
+            for offset, chave in [(0, 'acuracia_produtor'), (n, 'acuracia_usuario')]:
+                b = tk.Frame(info, bg=T.BG_PANEL,
+                             highlightthickness=1, highlightbackground=T.BORDER)
+                b.grid(row=1, column=col + offset, sticky='ew',
+                       padx=(20 if (col == 0 and offset == n) else
+                              (0 if col == 0 else 4), 0))
+                info.columnconfigure(col + offset, weight=1)
+                tk.Label(b, text=c.capitalize(), bg=T.BG_PANEL, fg=cor,
+                         font=T.FONT_KICKER, anchor='w').pack(
+                    fill='x', padx=6, pady=(4, 0))
+                tk.Label(b, text=f'{pc[chave]*100:.2f}%',
+                         bg=T.BG_PANEL, fg=cor,
+                         font=T.FONT_HEADLINE, anchor='w').pack(
+                    fill='x', padx=6, pady=(0, 4))
+
+    # ------------------------------------------------------------------
+    # Item (e) — Teste Z de Kappa: Bayes Otimo vs Naive Bayes
+    # ------------------------------------------------------------------
+    def _preencher_comparacao_kappa(self):
+        for w in self._aba_kappa_tab.winfo_children():
+            w.destroy()
+
+        if not self.rel_bayes or not self.rel_naive:
+            tk.Label(self._aba_kappa_tab, text='Aguardando dados...',
+                     bg=T.BG_CARD, fg=T.FG_DIM, font=T.FONT_BODY
+                    ).place(relx=0.5, rely=0.5, anchor='center')
+            return
+
+        outer = tk.Frame(self._aba_kappa_tab, bg=T.BG_CARD)
+        outer.pack(fill='both', expand=True, padx=14, pady=10)
+
+        attr_key = self.var_attr.get()
+        k1  = self.rel_bayes['kappa']
+        k2  = self.rel_naive['kappa']
+        t1  = self.rel_bayes['tau']
+        t2  = self.rel_naive['tau']
+        vk1 = self.rel_bayes['variancia_kappa']
+        vk2 = self.rel_naive['variancia_kappa']
+        vt1 = self.rel_bayes['variancia_tau']
+        vt2 = self.rel_naive['variancia_tau']
+        ag1 = self.rel_bayes['acerto_global']
+        ag2 = self.rel_naive['acerto_global']
+
+        zk  = z_kappa(k1, vk1, k2, vk2)
+        zt  = z_tau(t1, vt1, t2, vt2)
+        pzk = p_valor_z(zk)
+        pzt = p_valor_z(zt)
+        sig_k = pzk < 0.05
+        sig_t = pzt < 0.05
+
+        tk.Label(outer,
+                 text='Item (e) — Qual classificador tem maior acuracia? '
+                      'Teste de Significancia de Kappa (Z-test)',
+                 bg=T.BG_CARD, fg=T.ACCENT_DEEP, font=T.FONT_KICKER, anchor='w'
+                ).pack(fill='x', pady=(0, 3))
+        tk.Label(outer,
+                 text=f'Atributos: {CONFIGURACOES_ATRIBUTOS[attr_key]["rotulo_ui"]}   |   '
+                      'H0: K_Bayes = K_Naive  |  H1: K_Bayes ≠ K_Naive  (alfa = 5%)',
+                 bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_LABEL,
+                 justify='left', anchor='w', wraplength=720
+                ).pack(fill='x', pady=(0, 10))
+
+        # Tabela comparativa
+        tab = tk.Frame(outer, bg=T.BG_CARD)
+        tab.pack(fill='x', pady=(0, 12))
+
+        def th(col, texto):
+            tk.Label(tab, text=texto, bg=T.BG_PANEL, fg=T.ACCENT_DEEP,
+                     font=T.FONT_CELL_BOLD, anchor='center',
+                     width=18, highlightthickness=1,
+                     highlightbackground=T.BORDER
+                    ).grid(row=0, column=col, padx=1, pady=1, sticky='nsew')
+
+        def td(row, col, texto, cor=T.FG):
+            bg = T.BG_CARD if row % 2 else T.BG_PANEL
+            tk.Label(tab, text=texto, bg=bg, fg=cor,
+                     font=T.FONT_MONO_SM, anchor='center',
+                     width=18, highlightthickness=1,
+                     highlightbackground=T.BORDER
+                    ).grid(row=row, column=col, padx=1, pady=1, sticky='nsew')
+
+        for col, h in enumerate(['Metrica', 'Bayes Otimo', 'Naive Bayes',
+                                  'Z calculado', 'p-valor', 'Conclusao (5%)']):
+            th(col, h)
+
+        melhor_ag = ('Bayes Otimo' if ag1 > ag2 else
+                     ('Naive Bayes' if ag2 > ag1 else 'Empate'))
+
+        linhas = [
+            ('Acerto Global',
+             f'{ag1:.2%}', f'{ag2:.2%}',
+             '—', '—',
+             f'Maior: {melhor_ag}'),
+            ('Kappa',
+             f'{k1:.6f}', f'{k2:.6f}',
+             f'{zk:.4f}', f'{pzk:.4f}',
+             'SIGNIFICATIVO' if sig_k else 'nao significativo'),
+            ('Tau',
+             f'{t1:.6f}', f'{t2:.6f}',
+             f'{zt:.4f}', f'{pzt:.4f}',
+             'SIGNIFICATIVO' if sig_t else 'nao significativo'),
+            ('Var(Kappa)',
+             f'{vk1:.8f}', f'{vk2:.8f}', '—', '—', '—'),
+            ('Var(Tau)',
+             f'{vt1:.8f}', f'{vt2:.8f}', '—', '—', '—'),
+        ]
+
+        for r, (m, v1, v2, z, p, conc) in enumerate(linhas):
+            cor_conc = (T.DANGER if 'SIGNIFICATIVO' in conc and 'nao' not in conc
+                        else T.SUCCESS if 'nao' in conc
+                        else T.FG_MUTED)
+            # Destacar melhor valor (verde para maior)
+            if m == 'Acerto Global':
+                c1 = T.SUCCESS if ag1 > ag2 else T.FG
+                c2 = T.SUCCESS if ag2 > ag1 else T.FG
+            elif m == 'Kappa':
+                c1 = T.SUCCESS if k1 > k2 else T.FG
+                c2 = T.SUCCESS if k2 > k1 else T.FG
+            elif m == 'Tau':
+                c1 = T.SUCCESS if t1 > t2 else T.FG
+                c2 = T.SUCCESS if t2 > t1 else T.FG
+            else:
+                c1 = c2 = T.FG
+
+            td(r + 1, 0, m, T.FG_MUTED)
+            td(r + 1, 1, v1, c1)
+            td(r + 1, 2, v2, c2)
+            td(r + 1, 3, z)
+            td(r + 1, 4, p)
+            td(r + 1, 5, conc, cor_conc)
+
+        # Conclusao narrativa
+        tk.Frame(outer, bg=T.BORDER, height=1).pack(fill='x', pady=(4, 8))
+
+        if sig_k:
+            melhor = 'Bayes Otimo (QDA)' if k1 > k2 else 'Naive Bayes'
+            conclusao = (
+                f'CONCLUSAO: Existe diferenca ESTATISTICAMENTE SIGNIFICATIVA '
+                f'(Z = {zk:.4f},  p = {pzk:.6f}  <  0.05).\n'
+                f'O classificador {melhor} possui Kappa significativamente superior '
+                f'e deve ser preferido para este conjunto de atributos.'
+            )
+            cor_conc_lbl = T.DANGER
+        else:
+            melhor = 'Bayes Otimo (QDA)' if k1 > k2 else 'Naive Bayes'
+            if abs(k1 - k2) < 1e-9:
+                conclusao = (
+                    f'CONCLUSAO: Os dois classificadores possuem desempenho IDENTICO '
+                    f'(Z = {zk:.4f},  p = {pzk:.6f}  >=  0.05).\n'
+                    f'Nao ha diferenca estatisticamente significativa ao nivel de 5%.'
+                )
+            else:
+                conclusao = (
+                    f'CONCLUSAO: NAO existe diferenca estatisticamente significativa '
+                    f'(Z = {zk:.4f},  p = {pzk:.6f}  >=  0.05).\n'
+                    f'O {melhor} possui maior acuracia nominal '
+                    f'({ag1:.2%} vs {ag2:.2%}), porem a diferenca nao e '
+                    f'significativa ao nivel de 5%.'
+                )
+            cor_conc_lbl = T.SUCCESS
+
+        tk.Label(outer, text=conclusao,
+                 bg=T.BG_CARD, fg=cor_conc_lbl, font=T.FONT_BODY,
+                 justify='left', anchor='w', wraplength=720
+                ).pack(fill='x', pady=(0, 10))
 
     def _abrir_memoria_calculo(self):
         """Abre a janela de memoria de calculo para Bayes & Naive Bayes."""
