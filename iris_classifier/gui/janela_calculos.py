@@ -4,6 +4,8 @@ Janelas de Memoria de Calculo.
 JanelaMemoriaCalculo           — Classificador de Distancia Minima (Aba 1)
 JanelaMemoriaCalculoPD         — Perceptron / Regra Delta            (Aba 2)
 JanelaMemoriaCalculoMetricas   — Metricas Avancadas (Ag, K, tau, ...)(Aba 3)
+JanelaMemoriaCalculoBayes      — Bayes Otimo / Naive Bayes           (Aba 4)
+JanelaMemoriaCalculoMLP        — Feedforward / Backpropagation       (Aba 5)
 
 Cada janela exibe formulas LaTeX (matplotlib mathtext + PIL),
 substituicao numerica passo a passo e referencia arquivo:linha
@@ -30,6 +32,7 @@ from models.classifier import treinar, predizer_todas_classes
 from models.bayes_classifier import treinar_bayes, predizer_todas_classes_bayes, predizer_binario_bayes
 from models.perceptron import treinar_perceptron, predizer_perceptron, _sgn
 from models.delta_rule import treinar_delta_iris, predizer_delta, _treinar_delta
+from models.mlp_backprop import RedeFeedforward, sigmoide
 from evaluation.metricas_avancadas import (
     acerto_global, acuracia_produtor, acuracia_usuario,
     _acerto_casual, kappa, variancia_kappa, tau, variancia_tau,
@@ -1643,4 +1646,371 @@ class JanelaMemoriaCalculoBayes(tk.Toplevel):
         sig = "E SIGNIFICATIVA" if p_val < 0.05 else "NAO E SIGNIFICATIVA"
         cor_sig = T.SUCCESS if p_val >= 0.05 else T.DANGER
         self._add_resultado(card, f'Diferenca de desempenho {sig} no nivel de 5% (p = {p_val:.4f})', cor_sig)
+
+
+# ===========================================================================
+# Aba 5 — Feedforward (MLP) / Backpropagation — Lab 5, item (i)
+# ===========================================================================
+class JanelaMemoriaCalculoMLP(tk.Toplevel):
+    """
+    Janela de memoria de calculo do exemplo "Galinha vs Homem" (Lab 5).
+
+    Recebe a arquitetura e os pesos iniciais da rede (dados no slide da
+    Aula PR_711), recalcula a alimentacao adiante e um passo completo de
+    retropropagacao, e exibe formulas LaTeX + substituicao numerica para
+    cada etapa: net/ativacao, erro total, deltas e atualizacao dos pesos.
+    """
+
+    def __init__(self, parent, entradas, alvo, taxa_aprendizado,
+                 pesos_oculta, bias_oculta, pesos_saida, bias_saida,
+                 rotulos_ocultos=None, rotulos_saida=None):
+        super().__init__(parent)
+        self.title('Memoria de Calculo  ·  Feedforward (MLP)  ·  Galinha vs Homem')
+        self.geometry('1000x900')
+        self.minsize(860, 620)
+        self.configure(bg=T.BG)
+        self.transient(parent)
+
+        self.entradas = list(entradas)
+        self.alvo = list(alvo)
+        self.taxa = taxa_aprendizado
+        self.rotulos_ocultos = rotulos_ocultos or [f'b{i+1}' for i in range(len(bias_oculta))]
+        self.rotulos_saida = rotulos_saida or [f'c{i+1}' for i in range(len(bias_saida))]
+        self._imagens_ref = []
+
+        # Copias "antes" (a rede interna sera mutada pelo passo de treinamento)
+        self.w_oculta_antes = [row[:] for row in pesos_oculta]
+        self.b_oculta_antes = list(bias_oculta)
+        self.w_saida_antes = [row[:] for row in pesos_saida]
+        self.b_saida_antes = list(bias_saida)
+
+        self.rede = RedeFeedforward(
+            n_entradas=len(self.entradas), n_ocultos=len(bias_oculta), n_saidas=len(bias_saida),
+            pesos_oculta=[row[:] for row in pesos_oculta], bias_oculta=list(bias_oculta),
+            pesos_saida=[row[:] for row in pesos_saida], bias_saida=list(bias_saida),
+        )
+        self.r = self.rede.passo_treinamento(self.entradas, self.alvo, self.taxa)
+        self.nova_saida = self.rede.prever(self.entradas)
+        self.novo_erro = self.rede.erro_total(self.nova_saida, self.alvo)
+
+        self._construir()
+
+    # ------------------------------------------------------------------
+    def _construir(self):
+        tk.Frame(self, bg=T.ACCENT, height=3).pack(fill='x', side='top')
+
+        head = tk.Frame(self, bg=T.BG, height=90)
+        head.pack(fill='x', side='top')
+        head.pack_propagate(False)
+        tk.Label(head, text='MEMORIA DE CALCULO  ·  FEEDFORWARD (MLP)',
+                 bg=T.BG, fg=T.ACCENT_DEEP, font=T.FONT_KICKER
+                ).pack(anchor='w', padx=24, pady=(16, 0))
+        tk.Label(head, text='Rede 2-2-2  ·  Exemplo "Galinha vs Homem"  ·  Aula PR_711',
+                 bg=T.BG, fg=T.FG, font=T.FONT_TITLE
+                ).pack(anchor='w', padx=24)
+        tk.Label(head,
+                 text=(f'Entradas: {self._format_vetor(self.entradas)}   |   '
+                       f'Alvo: {self._format_vetor(self.alvo)}   |   '
+                       f'eta = {self.taxa}'),
+                 bg=T.BG, fg=T.FG_MUTED, font=T.FONT_SUBTITLE
+                ).pack(anchor='w', padx=24, pady=(2, 0))
+
+        tk.Frame(self, bg=T.BORDER, height=1).pack(fill='x', side='top')
+
+        rod = tk.Frame(self, bg=T.BG_PANEL, height=44)
+        rod.pack(fill='x', side='bottom')
+        rod.pack_propagate(False)
+        tk.Frame(self, bg=T.BORDER, height=1).pack(fill='x', side='bottom')
+        ttk.Button(rod, text='Fechar', command=self.destroy
+                  ).pack(side='right', padx=20, pady=8)
+        tk.Label(rod, text='Formulas via matplotlib mathtext  ·  calculos em Python puro',
+                 bg=T.BG_PANEL, fg=T.FG_DIM, font=T.FONT_SUBTITLE
+                ).pack(side='left', padx=20, pady=11)
+
+        canvas = tk.Canvas(self, bg=T.BG, highlightthickness=0, borderwidth=0)
+        scroll = ttk.Scrollbar(self, orient='vertical', command=canvas.yview)
+        canvas.configure(yscrollcommand=scroll.set)
+        scroll.pack(side='right', fill='y')
+        canvas.pack(side='left', fill='both', expand=True)
+
+        wrap = tk.Frame(canvas, bg=T.BG)
+        win_id = canvas.create_window((0, 0), window=wrap, anchor='nw')
+        wrap.bind('<Configure>',
+                  lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+        canvas.bind('<Configure>',
+                    lambda e: canvas.itemconfigure(win_id, width=e.width))
+
+        def _wheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), 'units')
+        canvas.bind_all('<MouseWheel>', _wheel)
+        self.protocol('WM_DELETE_WINDOW',
+                      lambda: (canvas.unbind_all('<MouseWheel>'), self.destroy()))
+
+        self._secao_modelo_neuronio(wrap)
+        self._secao_forward_oculta(wrap)
+        self._secao_forward_saida(wrap)
+        self._secao_erro(wrap)
+        self._secao_deltas_saida(wrap)
+        self._secao_deltas_oculta(wrap)
+        self._secao_atualizacao_pesos(wrap)
+        self._secao_nova_predicao(wrap)
+        tk.Frame(wrap, bg=T.BG, height=24).pack()
+
+    # ------------------------------------------------------------------
+    # Helpers (mesmo padrao das outras janelas)
+    # ------------------------------------------------------------------
+    def _formula(self, latex, fontsize=16, bg=T.BG_CARD):
+        fig = Figure(figsize=(0.1, 0.1), dpi=120, facecolor=bg)
+        fig.text(0, 0, latex, fontsize=fontsize, color=T.FG,
+                 va='bottom', ha='left')
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', bbox_inches='tight',
+                    pad_inches=0.18, facecolor=bg)
+        buf.seek(0)
+        photo = ImageTk.PhotoImage(Image.open(buf))
+        self._imagens_ref.append(photo)
+        return photo
+
+    def _add_formula(self, parent, latex, fontsize=16, bg=T.BG_CARD, pady=(6, 6)):
+        photo = self._formula(latex, fontsize=fontsize, bg=bg)
+        tk.Label(parent, image=photo, bg=bg).pack(anchor='w', padx=18, pady=pady)
+
+    def _add_step(self, parent, texto):
+        tk.Label(parent, text=texto, bg=T.BG_CARD, fg=T.FG,
+                 font=T.FONT_MONO_SM, anchor='w', justify='left'
+                ).pack(anchor='w', padx=18, pady=1)
+
+    def _add_subkicker(self, parent, texto):
+        tk.Label(parent, text=texto.upper(), bg=T.BG_CARD, fg=T.ACCENT_DEEP,
+                 font=T.FONT_KICKER, anchor='w'
+                ).pack(anchor='w', padx=18, pady=(10, 4))
+
+    def _add_explain(self, parent, texto, pady=(2, 4)):
+        tk.Label(parent, text=texto, bg=T.BG_CARD, fg=T.FG_MUTED,
+                 font=T.FONT_LABEL, wraplength=940, justify='left'
+                ).pack(anchor='w', padx=18, pady=pady)
+
+    def _add_resultado(self, parent, texto, cor):
+        tk.Label(parent, text=texto, bg=T.BG_CARD, fg=cor,
+                 font=T.FONT_TITLE, anchor='w'
+                ).pack(anchor='w', padx=18, pady=(10, 14))
+
+    def _add_ref(self, parent, func):
+        nome, linha = _ref_funcao(func)
+        tk.Label(parent,
+                 text=f'  →  {nome}  :  linha {linha}',
+                 bg=T.BG_CARD, fg=T.FG_DIM,
+                 font=T.FONT_REF, anchor='w'
+                ).pack(anchor='w', padx=18, pady=(0, 4))
+
+    def _respiro(self, parent):
+        tk.Frame(parent, bg=T.BG_CARD, height=10).pack()
+
+    @staticmethod
+    def _format_vetor(v):
+        return '[' + ', '.join(f'{x:.4f}' for x in v) + ']'
+
+    # ==================================================================
+    # SECAO 1 — Modelo do Neuronio (net + ativacao sigmoide)
+    # ==================================================================
+    def _secao_modelo_neuronio(self, parent):
+        card = Card(parent, titulo='1. Modelo do Neuronio  ·  Net + Ativacao Sigmoide')
+        card.pack(fill='x', padx=22, pady=(20, 0))
+
+        self._add_explain(card,
+            'Cada neuronio soma as entradas ponderadas pelos pesos, adiciona o '
+            'bias, e aplica a funcao de ativacao sigmoide.')
+        self._add_formula(card,
+            r'$z_i(l) \;=\; \sum_{j} w_{ij}(l)\, a_j(l-1) \;+\; b_i(l)'
+            r'\qquad\quad a_i(l) \;=\; \sigma\!\left(z_i(l)\right)$',
+            fontsize=17)
+        self._add_formula(card,
+            r'$\sigma(z) \;=\; \dfrac{1}{1 + e^{-z}}$', fontsize=19)
+        self._add_ref(card, RedeFeedforward.forward)
+        self._add_ref(card, sigmoide)
+        self._respiro(card)
+
+    # ==================================================================
+    # SECAO 2 — Alimentacao Adiante: Camada Oculta
+    # ==================================================================
+    def _secao_forward_oculta(self, parent):
+        card = Card(parent, titulo='2. Alimentacao Adiante  ·  Camada Oculta')
+        card.pack(fill='x', padx=22, pady=(22, 0))
+
+        self._add_explain(card,
+            'Substituindo as entradas e os pesos iniciais na formula do neuronio, '
+            'para cada neuronio da camada oculta:')
+
+        for i, nome in enumerate(self.rotulos_ocultos):
+            w = self.w_oculta_antes[i]
+            b = self.b_oculta_antes[i]
+            net = b + sum(w[j] * self.entradas[j] for j in range(len(self.entradas)))
+            out = self.r['saida_oculta'][i]
+
+            termos = '  +  '.join(
+                f'{self.entradas[j]:.2f}·{w[j]:.4f}' for j in range(len(self.entradas)))
+            self._add_subkicker(card, f'neuronio  {nome}')
+            self._add_step(card, f'  net_{nome} = {termos}  +  {b:.4f}  =  {net:.4f}')
+            self._add_step(card, f'  out_{nome} = sigma({net:.4f}) = {out:.4f}')
+        self._respiro(card)
+
+    # ==================================================================
+    # SECAO 3 — Alimentacao Adiante: Camada de Saida
+    # ==================================================================
+    def _secao_forward_saida(self, parent):
+        card = Card(parent, titulo='3. Alimentacao Adiante  ·  Camada de Saida')
+        card.pack(fill='x', padx=22, pady=(22, 0))
+
+        self._add_explain(card,
+            'As saidas da camada oculta alimentam a camada de saida, com o '
+            'mesmo calculo de net + sigmoide.')
+
+        for i, nome in enumerate(self.rotulos_saida):
+            w = self.w_saida_antes[i]
+            b = self.b_saida_antes[i]
+            net = b + sum(w[j] * self.r['saida_oculta'][j] for j in range(len(self.r['saida_oculta'])))
+            out = self.r['saida_rede'][i]
+
+            termos = '  +  '.join(
+                f'{self.r["saida_oculta"][j]:.4f}·{w[j]:.4f}'
+                for j in range(len(self.r['saida_oculta'])))
+            self._add_subkicker(card, f'neuronio  {nome}')
+            self._add_step(card, f'  net_{nome} = {termos}  +  {b:.4f}  =  {net:.4f}')
+            self._add_step(card, f'  out_{nome} = sigma({net:.4f}) = {out:.4f}')
+        self._respiro(card)
+
+    # ==================================================================
+    # SECAO 4 — Erro Total
+    # ==================================================================
+    def _secao_erro(self, parent):
+        card = Card(parent, titulo='4. Erro Total  ·  Funcao de Custo')
+        card.pack(fill='x', padx=22, pady=(22, 0))
+
+        self._add_explain(card,
+            'O erro quadratico total mede a distancia entre a saida desejada '
+            '(alvo) e a saida real da rede.')
+        self._add_formula(card,
+            r'$E \;=\; \dfrac{1}{2}\, \sum_{i}\, (t_i - z_i)^{2}$', fontsize=19)
+        self._add_ref(card, RedeFeedforward.erro_total)
+
+        self._add_subkicker(card, 'substituicao numerica')
+        for nome, t, z in zip(self.rotulos_saida, self.alvo, self.r['saida_rede']):
+            self._add_step(card, f'  (t_{nome} - out_{nome})^2 = ({t:.4f} - {z:.4f})^2 = {(t - z) ** 2:.6f}')
+        self._add_resultado(card, f'  E = {self.r["erro_total"]:.5f}', cor=T.ACCENT_DEEP)
+
+    # ==================================================================
+    # SECAO 5 — Retropropagacao: Deltas da Camada de Saida
+    # ==================================================================
+    def _secao_deltas_saida(self, parent):
+        card = Card(parent, titulo='5. Retropropagacao  ·  Deltas da Camada de Saida')
+        card.pack(fill='x', padx=22, pady=(22, 0))
+
+        self._add_explain(card,
+            'O termo de erro (delta) de cada neuronio de saida combina o erro '
+            'bruto com a derivada da sigmoide (que "trava" o ajuste quando o '
+            'neuronio ja esta saturado).')
+        self._add_formula(card,
+            r'$\delta_o \;=\; (z_o - t_o)\; z_o\,(1 - z_o)$', fontsize=19)
+        self._add_ref(card, RedeFeedforward.passo_treinamento)
+
+        for nome, t, z, d in zip(self.rotulos_saida, self.alvo,
+                                  self.r['saida_rede'], self.r['delta_saida']):
+            self._add_subkicker(card, f'delta_{nome}')
+            self._add_step(card,
+                f'  ({z:.4f} - {t:.4f}) · {z:.4f} · (1 - {z:.4f})  =  {d:.6f}')
+        self._respiro(card)
+
+    # ==================================================================
+    # SECAO 6 — Retropropagacao: Deltas da Camada Oculta
+    # ==================================================================
+    def _secao_deltas_oculta(self, parent):
+        card = Card(parent, titulo='6. Retropropagacao  ·  Deltas da Camada Oculta')
+        card.pack(fill='x', padx=22, pady=(22, 0))
+
+        self._add_explain(card,
+            'O erro de cada neuronio oculto e a soma ponderada dos deltas de '
+            'TODOS os neuronios de saida aos quais ele se conecta.')
+        self._add_formula(card,
+            r'$\delta_h \;=\; \left(\sum_{o}\, \delta_o\, w_{ho}\right)'
+            r'\; \text{out}_h\,(1 - \text{out}_h)$', fontsize=18)
+        self._add_ref(card, RedeFeedforward.passo_treinamento)
+
+        for i, nome in enumerate(self.rotulos_ocultos):
+            out_h = self.r['saida_oculta'][i]
+            termos = '  +  '.join(
+                f'{self.r["delta_saida"][o]:.6f}·{self.w_saida_antes[o][i]:.4f}'
+                for o in range(len(self.rotulos_saida)))
+            soma = sum(self.r['delta_saida'][o] * self.w_saida_antes[o][i]
+                       for o in range(len(self.rotulos_saida)))
+            self._add_subkicker(card, f'delta_{nome}')
+            self._add_step(card, f'  soma ponderada = {termos} = {soma:.6f}')
+            self._add_step(card,
+                f'  delta_{nome} = {soma:.6f} · {out_h:.4f} · (1 - {out_h:.4f}) '
+                f'= {self.r["delta_oculta"][i]:.6f}')
+        self._respiro(card)
+
+    # ==================================================================
+    # SECAO 7 — Atualizacao dos Pesos (Gradiente Descendente)
+    # ==================================================================
+    def _secao_atualizacao_pesos(self, parent):
+        card = Card(parent, titulo='7. Atualizacao dos Pesos  ·  Gradiente Descendente')
+        card.pack(fill='x', padx=22, pady=(22, 0))
+
+        self._add_explain(card,
+            'Cada peso e ajustado na direcao que reduz o erro, proporcional ao '
+            'delta do neuronio de destino e a ativacao de entrada da conexao.')
+        self._add_formula(card,
+            r'$w_{\text{novo}} \;=\; w \;-\; \eta \cdot \delta \cdot \text{entrada}'
+            r'\qquad\quad b_{\text{novo}} \;=\; b \;-\; \eta \cdot \delta$',
+            fontsize=17)
+        self._add_ref(card, RedeFeedforward.passo_treinamento)
+
+        self._add_subkicker(card, f'camada de saida  (eta = {self.taxa})')
+        for i, nome_o in enumerate(self.rotulos_saida):
+            for j, nome_h in enumerate(self.rotulos_ocultos):
+                antes = self.w_saida_antes[i][j]
+                depois = self.r['w_saida_depois'][i][j]
+                self._add_step(card,
+                    f'  w({nome_h}->{nome_o}) = {antes:.5f} - {self.taxa}·{self.r["delta_saida"][i]:.6f}'
+                    f'·{self.r["saida_oculta"][j]:.4f} = {depois:.5f}')
+            antes_b = self.b_saida_antes[i]
+            depois_b = self.r['b_saida_depois'][i]
+            self._add_step(card,
+                f'  bias({nome_o}) = {antes_b:.5f} - {self.taxa}·{self.r["delta_saida"][i]:.6f} = {depois_b:.5f}')
+
+        self._add_subkicker(card, f'camada oculta  (eta = {self.taxa})')
+        for i, nome_h in enumerate(self.rotulos_ocultos):
+            for j in range(len(self.entradas)):
+                antes = self.w_oculta_antes[i][j]
+                depois = self.r['w_oculta_depois'][i][j]
+                self._add_step(card,
+                    f'  w(a{j+1}->{nome_h}) = {antes:.5f} - {self.taxa}·{self.r["delta_oculta"][i]:.6f}'
+                    f'·{self.entradas[j]:.4f} = {depois:.5f}')
+            antes_b = self.b_oculta_antes[i]
+            depois_b = self.r['b_oculta_depois'][i]
+            self._add_step(card,
+                f'  bias({nome_h}) = {antes_b:.5f} - {self.taxa}·{self.r["delta_oculta"][i]:.6f} = {depois_b:.5f}')
+        self._respiro(card)
+
+    # ==================================================================
+    # SECAO 8 — Nova Predicao (apos 1 atualizacao)
+    # ==================================================================
+    def _secao_nova_predicao(self, parent):
+        card = Card(parent, titulo='8. Nova Predicao  ·  Apos 1 Atualizacao de Pesos')
+        card.pack(fill='x', padx=22, pady=(22, 0))
+
+        self._add_explain(card,
+            'Recalculando a alimentacao adiante com os pesos ja atualizados, '
+            'usando a mesma amostra de entrada:')
+
+        for nome, z in zip(self.rotulos_saida, self.nova_saida):
+            self._add_step(card, f'  out_{nome} (novo) = {z:.4f}')
+
+        reduziu = self.novo_erro < self.r['erro_total']
+        cor = T.SUCCESS if reduziu else T.DANGER
+        variacao = self.r['erro_total'] - self.novo_erro
+        self._add_resultado(card,
+            f'  E (novo) = {self.novo_erro:.5f}   '
+            f'(era {self.r["erro_total"]:.5f}  ·  variacao = {variacao:+.5f})',
+            cor=cor)
 

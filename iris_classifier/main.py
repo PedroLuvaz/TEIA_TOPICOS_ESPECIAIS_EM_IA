@@ -18,6 +18,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from data.data_loader import carregar_dados_iris, split_estratificado, filtrar_por_classes
 from models.classifier import treinar, predizer_todas_classes, predizer_binario
 from models.bayes_classifier import treinar_bayes, predizer_todas_classes_bayes, predizer_binario_bayes
+from models.mlp_sklearn import treinar_mlp_iris, prever_mlp_iris
 from evaluation.mvn_tester import executar_analise_mvn
 from evaluation.metricas_avancadas import relatorio_completo, z_kappa, p_valor_z
 from evaluation.evaluator import (
@@ -452,6 +453,63 @@ def experimento_bayes(dados_treino, dados_teste, dados_todos):
         )
 
 
+# ---------------------------------------------------------------------------
+# Lab 5 — Item (ii): Rede Feedforward (MLP) vs Bayes Otimo vs Naive Bayes
+# Unica parte do projeto que usa biblioteca de ML (scikit-learn), conforme
+# explicitamente permitido pelo enunciado apenas para este experimento.
+# ---------------------------------------------------------------------------
+
+def experimento_mlp_iris(dados_treino, dados_teste):
+    secao("LAB 5 - ITEM (ii): FEEDFORWARD (MLP) vs BAYES OTIMO vs NAIVE BAYES")
+    print("Classificacao das 3 especies do Iris (4 atributos), split 70/30 estratificado.")
+    print("MLP treinada com scikit-learn (unico experimento do projeto com lib de ML).\n")
+
+    gab = [d['classe'] for d in dados_teste]
+
+    # --- Treinar os 3 modelos ---
+    modelo_mlp = treinar_mlp_iris(dados_treino, INDICES_TODAS, semente=42)
+    model_bayes = treinar_bayes(dados_treino, INDICES_TODAS, naive=False)
+    model_naive = treinar_bayes(dados_treino, INDICES_TODAS, naive=True)
+
+    # --- Predicoes no conjunto de teste ---
+    preds_mlp = prever_mlp_iris(modelo_mlp, dados_teste, INDICES_TODAS)
+    preds_bayes = [predizer_todas_classes_bayes(d['atributos'], model_bayes, INDICES_TODAS)[1]
+                   for d in dados_teste]
+    preds_naive = [predizer_todas_classes_bayes(d['atributos'], model_naive, INDICES_TODAS)[1]
+                   for d in dados_teste]
+
+    # --- Relatorio completo (acerto global, kappa, tau, precisao/recall/F1/F2/MCC por classe) ---
+    rel_mlp = relatorio_completo(preds_mlp, gab, CLASSES, "Feedforward (MLP)")
+    rel_bayes = relatorio_completo(preds_bayes, gab, CLASSES, "Bayes Otimo")
+    rel_naive = relatorio_completo(preds_naive, gab, CLASSES, "Naive Bayes")
+
+    for rel in (rel_mlp, rel_bayes, rel_naive):
+        print(f"\n>>> {rel['nome'].upper()} <<<")
+        print(f"  Acerto Global: {rel['acerto_global']:.2%}")
+        print(f"  Kappa:         {rel['kappa']:.4f} (Var: {rel['variancia_kappa']:.6f})")
+        print(f"  Tau:           {rel['tau']:.4f}")
+        print("\n  Matriz de Confusao:")
+        imprimir_matriz_confusao(rel['matriz'], CLASSES)
+        print("\n  Metricas por Classe:")
+        for c in CLASSES:
+            mc = rel['por_classe'][c]
+            print(f"    {c:10}: Precisao={mc['precisao']:.4f}  Recall={mc['sensibilidade']:.4f}  "
+                  f"F1={mc['f1']:.4f}  F2={mc['f2']:.4f}  MCC={mc['mcc']:.4f}")
+
+    # --- Testes Z de significancia de Kappa (todos os pares) ---
+    print("\n>>> TESTES Z DE SIGNIFICANCIA DE KAPPA (todos os pares) <<<")
+    pares = [
+        ("Feedforward (MLP)", rel_mlp, "Bayes Otimo", rel_bayes),
+        ("Feedforward (MLP)", rel_mlp, "Naive Bayes", rel_naive),
+        ("Bayes Otimo", rel_bayes, "Naive Bayes", rel_naive),
+    ]
+    for nome_a, rel_a, nome_b, rel_b in pares:
+        z = z_kappa(rel_a['kappa'], rel_a['variancia_kappa'], rel_b['kappa'], rel_b['variancia_kappa'])
+        p = p_valor_z(z)
+        veredito = "diferenca estatisticamente significativa" if p < 0.05 else "sem diferenca significativa"
+        print(f"  {nome_a} x {nome_b}: Z={z:.4f}  p={p:.6f}  ({veredito} a 5%)")
+
+
 def executar_experimentos():
     os.makedirs(PASTA_OUTPUTS, exist_ok=True)
 
@@ -473,7 +531,10 @@ def executar_experimentos():
     
     # Executar os experimentos de Bayes & Naive Bayes (Nova Feature)
     experimento_bayes(dados_treino, dados_teste, dados)
-    
+
+    # Lab 5 — Feedforward (MLP) vs Bayes Otimo vs Naive Bayes (Nova Feature)
+    experimento_mlp_iris(dados_treino, dados_teste)
+
     modo_interativo(prototipos)
 
 

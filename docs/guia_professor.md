@@ -5,6 +5,8 @@ Este documento serve como um guia para apresentar e explicar o projeto. Ele deta
 **Conteúdo coberto:**
 - §1–§10: Distância Mínima (Aba 1) — split, protótipos, discriminante, fronteiras, GUI
 - §11–§14: Perceptron & Regra Delta & XOR (Aba 2) — teoria, resultados, demonstração
+- §15–§16: Bayes Ótimo & Naive Bayes (Aba 4) — normalidade multivariada, teste Z
+- §18–§20: Feedforward (MLP) & Backpropagation (Aba 5) — Lab 5
 
 ---
 
@@ -438,4 +440,42 @@ No conjunto de teste (split 70/30):
 2.  **Integração Multilinguagem (Python + R):** O projeto conecta-se ao R escrevendo scripts intermediários e executando-os em subprocessos, consumindo arquivos CSV de intercâmbio. Essa integração dinâmica é valorizada na prática científica.
 3.  **Fronteiras de Decisão Não-Lineares no Plano (Contour Plots):** Exiba os gráficos da pasta `outputs/` mostrando as fronteiras parabólicas e hiperbólicas geradas pelos contornos das funções de decisão log-probabilísticas de Bayes. Isso contrasta perfeitamente com as fronteiras retas das abas anteriores.
 4.  **Memória de Cálculo LaTeX Dinâmica:** A janela secundária de memória de cálculo para a aba Bayes apresenta no formato LaTeX os vetores de médias calculados e as matrizes de covariância estimadas da classe, permitindo ao professor auditar as contas.
+
+---
+
+## 18. Redes Neurais Multicamadas (Aba 5 — Feedforward/Backpropagation)
+
+**Ponto Chave de Apresentação:** Depois dos classificadores lineares e probabilísticos, o Lab 5 introduz **redes neurais multicamadas (MLP)**, treinadas pelo algoritmo de **retropropagação do erro (backpropagation)** — a base de todo o aprendizado profundo moderno.
+
+### Item (i) — Rede "Galinha vs Homem" (Python puro)
+*   **O que é:** uma rede 2 entradas → 2 neurônios ocultos → 2 neurônios de saída, com ativação sigmoide em ambas as camadas, usando os pesos iniciais exatos do slide da Aula PR_711.
+*   **Onde encontrar no código:** `iris_classifier/models/mlp_backprop.py` (classe `RedeFeedforward`) e `iris_classifier/lab05_galinha_homem.py`.
+*   **Prova de correção:** a alimentação adiante (forward) da implementação reproduz **exatamente** os valores do slide ($\text{out}_{b_1}=0{,}7020$, $\text{out}_{b_2}=0{,}5841$, $\text{out}_{c_1}=0{,}5934$, $\text{out}_{c_2}=0{,}7353$, $E=0{,}21108$) — mostre isso ao professor como evidência de que a matemática do backprop foi implementada corretamente do zero.
+*   **Como apresentar:** clique em "Rodar 1 passo de treinamento" na Aba 5 e mostre que o erro total cai de $0{,}21107$ para $0{,}20894$ após uma única atualização de pesos — a rede está de fato aprendendo na direção correta do gradiente.
+
+### Item (ii) — Feedforward vs Bayes Ótimo vs Naive Bayes (Iris)
+*   **Única exceção à regra "sem bibliotecas de ML":** o próprio enunciado permite `scikit-learn` apenas para este experimento. Isso está isolado em `iris_classifier/models/mlp_sklearn.py` — o restante do projeto (incluindo o item i deste mesmo laboratório) continua 100% Python puro.
+*   **Resultado:** a rede feedforward atingiu $100\%$ de acurácia no conjunto de teste, contra $97{,}78\%$ de Bayes Ótimo e Naive Bayes (ambos erram a mesma única amostra de *versicolor*).
+*   **Ponto sutil e importante:** apesar da diferença numérica, o **teste Z de Kappa** mostra que essa diferença **não é estatisticamente significativa** ($Z=1{,}0234$, $p=0{,}306$) — 45 amostras de teste são poucas para diferenciar com confiança um único erro a mais ou a menos. Isso é uma ótima oportunidade de discutir com o professor a diferença entre "melhor na prática" e "melhor com significância estatística".
+
+---
+
+## 19. Estrutura Modular do Lab 5
+
+| Arquivo | Responsabilidade | Restrição |
+|---|---|---|
+| `iris_classifier/models/mlp_backprop.py` | Rede feedforward + backprop do zero (item i) | Python puro |
+| `iris_classifier/lab05_galinha_homem.py` | Script demonstrativo do item (i) | Python puro |
+| `iris_classifier/models/mlp_sklearn.py` | Wrapper do `MLPClassifier` para o Iris (item ii) | scikit-learn permitido |
+| `iris_classifier/main.py` (`experimento_mlp_iris`) | Orquestra item (ii): treina os 3 modelos, métricas, testes Z | reaproveita `evaluation/` |
+| `iris_classifier/gui/tab_feedforward.py` | Aba 5 da GUI | — |
+
+---
+
+## 20. Defesa do Lab 5 ao Professor
+
+1.  **Progressão pedagógica completa:** Distância Mínima → Perceptron/Delta → Bayes → **Feedforward/Backprop** — do classificador linear mais simples até a rede neural multicamada, cobrindo toda a evolução histórica do reconhecimento de padrões estudada na disciplina.
+2.  **Regra da cadeia em ação:** o backprop implementado em `mlp_backprop.py` é uma aplicação direta e auditável da regra da cadeia do cálculo diferencial — cada `delta` no código corresponde exatamente a um termo da derivação do slide.
+3.  **Uso disciplinado de bibliotecas:** o projeto usa `scikit-learn` em **um único lugar** (`mlp_sklearn.py`), exatamente onde o enunciado permite, e em nenhum outro — mostra domínio de quando uma biblioteca é apropriada e quando a implementação do zero é exigida.
+4.  **Significância estatística acima da acurácia bruta:** o teste Z de Kappa entre os 3 modelos reforça uma lição central da disciplina — comparar acurácias brutas sem teste de hipótese pode levar a conclusões equivocadas sobre qual modelo é "melhor".
 

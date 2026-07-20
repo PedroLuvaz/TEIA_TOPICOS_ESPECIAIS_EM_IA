@@ -1,6 +1,6 @@
 # Reconhecimento de Padrões - Iris Dataset (Laboratório de Inteligência Artificial)
 
-Este projeto é uma aplicação científica completa para modelagem, visualização e classificação de padrões sobre o famoso conjunto de dados **Iris**. Ele implementa diversos classificadores clássicos a partir do zero (usando apenas **Python puro e Álgebra Linear**, sem bibliotecas de Machine Learning como Scikit-Learn ou NumPy).
+Este projeto é uma aplicação científica completa para modelagem, visualização e classificação de padrões sobre o famoso conjunto de dados **Iris**. Ele implementa diversos classificadores clássicos a partir do zero (usando apenas **Python puro e Álgebra Linear**, sem bibliotecas de Machine Learning como Scikit-Learn ou NumPy). A única exceção é o Lab 5, item (ii), onde o próprio enunciado permite explicitamente o uso do `scikit-learn` para treinar a rede feedforward comparada com os classificadores de Bayes.
 
 O projeto é equipado com uma interface gráfica rica e interativa desenvolvida em Tkinter e integrada ao ambiente R para testes de hipóteses avançados.
 
@@ -20,8 +20,11 @@ O projeto é equipado com uma interface gráfica rica e interativa desenvolvida 
 │   │   ├── teoria_lab03.md
 │   │   ├── item_02.md
 │   │   └── item_03.md
-│   └── lab_04/                     # Documentação específica de Bayes & Normalidade (Lab 4)
-│       ├── teoria_lab04.md
+│   ├── lab_04/                     # Documentação específica de Bayes & Normalidade (Lab 4)
+│   │   ├── teoria_lab04.md
+│   │   └── relatorio_experimentos.md
+│   └── lab_05/                     # Documentação específica de Feedforward/Backprop (Lab 5)
+│       ├── teoria_lab05.md
 │       └── relatorio_experimentos.md
 ├── iris_classifier/
 │   ├── classifier.py               # Lógica de treino/predição (Distância Mínima)
@@ -30,6 +33,9 @@ O projeto é equipado com uma interface gráfica rica e interativa desenvolvida 
 │   ├── bayes_classifier.py         # Classificador Bayes Ótimo (QDA) e Naive Bayes (Python puro)
 │   ├── mvn_tester.py               # Integração com R (pacote MVN) para testes de normalidade
 │   ├── metricas_avancadas.py       # Cálculo de Kappa, Tau, variâncias, Z-test, Fb, MCC
+│   ├── models/mlp_backprop.py      # Rede feedforward + backprop do zero (Lab 5, item i — Python puro)
+│   ├── models/mlp_sklearn.py       # Wrapper do MLPClassifier para o Iris (Lab 5, item ii — sklearn permitido)
+│   ├── lab05_galinha_homem.py      # Script demonstrativo do Lab 5, item i (reproduz os valores do slide)
 │   ├── data_loader.py              # Leitura do Excel e separação estratificada dos dados
 │   ├── evaluator.py                # Cálculo de acurácia básica e matriz de confusão
 │   ├── main.py                     # Ponto de entrada CLI (orquestra todos os experimentos)
@@ -44,16 +50,17 @@ O projeto é equipado com uma interface gráfica rica e interativa desenvolvida 
 │       ├── tab_perceptron_delta.py  # Painel de Perceptron e Regra Delta (convergência, XOR)
 │       ├── tab_metricas_avancadas.py# Painel com simulações, matrizes editáveis e teste Z
 │       ├── tab_bayes.py            # Painel dos Classificadores Probabilísticos de Bayes
+│       ├── tab_feedforward.py      # Painel do Lab 5 — Feedforward (MLP) e Backpropagation
 │       └── janela_calculos.py      # Memória de Cálculo LaTeX dinâmica por aba
 ├── outputs/                        # Gráficos e resultados gerados automaticamente
-└── requirements.txt                # Dependências básicas de execução (xlrd, matplotlib, pillow)
+└── requirements.txt                # Dependências de execução (xlrd, matplotlib, pillow, scikit-learn)
 ```
 
 ---
 
 ## ⚙️ Pré-requisitos e Instalação
 
-As únicas bibliotecas externas em Python são o `xlrd` (leitura do `.xls`), `matplotlib` (plotagem) e `pillow` (renderização de imagens). O laboratório opcionalmente requer uma instalação funcional de **R** com o pacote **MVN** instalado para os testes de normalidade multivariada (caso não esteja instalado, o programa usa um fallback seguro de resultados pré-calculados).
+As bibliotecas externas em Python são o `xlrd` (leitura do `.xls`), `matplotlib` (plotagem), `pillow` (renderização de imagens) e o `scikit-learn` (usado apenas no Lab 5, item ii, para a rede feedforward comparada com Bayes). O laboratório opcionalmente requer uma instalação funcional de **R** com o pacote **MVN** instalado para os testes de normalidade multivariada (caso não esteja instalado, o programa usa um fallback seguro de resultados pré-calculados).
 
 Para instalar as dependências de Python:
 
@@ -104,6 +111,11 @@ A GUI do projeto foi projetada seguindo regras estéticas premium (**Slate Light
 *   Classificação Bayesianas Probabilística por meio do **Bayes Ótimo (QDA)** e do **Naive Bayes**.
 *   Conexão em tempo real ao R para testar a Aderência à Normalidade Multivariada das classes via testes de **Henze-Zirkler** e **Mardia**.
 *   Superfícies de decisão não-lineares (parabólicas e hiperbólicas) geradas dinamicamente via contour lines de log-probabilidade.
+
+### **Aba 5: Feedforward (MLP)**
+*   **Item (i):** memória de cálculo passo a passo da rede 2-2-2 "galinha vs homem" (Python puro) — alimentação adiante, deltas da retropropagação e pesos atualizados, reproduzindo os valores exatos do slide da Aula PR_711.
+*   **Bônus interativo:** um canvas de 8x8 pixels pintável à mão livre (inspirado na Figura do slide), classificado em tempo real por uma segunda rede própria (64 entradas → 10 ocultos → 1 saída), com visualização ao vivo da saída e da ativação de cada neurônio da camada oculta.
+*   **Item (ii):** comparação da rede feedforward (`scikit-learn`, único ponto do projeto com biblioteca de ML) com o Bayes Ótimo e o Naive Bayes na classificação do Iris — tabela com todas as métricas de qualidade (Acerto Global, Kappa, Tau, Precisão, Recall, F1, F2, MCC) e testes Z de significância entre os 3 modelos.
 
 ---
 

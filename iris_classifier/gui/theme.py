@@ -57,6 +57,8 @@ FONT_VALUE_BIG  = (FONT_FAMILY_TITLE, 20, 'bold')
 FONT_VALUE_HUGE = (FONT_FAMILY_TITLE, 28, 'bold')
 
 FONT_BODY       = (FONT_FAMILY, 10, 'normal')
+FONT_BODY_SM    = (FONT_FAMILY, 9, 'normal')
+FONT_BODY_XS    = (FONT_FAMILY, 8, 'normal')
 FONT_LABEL      = (FONT_FAMILY, 9, 'normal')
 FONT_SUBTITLE   = (FONT_FAMILY, 9, 'normal')
 FONT_BUTTON     = (FONT_FAMILY_TITLE, 10, 'normal')
@@ -65,6 +67,7 @@ FONT_KICKER     = (FONT_FAMILY, 8, 'bold')   # rotulos em CAPS
 
 FONT_MONO       = ('Consolas', 10, 'normal')
 FONT_MONO_SM    = ('Consolas', 9, 'normal')
+FONT_MONO_XS    = ('Consolas', 8, 'normal')
 
 # Tokens para usos que antes ficavam hardcoded nas abas
 FONT_TEXT_HL    = (FONT_FAMILY_TITLE, 10)            # destaque em widgets Text

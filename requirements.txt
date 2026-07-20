@@ -1,3 +1,4 @@
 xlrd==2.0.2
 matplotlib==3.10.8
 Pillow>=10.0  # usado pela GUI para converter formulas LaTeX em PhotoImage (transitivo do matplotlib, listado explicitamente)
+scikit-learn>=1.5  # usado apenas no Lab 5, item ii (classificacao feedforward do Iris) — uso explicitamente permitido pelo enunciado
