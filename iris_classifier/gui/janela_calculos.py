@@ -21,6 +21,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 from matplotlib.figure import Figure
+import matplotlib.patches as mpatches
 from PIL import Image, ImageTk
 
 from core.math_utils import (produto_escalar, distancia_euclidiana,
@@ -64,6 +65,111 @@ def _ref_funcao(func):
         return nome, linha
     except Exception:
         return '?', 0
+
+
+# ---------------------------------------------------------------------------
+# Diagrama de arquitetura de rede (MLP) — reutilizado por JanelaMemoriaCalculoMLP
+# e JanelaMemoriaCalculoXOR, para desenhar circulos/conexoes/pesos/bias.
+# ---------------------------------------------------------------------------
+def _posicoes_coluna(n, espaco=1.3):
+    """Posicoes Y centradas em 0 para n neuronios de uma coluna."""
+    return [(n - 1) / 2 * espaco - i * espaco for i in range(n)]
+
+
+def _desenhar_arquitetura_rede(rotulos_entrada, rotulos_ocultos, rotulos_saida,
+                               pesos_oculta, bias_oculta, pesos_saida, bias_saida,
+                               bias_compartilhado=False, bg=T.BG_CARD):
+    """
+    Desenha o diagrama da rede (circulos = neuronios, linhas = pesos, quadrado
+    tracejado "+1" = bias), no mesmo estilo dos diagramas "Entrada / Oculta /
+    Saida" dos slides da Aula PR_711. Retorna um io.BytesIO com o PNG.
+    """
+    n_in, n_hid, n_out = len(rotulos_entrada), len(rotulos_ocultos), len(rotulos_saida)
+    espaco = 1.3
+    n_max = max(n_in, n_hid, n_out)
+    meia_altura = (n_max - 1) / 2 * espaco + 1.35
+    largura_fig = 10.4
+    altura_fig = max(3.6, meia_altura * 1.75)
+
+    fig = Figure(figsize=(largura_fig, altura_fig), dpi=130, facecolor=bg)
+    ax = fig.add_axes([0.01, 0.01, 0.98, 0.98])
+    x_in, x_hid, x_out = 0.7, 5.2, 9.7
+    ax.set_xlim(-0.5, 10.5)
+    ax.set_ylim(-meia_altura, meia_altura)
+    ax.set_aspect('equal')
+    ax.axis('off')
+
+    y_in = _posicoes_coluna(n_in, espaco)
+    y_hid = _posicoes_coluna(n_hid, espaco)
+    y_out = _posicoes_coluna(n_out, espaco)
+    raio = 0.30
+
+    topo = meia_altura - 0.35
+    ax.text(x_in, topo, 'ENTRADA', ha='center', va='top', fontsize=10,
+            fontweight='bold', color=T.FG_MUTED)
+    ax.text(x_hid, topo, 'OCULTA  (σ)', ha='center', va='top', fontsize=10,
+            fontweight='bold', color=T.ACCENT_DEEP)
+    ax.text(x_out, topo, 'SAIDA  (σ)', ha='center', va='top', fontsize=10,
+            fontweight='bold', color=T.DATA_BLUE)
+
+    def _ligar(x0, ys0, x1, ys1, pesos):
+        for i, y1 in enumerate(ys1):
+            for j, y0 in enumerate(ys0):
+                ax.plot([x0 + raio, x1 - raio], [y0, y1], color=T.BORDER_HARD,
+                        lw=0.8, zorder=1, alpha=0.85)
+                frac = 0.24 + 0.10 * (j % 3)
+                xm = x0 + (x1 - x0) * frac
+                ym = y0 + (y1 - y0) * frac
+                ax.text(xm, ym, f'{pesos[i][j]:.3g}', fontsize=6.3,
+                        color=T.FG_MUTED, ha='center', va='center', zorder=2,
+                        bbox=dict(boxstyle='round,pad=0.06', fc=bg, ec='none', alpha=0.9))
+
+    _ligar(x_in, y_in, x_hid, y_hid, pesos_oculta)
+    _ligar(x_hid, y_hid, x_out, y_out, pesos_saida)
+
+    def _bias_individual(x, ys, bias):
+        for y, b in zip(ys, bias):
+            ax.text(x, y - raio - 0.16, f'b={b:.4g}', ha='center', va='top',
+                    fontsize=6.3, color=T.ACCENT_DEEP, zorder=2)
+
+    def _bias_unico(x, ys, b):
+        topo_circulo = max(ys) + raio
+        yb = (topo_circulo + topo) / 2
+        ax.scatter([x], [yb], s=190, marker='s', color=T.ACCENT_SOFT,
+                   edgecolors=T.ACCENT_DEEP, linewidths=1.3, zorder=3)
+        ax.text(x, yb, '+1', ha='center', va='center', fontsize=7.5,
+                color=T.ACCENT_DEEP, zorder=4)
+        for y in ys:
+            ax.plot([x, x], [yb - 0.20, y + raio * 0.3], color=T.ACCENT,
+                    lw=0.9, ls=':', zorder=1, alpha=0.85)
+        ax.text(x + 0.42, yb, f'b={b:.4g}', ha='left', va='center',
+                fontsize=6.5, color=T.ACCENT_DEEP, zorder=2)
+
+    if bias_compartilhado:
+        if n_hid:
+            _bias_unico(x_hid, y_hid, bias_oculta[0])
+        if n_out:
+            _bias_unico(x_out, y_out, bias_saida[0])
+    else:
+        _bias_individual(x_hid, y_hid, bias_oculta)
+        _bias_individual(x_out, y_out, bias_saida)
+
+    colunas = [
+        (x_in, y_in, rotulos_entrada, T.BG_PANEL, T.BORDER_HARD, T.FG_MUTED),
+        (x_hid, y_hid, rotulos_ocultos, T.ACCENT_SOFT, T.ACCENT_DEEP, T.ACCENT_DEEP),
+        (x_out, y_out, rotulos_saida, '#DBEAFE', T.DATA_BLUE, T.DATA_BLUE),
+    ]
+    for x, ys, labels, fc, ec, tc in colunas:
+        for y, lbl in zip(ys, labels):
+            ax.add_patch(mpatches.Circle((x, y), raio, facecolor=fc,
+                                         edgecolor=ec, linewidth=1.6, zorder=4))
+            ax.text(x, y, lbl, ha='center', va='center', fontsize=8.5,
+                    fontweight='bold', color=tc, zorder=5)
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', facecolor=bg, bbox_inches='tight', pad_inches=0.12)
+    buf.seek(0)
+    return buf
 
 
 # ===========================================================================
@@ -1663,13 +1769,13 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
 
     def __init__(self, parent, entradas, alvo, taxa_aprendizado,
                  pesos_oculta, bias_oculta, pesos_saida, bias_saida,
-                 rotulos_ocultos=None, rotulos_saida=None,
+                 rotulos_entrada=None, rotulos_ocultos=None, rotulos_saida=None,
                  titulo_janela='Feedforward (MLP)  ·  Galinha vs Homem',
                  subtitulo='Rede 2-2-2  ·  Exemplo "Galinha vs Homem"  ·  Aula PR_711',
                  bias_compartilhado=False):
         super().__init__(parent)
         self.title(f'Memoria de Calculo  ·  {titulo_janela}')
-        self.geometry('1000x900')
+        self.geometry('1000x980')
         self.minsize(860, 620)
         self.configure(bg=T.BG)
         self.transient(parent)
@@ -1677,6 +1783,7 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
         self.entradas = list(entradas)
         self.alvo = list(alvo)
         self.taxa = taxa_aprendizado
+        self.rotulos_entrada = rotulos_entrada or [f'a{i+1}' for i in range(len(entradas))]
         self.rotulos_ocultos = rotulos_ocultos or [f'b{i+1}' for i in range(len(bias_oculta))]
         self.rotulos_saida = rotulos_saida or [f'c{i+1}' for i in range(len(bias_saida))]
         self.subtitulo = subtitulo
@@ -1766,6 +1873,7 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
         self.protocol('WM_DELETE_WINDOW',
                       lambda: (canvas.unbind_all('<MouseWheel>'), self.destroy()))
 
+        self._secao_arquitetura_rede(wrap)
         self._secao_modelo_neuronio(wrap)
         self._secao_forward_oculta(wrap)
         self._secao_forward_saida(wrap)
@@ -1831,10 +1939,64 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
         return '[' + ', '.join(f'{x:.4f}' for x in v) + ']'
 
     # ==================================================================
-    # SECAO 1 — Modelo do Neuronio (net + ativacao sigmoide)
+    # SECAO 1 — Arquitetura da Rede (diagrama)
+    # ==================================================================
+    def _secao_arquitetura_rede(self, parent):
+        card = Card(parent, titulo='1. Arquitetura da Rede  ·  Diagrama')
+        card.pack(fill='x', padx=22, pady=(20, 0))
+
+        self._add_explain(card,
+            'Diagrama da rede totalmente conectada usada nesta memoria de '
+            'calculo, com os pesos e bias iniciais rotulados em cada conexao '
+            '(mesmo estilo dos diagramas "Entrada / Oculta / Saida" da Aula '
+            'PR_711).')
+
+        buf = _desenhar_arquitetura_rede(
+            self.rotulos_entrada, self.rotulos_ocultos, self.rotulos_saida,
+            self.w_oculta_antes, self.b_oculta_antes,
+            self.w_saida_antes, self.b_saida_antes,
+            bias_compartilhado=self.bias_compartilhado, bg=T.BG_CARD)
+        photo = ImageTk.PhotoImage(Image.open(buf))
+        self._imagens_ref.append(photo)
+        tk.Label(card, image=photo, bg=T.BG_CARD).pack(padx=18, pady=(4, 8))
+
+        legenda = tk.Frame(card, bg=T.BG_CARD)
+        legenda.pack(fill='x', padx=18, pady=(0, 10))
+
+        def _item(cor_fundo, cor_borda, texto):
+            linha = tk.Frame(legenda, bg=T.BG_CARD)
+            linha.pack(fill='x', pady=1)
+            tk.Frame(linha, bg=cor_fundo, width=14, height=14,
+                     highlightthickness=1.5, highlightbackground=cor_borda
+                    ).pack(side='left', padx=(0, 8), pady=2)
+            tk.Label(linha, text=texto, bg=T.BG_CARD, fg=T.FG_MUTED,
+                     font=T.FONT_LABEL, anchor='w', justify='left',
+                     wraplength=880
+                    ).pack(side='left', fill='x')
+
+        _item(T.BG_PANEL, T.BORDER_HARD,
+              'Circulo cinza = neuronio de ENTRADA (recebe o valor do atributo diretamente, sem ativacao).')
+        _item(T.ACCENT_SOFT, T.ACCENT_DEEP,
+              'Circulo ambar = neuronio da camada OCULTA (aplica a sigmoide sobre o net calculado).')
+        _item('#DBEAFE', T.DATA_BLUE,
+              'Circulo azul = neuronio de SAIDA (aplica a sigmoide, ativacao final da rede).')
+        _item(T.BG_CARD, T.BORDER_HARD,
+              'Linhas cinzas = conexoes entre neuronios, rotuladas com o valor do peso correspondente.')
+        if self.bias_compartilhado:
+            _item(T.ACCENT_SOFT, T.ACCENT_DEEP,
+                  'Quadrado ambar "+1" tracejado = bias UNICO da camada, compartilhado por todos os '
+                  'neuronios dela (convencao deste exemplo especifico — ver secao 8).')
+        else:
+            _item(T.BG_CARD, T.BG_CARD,
+                  'Rotulo "b=valor" abaixo de cada neuronio = bias individual daquele neuronio '
+                  '(um valor independente por neuronio, convencao padrao deste laboratorio).')
+        self._respiro(card)
+
+    # ==================================================================
+    # SECAO 2 — Modelo do Neuronio (net + ativacao sigmoide)
     # ==================================================================
     def _secao_modelo_neuronio(self, parent):
-        card = Card(parent, titulo='1. Modelo do Neuronio  ·  Net + Ativacao Sigmoide')
+        card = Card(parent, titulo='2. Modelo do Neuronio  ·  Net + Ativacao Sigmoide')
         card.pack(fill='x', padx=22, pady=(20, 0))
 
         self._add_explain(card,
@@ -1851,10 +2013,10 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
         self._respiro(card)
 
     # ==================================================================
-    # SECAO 2 — Alimentacao Adiante: Camada Oculta
+    # SECAO 3 — Alimentacao Adiante: Camada Oculta
     # ==================================================================
     def _secao_forward_oculta(self, parent):
-        card = Card(parent, titulo='2. Alimentacao Adiante  ·  Camada Oculta')
+        card = Card(parent, titulo='3. Alimentacao Adiante  ·  Camada Oculta')
         card.pack(fill='x', padx=22, pady=(22, 0))
 
         self._add_explain(card,
@@ -1875,10 +2037,10 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
         self._respiro(card)
 
     # ==================================================================
-    # SECAO 3 — Alimentacao Adiante: Camada de Saida
+    # SECAO 4 — Alimentacao Adiante: Camada de Saida
     # ==================================================================
     def _secao_forward_saida(self, parent):
-        card = Card(parent, titulo='3. Alimentacao Adiante  ·  Camada de Saida')
+        card = Card(parent, titulo='4. Alimentacao Adiante  ·  Camada de Saida')
         card.pack(fill='x', padx=22, pady=(22, 0))
 
         self._add_explain(card,
@@ -1900,10 +2062,10 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
         self._respiro(card)
 
     # ==================================================================
-    # SECAO 4 — Erro Total
+    # SECAO 5 — Erro Total
     # ==================================================================
     def _secao_erro(self, parent):
-        card = Card(parent, titulo='4. Erro Total  ·  Funcao de Custo')
+        card = Card(parent, titulo='5. Erro Total  ·  Funcao de Custo')
         card.pack(fill='x', padx=22, pady=(22, 0))
 
         self._add_explain(card,
@@ -1919,10 +2081,10 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
         self._add_resultado(card, f'  E = {self.r["erro_total"]:.5f}', cor=T.ACCENT_DEEP)
 
     # ==================================================================
-    # SECAO 5 — Retropropagacao: Deltas da Camada de Saida
+    # SECAO 6 — Retropropagacao: Deltas da Camada de Saida
     # ==================================================================
     def _secao_deltas_saida(self, parent):
-        card = Card(parent, titulo='5. Retropropagacao  ·  Deltas da Camada de Saida')
+        card = Card(parent, titulo='6. Retropropagacao  ·  Deltas da Camada de Saida')
         card.pack(fill='x', padx=22, pady=(22, 0))
 
         self._add_explain(card,
@@ -1941,10 +2103,10 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
         self._respiro(card)
 
     # ==================================================================
-    # SECAO 6 — Retropropagacao: Deltas da Camada Oculta
+    # SECAO 7 — Retropropagacao: Deltas da Camada Oculta
     # ==================================================================
     def _secao_deltas_oculta(self, parent):
-        card = Card(parent, titulo='6. Retropropagacao  ·  Deltas da Camada Oculta')
+        card = Card(parent, titulo='7. Retropropagacao  ·  Deltas da Camada Oculta')
         card.pack(fill='x', padx=22, pady=(22, 0))
 
         self._add_explain(card,
@@ -1970,10 +2132,10 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
         self._respiro(card)
 
     # ==================================================================
-    # SECAO 7 — Atualizacao dos Pesos (Gradiente Descendente)
+    # SECAO 8 — Atualizacao dos Pesos (Gradiente Descendente)
     # ==================================================================
     def _secao_atualizacao_pesos(self, parent):
-        card = Card(parent, titulo='7. Atualizacao dos Pesos  ·  Gradiente Descendente')
+        card = Card(parent, titulo='8. Atualizacao dos Pesos  ·  Gradiente Descendente')
         card.pack(fill='x', padx=22, pady=(22, 0))
 
         self._add_explain(card,
@@ -2039,10 +2201,10 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
         self._respiro(card)
 
     # ==================================================================
-    # SECAO 8 — Nova Predicao (apos 1 atualizacao)
+    # SECAO 9 — Nova Predicao (apos 1 atualizacao)
     # ==================================================================
     def _secao_nova_predicao(self, parent):
-        card = Card(parent, titulo='8. Nova Predicao  ·  Apos 1 Atualizacao de Pesos')
+        card = Card(parent, titulo='9. Nova Predicao  ·  Apos 1 Atualizacao de Pesos')
         card.pack(fill='x', padx=22, pady=(22, 0))
 
         self._add_explain(card,
@@ -2235,6 +2397,41 @@ class JanelaMemoriaCalculoXOR(tk.Toplevel):
         self._add_step(card, f'  h1: w = {self.pesos_oculta_iniciais[0]}   bias = {self.bias_oculta_iniciais[0]:+.2f}')
         self._add_step(card, f'  h2: w = {self.pesos_oculta_iniciais[1]}   bias = {self.bias_oculta_iniciais[1]:+.2f}')
         self._add_step(card, f'  saida: w = {self.pesos_saida_iniciais[0]}   bias = {self.bias_saida_iniciais[0]:+.2f}')
+
+        self._add_subkicker(card, 'diagrama da rede')
+        buf = _desenhar_arquitetura_rede(
+            ['x1', 'x2'], ['h1', 'h2'], ['saida'],
+            self.pesos_oculta_iniciais, self.bias_oculta_iniciais,
+            self.pesos_saida_iniciais, self.bias_saida_iniciais,
+            bias_compartilhado=False, bg=T.BG_CARD)
+        photo = ImageTk.PhotoImage(Image.open(buf))
+        self._imagens_ref.append(photo)
+        tk.Label(card, image=photo, bg=T.BG_CARD).pack(padx=18, pady=(4, 8))
+
+        legenda = tk.Frame(card, bg=T.BG_CARD)
+        legenda.pack(fill='x', padx=18, pady=(0, 10))
+
+        def _item(cor_fundo, cor_borda, texto):
+            linha = tk.Frame(legenda, bg=T.BG_CARD)
+            linha.pack(fill='x', pady=1)
+            tk.Frame(linha, bg=cor_fundo, width=14, height=14,
+                     highlightthickness=1.5, highlightbackground=cor_borda
+                    ).pack(side='left', padx=(0, 8), pady=2)
+            tk.Label(linha, text=texto, bg=T.BG_CARD, fg=T.FG_MUTED,
+                     font=T.FONT_LABEL, anchor='w', justify='left',
+                     wraplength=880
+                    ).pack(side='left', fill='x')
+
+        _item(T.BG_PANEL, T.BORDER_HARD,
+              'Circulo cinza = neuronio de ENTRADA (x1, x2 — valores booleanos 0 ou 1).')
+        _item(T.ACCENT_SOFT, T.ACCENT_DEEP,
+              'Circulo ambar = neuronio da camada OCULTA (h1, h2 — aplica a sigmoide).')
+        _item('#DBEAFE', T.DATA_BLUE,
+              'Circulo azul = neuronio de SAIDA (aplica a sigmoide, saida final da rede).')
+        _item(T.BG_CARD, T.BORDER_HARD,
+              'Linhas cinzas = conexoes entre neuronios, rotuladas com o valor do peso correspondente.')
+        _item(T.BG_CARD, T.BG_CARD,
+              'Rotulo "b=valor" abaixo de cada neuronio = bias individual daquele neuronio.')
         self._respiro(card)
 
     # ==================================================================

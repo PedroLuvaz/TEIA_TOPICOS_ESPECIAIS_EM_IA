@@ -162,6 +162,8 @@ Como a rede é treinada com apenas 2 exemplos, ela não generaliza no sentido es
 
 O laboratório abre com uma aba dedicada, **Lab 5.0** (`iris_classifier/gui/tab_xor.py`), que resolve o exercício do XOR (slide 36) usando o exemplo didático genérico do slide 37 como demonstração do algoritmo. Ela antecede a aba "Lab 5.1" (itens i/ii do enunciado formal) porque tem arquitetura, pesos e visualização próprios.
 
+**Diagrama da rede e legendas:** toda janela de memória de cálculo (`JanelaMemoriaCalculoMLP` e `JanelaMemoriaCalculoXOR`) abre com um **diagrama da arquitetura da rede** (círculos = neurônios, coloridos por camada; linhas = conexões, rotuladas com o valor de cada peso; quadrado "+1" = bias), seguido de uma legenda explicando cada cor e símbolo. O gráfico de fronteira de decisão 2D da Aba Lab 5.0 também ganhou uma barra de cores (escala 0 a 1 da saída da rede) e uma legenda explicando os marcadores (○/△ = classe), as bordas verde/vermelha (acerto/erro) e o significado das faixas coloridas (curvas de mesmo nível de saída, como um mapa topográfico).
+
 ### 8.1 Exemplo Didático (slide 37) — Rede 2-2-2 Genérica
 
 O slide 37 ("Exemplo didático: treinando uma rede de 3 camadas") **não resolve o XOR** — é um exemplo completo e genérico de como a conta do backpropagation é feita passo a passo, com números diferentes do restante do laboratório: $i_1=0{,}05$, $i_2=0{,}10$, alvo $o_1=0{,}01$ e $o_2=0{,}99$, pesos $w_1..w_8$ e $\eta=0{,}5$. Os slides 38-43 mostram a solução completa (1ª e 2ª iteração, e uma curva de convergência até a época 1000), o que permite conferir a implementação numericamente, exatamente como já era feito para o item (i).

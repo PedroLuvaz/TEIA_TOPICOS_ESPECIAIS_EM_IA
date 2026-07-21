@@ -192,6 +192,7 @@ class TabXOR(tk.Frame):
         wrap.rowconfigure(0, weight=0)
         wrap.rowconfigure(1, weight=1)
         wrap.rowconfigure(2, weight=0)
+        wrap.rowconfigure(3, weight=0)
 
         faixa = tk.Frame(wrap, bg=T.BG)
         faixa.grid(row=0, column=0, sticky='ew')
@@ -210,13 +211,14 @@ class TabXOR(tk.Frame):
         painel.columnconfigure(0, weight=1)
         painel.rowconfigure(0, weight=1)
 
-        self.figura = Figure(figsize=(9.5, 4.0), dpi=100, facecolor=T.BG_CARD)
+        self.figura = Figure(figsize=(10.2, 4.0), dpi=100, facecolor=T.BG_CARD)
         gs = self.figura.add_gridspec(
-            1, 2, width_ratios=[5, 3],
-            left=0.08, right=0.97, bottom=0.14, top=0.90, wspace=0.32,
+            1, 4, width_ratios=[5, 0.22, 0.55, 3],
+            left=0.06, right=0.97, bottom=0.14, top=0.88, wspace=0.15,
         )
         self.ax_sc = self.figura.add_subplot(gs[0])
-        self.ax_cv = self.figura.add_subplot(gs[1])
+        self.cax = self.figura.add_subplot(gs[1])
+        self.ax_cv = self.figura.add_subplot(gs[3])
 
         self.canvas = FigureCanvasTkAgg(self.figura, master=painel)
         self.canvas.get_tk_widget().grid(row=0, column=0, sticky='nsew',
@@ -227,8 +229,62 @@ class TabXOR(tk.Frame):
         self._estilizar_toolbar(self.toolbar)
         self.toolbar.grid(row=1, column=0, sticky='ew', padx=6, pady=(0, 6))
 
+        self._construir_legenda(wrap)
+
         self._tabela_holder = tk.Frame(wrap, bg=T.BG)
-        self._tabela_holder.grid(row=2, column=0, sticky='ew', pady=(10, 0))
+        self._tabela_holder.grid(row=3, column=0, sticky='ew', pady=(10, 0))
+
+    def _construir_legenda(self, wrap):
+        legenda = tk.Frame(wrap, bg=T.BG)
+        legenda.grid(row=2, column=0, sticky='ew', pady=(10, 0))
+
+        def _swatch_cor(parent, cor, texto):
+            item = tk.Frame(parent, bg=T.BG)
+            item.pack(side='left', padx=(0, 16))
+            tk.Frame(item, bg=cor, width=14, height=14,
+                     highlightthickness=1, highlightbackground=T.BORDER_HARD
+                    ).pack(side='left', padx=(0, 6))
+            tk.Label(item, text=texto, bg=T.BG, fg=T.FG_MUTED,
+                     font=T.FONT_LABEL).pack(side='left')
+
+        def _swatch_marcador(parent, marcador, cor, texto):
+            item = tk.Frame(parent, bg=T.BG)
+            item.pack(side='left', padx=(0, 16))
+            tk.Label(item, text=marcador, bg=T.BG, fg=cor,
+                     font=(T.FONT_FAMILY, 12, 'bold')).pack(side='left', padx=(0, 6))
+            tk.Label(item, text=texto, bg=T.BG, fg=T.FG_MUTED,
+                     font=T.FONT_LABEL).pack(side='left')
+
+        linha1 = tk.Frame(legenda, bg=T.BG)
+        linha1.pack(fill='x', anchor='w')
+        tk.Label(linha1, text='CORES DO FUNDO (SAIDA DA REDE):', bg=T.BG,
+                 fg=T.ACCENT_DEEP, font=T.FONT_KICKER).pack(side='left', padx=(0, 10))
+        _swatch_cor(linha1, T.DATA_BLUE, 'perto de 0  (classe 0)')
+        _swatch_cor(linha1, '#FFFFFF', 'perto de 0,5  (ambiguo)')
+        _swatch_cor(linha1, T.DATA_CORAL, 'perto de 1  (classe 1)')
+
+        linha2 = tk.Frame(legenda, bg=T.BG)
+        linha2.pack(fill='x', anchor='w', pady=(4, 0))
+        tk.Label(linha2, text='PONTOS E FRONTEIRA:', bg=T.BG, fg=T.ACCENT_DEEP,
+                 font=T.FONT_KICKER).pack(side='left', padx=(0, 10))
+        _swatch_marcador(linha2, '○', T.DATA_BLUE, 'classe 0  {(0,0),(1,1)}')
+        _swatch_marcador(linha2, '△', T.DATA_CORAL, 'classe 1  {(0,1),(1,0)}')
+        tk.Label(linha2, text='- - -', bg=T.BG, fg=T.FG,
+                 font=(T.FONT_FAMILY, 11, 'bold')).pack(side='left', padx=(0, 6))
+        tk.Label(linha2, text='fronteira de decisao (saida=0,5)', bg=T.BG,
+                 fg=T.FG_MUTED, font=T.FONT_LABEL).pack(side='left', padx=(0, 16))
+        _swatch_cor(linha2, T.SUCCESS, 'borda = acerto')
+        _swatch_cor(linha2, T.DANGER, 'borda = erro')
+
+        linha3 = tk.Frame(legenda, bg=T.BG)
+        linha3.pack(fill='x', anchor='w', pady=(4, 0))
+        tk.Label(linha3,
+                 text='As listras/faixas coloridas sao curvas de mesmo nivel de saida '
+                      '(como as curvas de altitude de um mapa topografico) — quanto mais '
+                      'proximas as faixas, mais rapido a saida muda naquela regiao.',
+                 bg=T.BG, fg=T.FG_DIM, font=T.FONT_BODY_XS, anchor='w',
+                 justify='left', wraplength=1000
+                ).pack(side='left', fill='x')
 
     # ------------------------------------------------------------------
     # Rede XOR — estado interativo
@@ -290,10 +346,16 @@ class TabXOR(tk.Frame):
         self._estilizar_ax(ax)
 
         X, Y, Z = self._calcular_grade_saida()
-        ax.contourf(X, Y, Z, levels=20, cmap=_CMAP_XOR, vmin=0, vmax=1,
-                   alpha=0.85, zorder=1)
+        cf = ax.contourf(X, Y, Z, levels=20, cmap=_CMAP_XOR, vmin=0, vmax=1,
+                         alpha=0.85, zorder=1)
         ax.contour(X, Y, Z, levels=[0.5], colors=[T.FG], linestyles='--',
                   linewidths=1.6, zorder=2)
+
+        self.cax.cla()
+        cbar = self.figura.colorbar(cf, cax=self.cax, ticks=[0, 0.25, 0.5, 0.75, 1])
+        cbar.ax.tick_params(colors=T.FG_MUTED, labelsize=7)
+        cbar.outline.set_edgecolor(T.BORDER)
+        cbar.ax.set_title('saida\nda rede', fontsize=6.8, color=T.FG_MUTED, pad=6)
 
         cores = {0: T.DATA_BLUE, 1: T.DATA_CORAL}
         marcadores = {0: 'o', 1: '^'}
@@ -412,6 +474,7 @@ class TabXOR(tk.Frame):
             entradas=EX_ENTRADAS, alvo=EX_ALVO, taxa_aprendizado=EX_TAXA_APRENDIZADO,
             pesos_oculta=EX_PESOS_OCULTA, bias_oculta=EX_BIAS_OCULTA,
             pesos_saida=EX_PESOS_SAIDA, bias_saida=EX_BIAS_SAIDA,
+            rotulos_entrada=['i1', 'i2'],
             rotulos_ocultos=['h1', 'h2'],
             rotulos_saida=['o1', 'o2'],
             titulo_janela='Exemplo Didatico (slide 37)  ·  Rede 2-2-2',

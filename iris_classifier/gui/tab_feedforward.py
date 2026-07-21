@@ -672,6 +672,7 @@ class TabFeedforward(tk.Frame):
             entradas=GH_ENTRADAS, alvo=GH_ALVO, taxa_aprendizado=GH_TAXA_APRENDIZADO,
             pesos_oculta=GH_PESOS_OCULTA, bias_oculta=GH_BIAS_OCULTA,
             pesos_saida=GH_PESOS_SAIDA, bias_saida=GH_BIAS_SAIDA,
+            rotulos_entrada=['a1', 'a2'],
             rotulos_ocultos=['b1', 'b2'],
             rotulos_saida=['c1 (homem)', 'c2 (galinha)'],
         )
@@ -685,6 +686,7 @@ class TabFeedforward(tk.Frame):
             entradas=EXA_ENTRADAS, alvo=EXA_ALVO, taxa_aprendizado=EXA_TAXA_APRENDIZADO,
             pesos_oculta=EXA_PESOS_OCULTA, bias_oculta=EXA_BIAS_OCULTA,
             pesos_saida=EXA_PESOS_SAIDA, bias_saida=EXA_BIAS_SAIDA,
+            rotulos_entrada=['x1', 'x2', 'x3'],
             rotulos_ocultos=['b1', 'b2'],
             rotulos_saida=['c1', 'c2'],
             titulo_janela='Exercicio A  ·  Rede da Fig. 12.32 (1 iteracao)',
