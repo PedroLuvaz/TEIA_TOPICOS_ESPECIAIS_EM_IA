@@ -14,6 +14,7 @@ from .tab_distancia_minima import TabDistanciaMinima
 from .tab_perceptron_delta import TabPerceptronDelta
 from .tab_metricas_avancadas import TabMetricasAvancadas
 from .tab_bayes import TabBayes
+from .tab_xor import TabXOR
 from .tab_feedforward import TabFeedforward
 
 _SCROLL_UNIT = 3
@@ -148,9 +149,13 @@ class App(tk.Tk):
         aba4 = TabBayes(self.notebook)
         self.notebook.add(aba4, text='   Bayes & Normalidade   ')
 
-        # Aba 5 — NOVA: Feedforward (MLP) — Lab 5
-        aba5 = TabFeedforward(self.notebook)
-        self.notebook.add(aba5, text='   Feedforward (MLP)   ')
+        # Aba 5 — NOVA: XOR (MLP) — Lab 5.0
+        aba5 = TabXOR(self.notebook)
+        self.notebook.add(aba5, text='   Lab 5.0 · XOR (MLP)   ')
+
+        # Aba 6 — NOVA: Feedforward (MLP) — Lab 5.1
+        aba6 = TabFeedforward(self.notebook)
+        self.notebook.add(aba6, text='   Lab 5.1 · Feedforward (MLP)   ')
 
         # Abas placeholder
         # for nome, status in ABAS_FUTURAS:

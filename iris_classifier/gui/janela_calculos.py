@@ -1663,9 +1663,12 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
 
     def __init__(self, parent, entradas, alvo, taxa_aprendizado,
                  pesos_oculta, bias_oculta, pesos_saida, bias_saida,
-                 rotulos_ocultos=None, rotulos_saida=None):
+                 rotulos_ocultos=None, rotulos_saida=None,
+                 titulo_janela='Feedforward (MLP)  ·  Galinha vs Homem',
+                 subtitulo='Rede 2-2-2  ·  Exemplo "Galinha vs Homem"  ·  Aula PR_711',
+                 bias_compartilhado=False):
         super().__init__(parent)
-        self.title('Memoria de Calculo  ·  Feedforward (MLP)  ·  Galinha vs Homem')
+        self.title(f'Memoria de Calculo  ·  {titulo_janela}')
         self.geometry('1000x900')
         self.minsize(860, 620)
         self.configure(bg=T.BG)
@@ -1676,6 +1679,8 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
         self.taxa = taxa_aprendizado
         self.rotulos_ocultos = rotulos_ocultos or [f'b{i+1}' for i in range(len(bias_oculta))]
         self.rotulos_saida = rotulos_saida or [f'c{i+1}' for i in range(len(bias_saida))]
+        self.subtitulo = subtitulo
+        self.bias_compartilhado = bias_compartilhado
         self._imagens_ref = []
 
         # Copias "antes" (a rede interna sera mutada pelo passo de treinamento)
@@ -1690,6 +1695,21 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
             pesos_saida=[row[:] for row in pesos_saida], bias_saida=list(bias_saida),
         )
         self.r = self.rede.passo_treinamento(self.entradas, self.alvo, self.taxa)
+
+        if self.bias_compartilhado:
+            # Convencao do exemplo didatico do slide (Aula PR_711): b1 e b2 sao
+            # UM UNICO bias por camada, compartilhado por todos os neuronios
+            # dela (nao um bias independente por neuronio). O gradiente desse
+            # bias unico soma as contribuicoes de todos os deltas da camada:
+            #   dE/db = sum(delta_da_camada)  ->  b_novo = b - eta * dE/db
+            # (mesmo valor novo aplicado a todos os neuronios da camada).
+            b_oculta_novo = self.b_oculta_antes[0] - self.taxa * sum(self.r['delta_oculta'])
+            b_saida_novo = self.b_saida_antes[0] - self.taxa * sum(self.r['delta_saida'])
+            self.r['b_oculta_depois'] = [b_oculta_novo] * len(bias_oculta)
+            self.r['b_saida_depois'] = [b_saida_novo] * len(bias_saida)
+            self.rede.b_oculta = list(self.r['b_oculta_depois'])
+            self.rede.b_saida = list(self.r['b_saida_depois'])
+
         self.nova_saida = self.rede.prever(self.entradas)
         self.novo_erro = self.rede.erro_total(self.nova_saida, self.alvo)
 
@@ -1705,7 +1725,7 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
         tk.Label(head, text='MEMORIA DE CALCULO  ·  FEEDFORWARD (MLP)',
                  bg=T.BG, fg=T.ACCENT_DEEP, font=T.FONT_KICKER
                 ).pack(anchor='w', padx=24, pady=(16, 0))
-        tk.Label(head, text='Rede 2-2-2  ·  Exemplo "Galinha vs Homem"  ·  Aula PR_711',
+        tk.Label(head, text=self.subtitulo,
                  bg=T.BG, fg=T.FG, font=T.FONT_TITLE
                 ).pack(anchor='w', padx=24)
         tk.Label(head,
@@ -1965,6 +1985,14 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
             fontsize=17)
         self._add_ref(card, RedeFeedforward.passo_treinamento)
 
+        if self.bias_compartilhado:
+            self._add_explain(card,
+                'Este exemplo usa um UNICO bias por camada, compartilhado por '
+                'todos os neuronios dela (convencao classica do slide didatico) '
+                '— por isso o gradiente do bias soma os deltas de todos os '
+                'neuronios da camada, em vez de usar apenas o delta de um.',
+                pady=(0, 8))
+
         self._add_subkicker(card, f'camada de saida  (eta = {self.taxa})')
         for i, nome_o in enumerate(self.rotulos_saida):
             for j, nome_h in enumerate(self.rotulos_ocultos):
@@ -1973,10 +2001,19 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
                 self._add_step(card,
                     f'  w({nome_h}->{nome_o}) = {antes:.5f} - {self.taxa}·{self.r["delta_saida"][i]:.6f}'
                     f'·{self.r["saida_oculta"][j]:.4f} = {depois:.5f}')
-            antes_b = self.b_saida_antes[i]
-            depois_b = self.r['b_saida_depois'][i]
+        if self.bias_compartilhado:
+            antes_b = self.b_saida_antes[0]
+            depois_b = self.r['b_saida_depois'][0]
+            soma_d = sum(self.r['delta_saida'])
             self._add_step(card,
-                f'  bias({nome_o}) = {antes_b:.5f} - {self.taxa}·{self.r["delta_saida"][i]:.6f} = {depois_b:.5f}')
+                f'  bias(saida) = {antes_b:.5f} - {self.taxa}·({"+".join(f"{d:.6f}" for d in self.r["delta_saida"])})'
+                f' = {antes_b:.5f} - {self.taxa}·{soma_d:.6f} = {depois_b:.5f}')
+        else:
+            for i, nome_o in enumerate(self.rotulos_saida):
+                antes_b = self.b_saida_antes[i]
+                depois_b = self.r['b_saida_depois'][i]
+                self._add_step(card,
+                    f'  bias({nome_o}) = {antes_b:.5f} - {self.taxa}·{self.r["delta_saida"][i]:.6f} = {depois_b:.5f}')
 
         self._add_subkicker(card, f'camada oculta  (eta = {self.taxa})')
         for i, nome_h in enumerate(self.rotulos_ocultos):
@@ -1986,10 +2023,19 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
                 self._add_step(card,
                     f'  w(a{j+1}->{nome_h}) = {antes:.5f} - {self.taxa}·{self.r["delta_oculta"][i]:.6f}'
                     f'·{self.entradas[j]:.4f} = {depois:.5f}')
-            antes_b = self.b_oculta_antes[i]
-            depois_b = self.r['b_oculta_depois'][i]
+        if self.bias_compartilhado:
+            antes_b = self.b_oculta_antes[0]
+            depois_b = self.r['b_oculta_depois'][0]
+            soma_d = sum(self.r['delta_oculta'])
             self._add_step(card,
-                f'  bias({nome_h}) = {antes_b:.5f} - {self.taxa}·{self.r["delta_oculta"][i]:.6f} = {depois_b:.5f}')
+                f'  bias(oculta) = {antes_b:.5f} - {self.taxa}·({"+".join(f"{d:.6f}" for d in self.r["delta_oculta"])})'
+                f' = {antes_b:.5f} - {self.taxa}·{soma_d:.6f} = {depois_b:.5f}')
+        else:
+            for i, nome_h in enumerate(self.rotulos_ocultos):
+                antes_b = self.b_oculta_antes[i]
+                depois_b = self.r['b_oculta_depois'][i]
+                self._add_step(card,
+                    f'  bias({nome_h}) = {antes_b:.5f} - {self.taxa}·{self.r["delta_oculta"][i]:.6f} = {depois_b:.5f}')
         self._respiro(card)
 
     # ==================================================================
@@ -2013,4 +2059,272 @@ class JanelaMemoriaCalculoMLP(tk.Toplevel):
             f'  E (novo) = {self.novo_erro:.5f}   '
             f'(era {self.r["erro_total"]:.5f}  ·  variacao = {variacao:+.5f})',
             cor=cor)
+
+
+# ===========================================================================
+# Lab 5 — Exercicio B: Problema XOR com MLP (1 epoca, 4 padroes online)
+# ===========================================================================
+class JanelaMemoriaCalculoXOR(tk.Toplevel):
+    """
+    Janela de memoria de calculo do Exercicio B do Lab 5: resolver o XOR com
+    uma MLP (arquitetura da Fig. 12.28b — 2 entradas, 2 ocultos, 1 saida),
+    demonstrando 1 epoca completa (os 4 padroes da tabela-verdade, em modo
+    online/estocastico) de retropropagacao.
+    """
+
+    def __init__(self, parent, padroes, taxa_aprendizado,
+                 pesos_oculta, bias_oculta, pesos_saida, bias_saida):
+        super().__init__(parent)
+        self.title('Memoria de Calculo  ·  XOR com MLP  ·  1 Epoca')
+        self.geometry('1040x900')
+        self.minsize(880, 620)
+        self.configure(bg=T.BG)
+        self.transient(parent)
+
+        self.padroes = [(list(x), list(t)) for x, t in padroes]
+        self.taxa = taxa_aprendizado
+        self.pesos_oculta_iniciais = [row[:] for row in pesos_oculta]
+        self.bias_oculta_iniciais = list(bias_oculta)
+        self.pesos_saida_iniciais = [row[:] for row in pesos_saida]
+        self.bias_saida_iniciais = list(bias_saida)
+        self._imagens_ref = []
+
+        self.rede = RedeFeedforward(
+            n_entradas=2, n_ocultos=len(bias_oculta), n_saidas=len(bias_saida),
+            pesos_oculta=[row[:] for row in pesos_oculta], bias_oculta=list(bias_oculta),
+            pesos_saida=[row[:] for row in pesos_saida], bias_saida=list(bias_saida),
+        )
+
+        self.previsoes_antes = [self.rede.prever(x)[0] for x, _ in self.padroes]
+
+        # Processa a epoca inteira (1 passagem online pelos 4 padroes) e
+        # guarda o resultado de cada passo, na ordem em que ocorreram.
+        self.resultados = [self.rede.passo_treinamento(x, t, self.taxa)
+                            for x, t in self.padroes]
+
+        self.previsoes_depois = [self.rede.prever(x)[0] for x, _ in self.padroes]
+        self.erro_medio_epoca = sum(r['erro_total'] for r in self.resultados) / len(self.resultados)
+
+        self._construir()
+
+    # ------------------------------------------------------------------
+    def _construir(self):
+        tk.Frame(self, bg=T.ACCENT, height=3).pack(fill='x', side='top')
+
+        head = tk.Frame(self, bg=T.BG, height=90)
+        head.pack(fill='x', side='top')
+        head.pack_propagate(False)
+        tk.Label(head, text='MEMORIA DE CALCULO  ·  EXERCICIO B (XOR)',
+                 bg=T.BG, fg=T.ACCENT_DEEP, font=T.FONT_KICKER
+                ).pack(anchor='w', padx=24, pady=(16, 0))
+        tk.Label(head, text='XOR com MLP (arquitetura Fig. 12.28b)  ·  1 Epoca  ·  Aula PR_711',
+                 bg=T.BG, fg=T.FG, font=T.FONT_TITLE
+                ).pack(anchor='w', padx=24)
+        tk.Label(head,
+                 text=(f'Arquitetura: 2 entradas -> 2 ocultos -> 1 saida   |   '
+                       f'4 padroes (modo online)   |   eta = {self.taxa}'),
+                 bg=T.BG, fg=T.FG_MUTED, font=T.FONT_SUBTITLE
+                ).pack(anchor='w', padx=24, pady=(2, 0))
+
+        tk.Frame(self, bg=T.BORDER, height=1).pack(fill='x', side='top')
+
+        rod = tk.Frame(self, bg=T.BG_PANEL, height=44)
+        rod.pack(fill='x', side='bottom')
+        rod.pack_propagate(False)
+        tk.Frame(self, bg=T.BORDER, height=1).pack(fill='x', side='bottom')
+        ttk.Button(rod, text='Fechar', command=self.destroy
+                  ).pack(side='right', padx=20, pady=8)
+        tk.Label(rod, text='Formulas via matplotlib mathtext  ·  calculos em Python puro',
+                 bg=T.BG_PANEL, fg=T.FG_DIM, font=T.FONT_SUBTITLE
+                ).pack(side='left', padx=20, pady=11)
+
+        canvas = tk.Canvas(self, bg=T.BG, highlightthickness=0, borderwidth=0)
+        scroll = ttk.Scrollbar(self, orient='vertical', command=canvas.yview)
+        canvas.configure(yscrollcommand=scroll.set)
+        scroll.pack(side='right', fill='y')
+        canvas.pack(side='left', fill='both', expand=True)
+
+        wrap = tk.Frame(canvas, bg=T.BG)
+        win_id = canvas.create_window((0, 0), window=wrap, anchor='nw')
+        wrap.bind('<Configure>',
+                  lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+        canvas.bind('<Configure>',
+                    lambda e: canvas.itemconfigure(win_id, width=e.width))
+
+        def _wheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), 'units')
+        canvas.bind_all('<MouseWheel>', _wheel)
+        self.protocol('WM_DELETE_WINDOW',
+                      lambda: (canvas.unbind_all('<MouseWheel>'), self.destroy()))
+
+        self._secao_arquitetura(wrap)
+        self._secao_formulas(wrap)
+        self._secao_epoca(wrap)
+        self._secao_resultado_final(wrap)
+        tk.Frame(wrap, bg=T.BG, height=24).pack()
+
+    # ------------------------------------------------------------------
+    # Helpers (mesmo padrao das outras janelas)
+    # ------------------------------------------------------------------
+    def _formula(self, latex, fontsize=16, bg=T.BG_CARD):
+        fig = Figure(figsize=(0.1, 0.1), dpi=120, facecolor=bg)
+        fig.text(0, 0, latex, fontsize=fontsize, color=T.FG,
+                 va='bottom', ha='left')
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', bbox_inches='tight',
+                    pad_inches=0.18, facecolor=bg)
+        buf.seek(0)
+        photo = ImageTk.PhotoImage(Image.open(buf))
+        self._imagens_ref.append(photo)
+        return photo
+
+    def _add_formula(self, parent, latex, fontsize=16, bg=T.BG_CARD, pady=(6, 6)):
+        photo = self._formula(latex, fontsize=fontsize, bg=bg)
+        tk.Label(parent, image=photo, bg=bg).pack(anchor='w', padx=18, pady=pady)
+
+    def _add_step(self, parent, texto):
+        tk.Label(parent, text=texto, bg=T.BG_CARD, fg=T.FG,
+                 font=T.FONT_MONO_SM, anchor='w', justify='left'
+                ).pack(anchor='w', padx=18, pady=1)
+
+    def _add_subkicker(self, parent, texto):
+        tk.Label(parent, text=texto.upper(), bg=T.BG_CARD, fg=T.ACCENT_DEEP,
+                 font=T.FONT_KICKER, anchor='w'
+                ).pack(anchor='w', padx=18, pady=(10, 4))
+
+    def _add_explain(self, parent, texto, pady=(2, 4)):
+        tk.Label(parent, text=texto, bg=T.BG_CARD, fg=T.FG_MUTED,
+                 font=T.FONT_LABEL, wraplength=940, justify='left'
+                ).pack(anchor='w', padx=18, pady=pady)
+
+    def _add_resultado(self, parent, texto, cor):
+        tk.Label(parent, text=texto, bg=T.BG_CARD, fg=cor,
+                 font=T.FONT_TITLE, anchor='w'
+                ).pack(anchor='w', padx=18, pady=(10, 14))
+
+    def _add_ref(self, parent, func):
+        nome, linha = _ref_funcao(func)
+        tk.Label(parent,
+                 text=f'  →  {nome}  :  linha {linha}',
+                 bg=T.BG_CARD, fg=T.FG_DIM,
+                 font=T.FONT_REF, anchor='w'
+                ).pack(anchor='w', padx=18, pady=(0, 4))
+
+    def _respiro(self, parent):
+        tk.Frame(parent, bg=T.BG_CARD, height=10).pack()
+
+    # ==================================================================
+    # SECAO 1 — Arquitetura e Pesos Iniciais
+    # ==================================================================
+    def _secao_arquitetura(self, parent):
+        card = Card(parent, titulo='1. Arquitetura e Pesos Iniciais  ·  Fig. 12.28(b)')
+        card.pack(fill='x', padx=22, pady=(20, 0))
+
+        self._add_explain(card,
+            'A Figura 12.28(b) do slide mostra a topologia minima que resolve o '
+            'XOR (2 entradas -> 2 ocultos -> 1 saida), com pesos rotulados '
+            'genericamente w1...w9 — sem valores numericos dados. Os pesos '
+            'abaixo foram escolhidos para esta demonstracao (valores pequenos, '
+            'tipicos de uma inicializacao aleatoria).')
+
+        self._add_subkicker(card, 'tabela-verdade do xor (4 padroes de treino)')
+        for x, t in self.padroes:
+            self._add_step(card, f'  ({x[0]:.0f}, {x[1]:.0f})  ->  {t[0]:.0f}')
+
+        self._add_subkicker(card, 'pesos iniciais')
+        self._add_step(card, f'  h1: w = {self.pesos_oculta_iniciais[0]}   bias = {self.bias_oculta_iniciais[0]:+.2f}')
+        self._add_step(card, f'  h2: w = {self.pesos_oculta_iniciais[1]}   bias = {self.bias_oculta_iniciais[1]:+.2f}')
+        self._add_step(card, f'  saida: w = {self.pesos_saida_iniciais[0]}   bias = {self.bias_saida_iniciais[0]:+.2f}')
+        self._respiro(card)
+
+    # ==================================================================
+    # SECAO 2 — Formulas (recapitulacao: net, sigmoide, deltas, atualizacao)
+    # ==================================================================
+    def _secao_formulas(self, parent):
+        card = Card(parent, titulo='2. Formulas Aplicadas a Cada Padrao')
+        card.pack(fill='x', padx=22, pady=(22, 0))
+
+        self._add_explain(card,
+            'As mesmas formulas de alimentacao adiante e retropropagacao do '
+            'item (i) sao aplicadas aqui, uma vez para cada um dos 4 padroes '
+            '(modo online: os pesos sao atualizados apos cada padrao, antes '
+            'de processar o proximo).')
+        self._add_formula(card,
+            r'$z = \sum_j w_j\, a_j + b \qquad a = \sigma(z) = \dfrac{1}{1+e^{-z}}$',
+            fontsize=16)
+        self._add_formula(card,
+            r'$\delta_o = (z_o - t_o)\, z_o(1-z_o) \qquad '
+            r'\delta_h = \left(\sum_o \delta_o w_{ho}\right) \text{out}_h(1-\text{out}_h)$',
+            fontsize=15)
+        self._add_formula(card,
+            r'$w_{\text{novo}} = w - \eta \cdot \delta \cdot \text{entrada}$',
+            fontsize=16)
+        self._add_ref(card, RedeFeedforward.passo_treinamento)
+        self._respiro(card)
+
+    # ==================================================================
+    # SECAO 3 — A Epoca: os 4 padroes processados em sequencia
+    # ==================================================================
+    def _secao_epoca(self, parent):
+        card = Card(parent, titulo='3. A Epoca  ·  4 Padroes Processados em Sequencia')
+        card.pack(fill='x', padx=22, pady=(22, 0))
+
+        self._add_explain(card,
+            'Cada padrao e apresentado uma vez, nesta ordem. O erro de cada '
+            'padrao e calculado ANTES da atualizacao de pesos daquele padrao '
+            '(mesma convencao usada no Perceptron e na Regra Delta deste '
+            'projeto) — por isso os pesos "antes" de um padrao sao os '
+            '"depois" do padrao anterior.')
+
+        for i, ((x, t), r) in enumerate(zip(self.padroes, self.resultados)):
+            self._add_subkicker(card, f'padrao {i + 1}  ·  x=({x[0]:.0f}, {x[1]:.0f})  alvo={t[0]:.0f}')
+            self._add_step(card,
+                f'  out_h1={r["saida_oculta"][0]:.4f}   out_h2={r["saida_oculta"][1]:.4f}   '
+                f'out={r["saida_rede"][0]:.4f}   erro={r["erro_total"]:.5f}')
+            self._add_step(card,
+                f'  delta_saida={r["delta_saida"][0]:+.6f}   '
+                f'delta_h1={r["delta_oculta"][0]:+.6f}   delta_h2={r["delta_oculta"][1]:+.6f}')
+            self._add_step(card,
+                f'  pesos oculta -> {[[round(v, 4) for v in row] for row in r["w_oculta_depois"]]}   '
+                f'bias -> {[round(v, 4) for v in r["b_oculta_depois"]]}')
+            self._add_step(card,
+                f'  pesos saida  -> {[round(v, 4) for v in r["w_saida_depois"][0]]}   '
+                f'bias -> {r["b_saida_depois"][0]:.4f}')
+
+        self._add_resultado(card,
+            f'  Erro medio da epoca = {self.erro_medio_epoca:.5f}', cor=T.ACCENT_DEEP)
+
+    # ==================================================================
+    # SECAO 4 — Resultado Final: previsoes antes/depois da epoca
+    # ==================================================================
+    def _secao_resultado_final(self, parent):
+        card = Card(parent, titulo='4. Resultado Final  ·  Previsoes Antes e Depois da Epoca')
+        card.pack(fill='x', padx=22, pady=(22, 0))
+
+        self._add_explain(card,
+            'Recalculando a saida da rede para os 4 padroes com os pesos ja '
+            'atualizados apos a epoca completa:')
+
+        acertos = 0
+        for (x, t), antes, depois in zip(self.padroes, self.previsoes_antes, self.previsoes_depois):
+            classe = 1 if depois >= 0.5 else 0
+            certo = classe == int(t[0])
+            acertos += int(certo)
+            marcador = 'OK' if certo else 'ainda errado'
+            self._add_step(card,
+                f'  x=({x[0]:.0f},{x[1]:.0f})  alvo={t[0]:.0f}   '
+                f'antes={antes:.4f}  ->  depois={depois:.4f}   ({marcador})')
+
+        cor = T.SUCCESS if acertos == 4 else (T.ACCENT_DEEP if acertos > 0 else T.DANGER)
+        self._add_resultado(card,
+            f'  {acertos}/4 padroes corretos apos 1 epoca', cor=cor)
+        self._add_explain(card,
+            'O XOR nao e linearmente separavel: as saidas permanecem proximas '
+            'de 0.5 (regiao de maxima incerteza da sigmoide) apos apenas 1 '
+            'epoca. Sao necessarias muitas epocas de gradiente descendente '
+            'para a rede efetivamente separar os 4 padroes — isso confirma, '
+            'na pratica, por que uma camada oculta nao-linear e indispensavel '
+            'para o XOR (o mesmo limite ja demonstrado com a Regra Delta '
+            'linear na Aba 2, onde o MSE estaciona em 0.25 sem nunca zerar).',
+            pady=(8, 0))
 

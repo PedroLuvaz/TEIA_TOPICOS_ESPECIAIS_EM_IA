@@ -6,7 +6,7 @@ Este documento serve como um guia para apresentar e explicar o projeto. Ele deta
 - §1–§10: Distância Mínima (Aba 1) — split, protótipos, discriminante, fronteiras, GUI
 - §11–§14: Perceptron & Regra Delta & XOR (Aba 2) — teoria, resultados, demonstração
 - §15–§16: Bayes Ótimo & Naive Bayes (Aba 4) — normalidade multivariada, teste Z
-- §18–§20: Feedforward (MLP) & Backpropagation (Aba 5) — Lab 5
+- §18–§20: Feedforward (MLP) & Backpropagation (Lab 5.0 + Lab 5.1) — XOR, exemplo didático e Iris
 
 ---
 
@@ -443,17 +443,26 @@ No conjunto de teste (split 70/30):
 
 ---
 
-## 18. Redes Neurais Multicamadas (Aba 5 — Feedforward/Backpropagation)
+## 18. Redes Neurais Multicamadas (Lab 5.0 e Lab 5.1 — Feedforward/Backpropagation)
 
-**Ponto Chave de Apresentação:** Depois dos classificadores lineares e probabilísticos, o Lab 5 introduz **redes neurais multicamadas (MLP)**, treinadas pelo algoritmo de **retropropagação do erro (backpropagation)** — a base de todo o aprendizado profundo moderno.
+**Ponto Chave de Apresentação:** Depois dos classificadores lineares e probabilísticos, o Lab 5 introduz **redes neurais multicamadas (MLP)**, treinadas pelo algoritmo de **retropropagação do erro (backpropagation)** — a base de todo o aprendizado profundo moderno. O laboratório ocupa duas abas: **Lab 5.0** (slides 36-37, XOR) e **Lab 5.1** (itens i/ii do enunciado formal + Exercício A).
 
-### Item (i) — Rede "Galinha vs Homem" (Python puro)
+### Lab 5.0 — Exemplo Didático (slide 37) e XOR (slide 36)
+*   **Exemplo didático (slide 37):** uma rede 2-2-2 genérica ($i_1=0{,}05$, $i_2=0{,}10$), diferente de todos os outros exemplos do laboratório por usar **um único bias por camada, compartilhado por todos os neurônios dela** (em vez de um bias independente por neurônio). A implementação reproduz **exatamente** todos os valores dos slides 38-42, incluindo a 2ª iteração completa ($E$ cai de $0{,}298371$ para $0{,}285751$) — prova robusta de que o motor de backprop está correto em ambas as convenções de bias.
+*   **Exercício XOR (slide 36):** resolve o XOR com a arquitetura mínima da Fig. 12.28(b) (2→2→1), processando os 4 padrões da tabela-verdade em **1 época** (modo online). Como o slide só dá a topologia (sem valores numéricos de peso), os pesos iniciais foram escolhidos pelo grupo — dito de forma transparente na documentação e na janela de memória de cálculo. Após 1 época as saídas continuam perto de $0{,}5$, provando que o XOR exige uma camada oculta não linear **e** muitas épocas de treino.
+*   **Painel interativo (diferencial desta aba):** fronteira de decisão 2D ao vivo (mapa de calor da saída da rede sobre o plano $x_1{\times}x_2$) e curva de convergência, com botões para treinar além da 1 época exigida. Mostre ao professor que, com estes pesos, o erro fica quase parado até a época ~500 e só converge de fato entre 2000-5000 épocas — e que, diferente da Regra Delta linear (Aba 2, que nunca resolve o XOR, MSE preso em $0{,}25$), a MLP eventualmente resolve o problema.
+*   **Onde encontrar no código:** `iris_classifier/gui/tab_xor.py`, `iris_classifier/models/mlp_backprop.py` (mesmo motor), `iris_classifier/lab05_exercicio_xor.py`.
+
+### Lab 5.1 — Item (i): Rede "Galinha vs Homem" (Python puro)
 *   **O que é:** uma rede 2 entradas → 2 neurônios ocultos → 2 neurônios de saída, com ativação sigmoide em ambas as camadas, usando os pesos iniciais exatos do slide da Aula PR_711.
 *   **Onde encontrar no código:** `iris_classifier/models/mlp_backprop.py` (classe `RedeFeedforward`) e `iris_classifier/lab05_galinha_homem.py`.
 *   **Prova de correção:** a alimentação adiante (forward) da implementação reproduz **exatamente** os valores do slide ($\text{out}_{b_1}=0{,}7020$, $\text{out}_{b_2}=0{,}5841$, $\text{out}_{c_1}=0{,}5934$, $\text{out}_{c_2}=0{,}7353$, $E=0{,}21108$) — mostre isso ao professor como evidência de que a matemática do backprop foi implementada corretamente do zero.
-*   **Como apresentar:** clique em "Rodar 1 passo de treinamento" na Aba 5 e mostre que o erro total cai de $0{,}21107$ para $0{,}20894$ após uma única atualização de pesos — a rede está de fato aprendendo na direção correta do gradiente.
+*   **Como apresentar:** clique em "Abrir memória de cálculo" no card do item (i), na aba Lab 5.1, e mostre que o erro total cai de $0{,}21107$ para $0{,}20894$ após uma única atualização de pesos — a rede está de fato aprendendo na direção correta do gradiente.
 
-### Item (ii) — Feedforward vs Bayes Ótimo vs Naive Bayes (Iris)
+### Lab 5.1 — Exercício Extra (slide 34)
+*   Treina a rede maior do exemplo completo da aula (Fig. 12.32, arquitetura 3→2→2) por **1 única iteração**, com alvo explícito $C_1=1$, $C_2=0$. Mostra que o mesmo motor de backprop generaliza para uma arquitetura diferente sem alterar uma linha de código — só os parâmetros mudam. Erro cai de $0{,}26960$ para $0{,}23986$ na única iteração. Script: `iris_classifier/lab05_exercicio_fig1232.py`.
+
+### Lab 5.1 — Item (ii): Feedforward vs Bayes Ótimo vs Naive Bayes (Iris)
 *   **Única exceção à regra "sem bibliotecas de ML":** o próprio enunciado permite `scikit-learn` apenas para este experimento. Isso está isolado em `iris_classifier/models/mlp_sklearn.py` — o restante do projeto (incluindo o item i deste mesmo laboratório) continua 100% Python puro.
 *   **Resultado:** a rede feedforward atingiu $100\%$ de acurácia no conjunto de teste, contra $97{,}78\%$ de Bayes Ótimo e Naive Bayes (ambos erram a mesma única amostra de *versicolor*).
 *   **Ponto sutil e importante:** apesar da diferença numérica, o **teste Z de Kappa** mostra que essa diferença **não é estatisticamente significativa** ($Z=1{,}0234$, $p=0{,}306$) — 45 amostras de teste são poucas para diferenciar com confiança um único erro a mais ou a menos. Isso é uma ótima oportunidade de discutir com o professor a diferença entre "melhor na prática" e "melhor com significância estatística".
@@ -464,11 +473,14 @@ No conjunto de teste (split 70/30):
 
 | Arquivo | Responsabilidade | Restrição |
 |---|---|---|
-| `iris_classifier/models/mlp_backprop.py` | Rede feedforward + backprop do zero (item i) | Python puro |
+| `iris_classifier/models/mlp_backprop.py` | Rede feedforward + backprop do zero | Python puro |
+| `iris_classifier/gui/tab_xor.py` | Aba Lab 5.0 — exemplo didático (slide 37) + XOR interativo (slide 36) | — |
+| `iris_classifier/lab05_exercicio_xor.py` | Script do exercício XOR (slide 36) | Python puro |
 | `iris_classifier/lab05_galinha_homem.py` | Script demonstrativo do item (i) | Python puro |
+| `iris_classifier/lab05_exercicio_fig1232.py` | Exercício extra (slide 34): rede Fig. 12.32, 1 iteração | Python puro |
 | `iris_classifier/models/mlp_sklearn.py` | Wrapper do `MLPClassifier` para o Iris (item ii) | scikit-learn permitido |
 | `iris_classifier/main.py` (`experimento_mlp_iris`) | Orquestra item (ii): treina os 3 modelos, métricas, testes Z | reaproveita `evaluation/` |
-| `iris_classifier/gui/tab_feedforward.py` | Aba 5 da GUI | — |
+| `iris_classifier/gui/tab_feedforward.py` | Aba Lab 5.1 — item (i), item (ii), Exercício extra | — |
 
 ---
 
@@ -476,6 +488,8 @@ No conjunto de teste (split 70/30):
 
 1.  **Progressão pedagógica completa:** Distância Mínima → Perceptron/Delta → Bayes → **Feedforward/Backprop** — do classificador linear mais simples até a rede neural multicamada, cobrindo toda a evolução histórica do reconhecimento de padrões estudada na disciplina.
 2.  **Regra da cadeia em ação:** o backprop implementado em `mlp_backprop.py` é uma aplicação direta e auditável da regra da cadeia do cálculo diferencial — cada `delta` no código corresponde exatamente a um termo da derivação do slide.
-3.  **Uso disciplinado de bibliotecas:** o projeto usa `scikit-learn` em **um único lugar** (`mlp_sklearn.py`), exatamente onde o enunciado permite, e em nenhum outro — mostra domínio de quando uma biblioteca é apropriada e quando a implementação do zero é exigida.
-4.  **Significância estatística acima da acurácia bruta:** o teste Z de Kappa entre os 3 modelos reforça uma lição central da disciplina — comparar acurácias brutas sem teste de hipótese pode levar a conclusões equivocadas sobre qual modelo é "melhor".
+3.  **Duas convenções de bias, ambas verificadas:** o exemplo didático do slide 37 usa bias compartilhado por camada, diferente do bias independente por neurônio usado no restante do laboratório — a implementação reproduz corretamente as duas, evidência de entendimento profundo do algoritmo, não apenas de código copiado.
+4.  **Uso disciplinado de bibliotecas:** o projeto usa `scikit-learn` em **um único lugar** (`mlp_sklearn.py`), exatamente onde o enunciado permite, e em nenhum outro — mostra domínio de quando uma biblioteca é apropriada e quando a implementação do zero é exigida.
+5.  **Significância estatística acima da acurácia bruta:** o teste Z de Kappa entre os 3 modelos reforça uma lição central da disciplina — comparar acurácias brutas sem teste de hipótese pode levar a conclusões equivocadas sobre qual modelo é "melhor".
+6.  **Entrega completa dos slides:** além dos itens (i) e (ii) do enunciado, o exercício do XOR (slide 36, com exemplo didático do slide 37) e o exercício extra da Fig. 12.32 (slide 34) também foram resolvidos e documentados, com a mesma "memória de cálculo" em LaTeX — mostrando que nenhum exercício da Aula PR_711 ficou de fora da entrega individual.
 

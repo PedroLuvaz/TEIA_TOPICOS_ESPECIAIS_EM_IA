@@ -36,6 +36,8 @@ O projeto é equipado com uma interface gráfica rica e interativa desenvolvida 
 │   ├── models/mlp_backprop.py      # Rede feedforward + backprop do zero (Lab 5, item i — Python puro)
 │   ├── models/mlp_sklearn.py       # Wrapper do MLPClassifier para o Iris (Lab 5, item ii — sklearn permitido)
 │   ├── lab05_galinha_homem.py      # Script demonstrativo do Lab 5, item i (reproduz os valores do slide)
+│   ├── lab05_exercicio_fig1232.py  # Exercicio extra do Lab 5.1 (slide 34): rede Fig. 12.32, 1 iteracao
+│   ├── lab05_exercicio_xor.py      # Exercicio XOR do Lab 5.0 (slide 36): XOR com MLP, 1 epoca
 │   ├── data_loader.py              # Leitura do Excel e separação estratificada dos dados
 │   ├── evaluator.py                # Cálculo de acurácia básica e matriz de confusão
 │   ├── main.py                     # Ponto de entrada CLI (orquestra todos os experimentos)
@@ -50,7 +52,8 @@ O projeto é equipado com uma interface gráfica rica e interativa desenvolvida 
 │       ├── tab_perceptron_delta.py  # Painel de Perceptron e Regra Delta (convergência, XOR)
 │       ├── tab_metricas_avancadas.py# Painel com simulações, matrizes editáveis e teste Z
 │       ├── tab_bayes.py            # Painel dos Classificadores Probabilísticos de Bayes
-│       ├── tab_feedforward.py      # Painel do Lab 5 — Feedforward (MLP) e Backpropagation
+│       ├── tab_xor.py              # Painel do Lab 5.0 — XOR (MLP) + exemplo didático (slides 36-37)
+│       ├── tab_feedforward.py      # Painel do Lab 5.1 — Feedforward (MLP) e Backpropagation (Iris)
 │       └── janela_calculos.py      # Memória de Cálculo LaTeX dinâmica por aba
 ├── outputs/                        # Gráficos e resultados gerados automaticamente
 └── requirements.txt                # Dependências de execução (xlrd, matplotlib, pillow, scikit-learn)
@@ -112,10 +115,16 @@ A GUI do projeto foi projetada seguindo regras estéticas premium (**Slate Light
 *   Conexão em tempo real ao R para testar a Aderência à Normalidade Multivariada das classes via testes de **Henze-Zirkler** e **Mardia**.
 *   Superfícies de decisão não-lineares (parabólicas e hiperbólicas) geradas dinamicamente via contour lines de log-probabilidade.
 
-### **Aba 5: Feedforward (MLP)**
+### **Aba 5 · Lab 5.0: XOR (MLP)**
+*   **Exemplo didático (slide 37):** memória de cálculo passo a passo de uma rede 2-2-2 genérica, com bias único compartilhado por camada — reproduz exatamente os valores dos slides 38-42, incluindo a 2ª iteração completa.
+*   **Exercício XOR (slide 36):** resolve o XOR com a arquitetura mínima da Fig. 12.28(b) (2 entradas → 2 ocultos → 1 saída) em 1 época, com sua própria memória de cálculo em LaTeX.
+*   **Painel interativo:** fronteira de decisão 2D ao vivo (mapa de calor da saída da rede) e curva de convergência, com botões para treinar além da 1 época exigida e observar o XOR sendo efetivamente resolvido (algo que a Regra Delta linear, na Aba 2, nunca consegue fazer).
+
+### **Aba 6 · Lab 5.1: Feedforward (MLP)**
 *   **Item (i):** memória de cálculo passo a passo da rede 2-2-2 "galinha vs homem" (Python puro) — alimentação adiante, deltas da retropropagação e pesos atualizados, reproduzindo os valores exatos do slide da Aula PR_711.
 *   **Bônus interativo:** um canvas de 8x8 pixels pintável à mão livre (inspirado na Figura do slide), classificado em tempo real por uma segunda rede própria (64 entradas → 10 ocultos → 1 saída), com visualização ao vivo da saída e da ativação de cada neurônio da camada oculta.
 *   **Item (ii):** comparação da rede feedforward (`scikit-learn`, único ponto do projeto com biblioteca de ML) com o Bayes Ótimo e o Naive Bayes na classificação do Iris — tabela com todas as métricas de qualidade (Acerto Global, Kappa, Tau, Precisão, Recall, F1, F2, MCC) e testes Z de significância entre os 3 modelos.
+*   **Exercício extra (slide 34):** treina a rede maior do exemplo completo da aula (Fig. 12.32) por 1 iteração, com sua própria memória de cálculo em LaTeX.
 
 ---
 

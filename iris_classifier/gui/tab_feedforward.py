@@ -55,6 +55,15 @@ GH_BIAS_OCULTA = [0.80, 0.25]
 GH_PESOS_SAIDA = [[0.05, 0.33], [0.40, 0.07]]
 GH_BIAS_SAIDA = [0.15, 0.70]
 
+# --- Exercicio A (slide 34): rede da Figura 12.32, 1 iteracao ---
+EXA_ENTRADAS = [3.0, 0.0, 1.0]
+EXA_ALVO = [1.0, 0.0]  # C1 = 1, C2 = 0
+EXA_TAXA_APRENDIZADO = 0.5
+EXA_PESOS_OCULTA = [[0.1, 0.2, 0.6], [0.4, 0.3, 0.1]]
+EXA_BIAS_OCULTA = [0.4, 0.2]
+EXA_PESOS_SAIDA = [[0.2, 0.1], [0.1, 0.4]]
+EXA_BIAS_SAIDA = [0.6, 0.3]
+
 # --- Bonus interativo: reconhecimento de imagem 8x8 pixels ---
 # Padroes de referencia desenhados a mao (inspirados no slide da Aula PR_711:
 # "Man" e "Chicken" em uma grade de 8x8 pixels). Valores 0.0 (fundo claro) a
@@ -124,7 +133,7 @@ class TabFeedforward(tk.Frame):
         wrap.grid(row=0, column=0, sticky='nsew', padx=(T.PAD_PAGE, T.GAP), pady=T.PAD_PAGE)
         wrap.columnconfigure(0, weight=1)
 
-        card_info = Card(wrap, titulo='sobre esta aba')
+        card_info = Card(wrap, titulo='sobre esta aba  ·  lab 5.1')
         card_info.grid(row=0, column=0, sticky='ew')
         tk.Label(card_info,
                  text='Item (i): rede 2-2-2 em Python puro (sem libs de ML), '
@@ -151,8 +160,21 @@ class TabFeedforward(tk.Frame):
                    command=self._abrir_memoria_galinha_homem
                   ).pack(fill='x', padx=T.CARD_PADX, pady=(0, 10))
 
+        card_extras = Card(wrap, titulo='exercicio extra (slide 34)')
+        card_extras.grid(row=2, column=0, sticky='ew', pady=(T.GAP_SM, 0))
+        tk.Label(card_extras,
+                 text='Exercicio A: Rede da Fig. 12.32 — 1 iteracao de treino.\n\n'
+                      'O exercicio do XOR (slide 36) tem aba propria — '
+                      'ver "Lab 5.0 · XOR (MLP)", antes desta aba.',
+                 bg=T.BG_CARD, fg=T.FG_MUTED, font=T.FONT_MONO_SM,
+                 justify='left', anchor='w'
+                ).pack(fill='x', padx=T.CARD_PADX, pady=(0, 6))
+        ttk.Button(card_extras, text='Exercicio A — memoria de calculo  >',
+                   command=self._abrir_memoria_exercicio_a
+                  ).pack(fill='x', padx=T.CARD_PADX, pady=(0, 10))
+
         card_ii = Card(wrap, titulo='item (ii) — iris comparativo')
-        card_ii.grid(row=2, column=0, sticky='ew', pady=(T.GAP_SM, 0))
+        card_ii.grid(row=3, column=0, sticky='ew', pady=(T.GAP_SM, 0))
         ttk.Button(card_ii, text='Treinar e Comparar Modelos  >',
                    style='Primary.TButton',
                    command=self._treinar_tudo
@@ -163,7 +185,7 @@ class TabFeedforward(tk.Frame):
                                    wraplength=260, justify='left')
         self.lbl_status.pack(fill='x', padx=T.CARD_PADX, pady=(0, 10))
 
-        wrap.rowconfigure(3, weight=1)
+        wrap.rowconfigure(4, weight=1)
 
     def _coluna_resultados(self):
         wrap = tk.Frame(self, bg=T.BG)
@@ -652,4 +674,19 @@ class TabFeedforward(tk.Frame):
             pesos_saida=GH_PESOS_SAIDA, bias_saida=GH_BIAS_SAIDA,
             rotulos_ocultos=['b1', 'b2'],
             rotulos_saida=['c1 (homem)', 'c2 (galinha)'],
+        )
+
+    # ------------------------------------------------------------------
+    # Memoria de Calculo (janela LaTeX) — Exercicio A (Fig. 12.32, slide 34)
+    # ------------------------------------------------------------------
+    def _abrir_memoria_exercicio_a(self):
+        JanelaMemoriaCalculoMLP(
+            self,
+            entradas=EXA_ENTRADAS, alvo=EXA_ALVO, taxa_aprendizado=EXA_TAXA_APRENDIZADO,
+            pesos_oculta=EXA_PESOS_OCULTA, bias_oculta=EXA_BIAS_OCULTA,
+            pesos_saida=EXA_PESOS_SAIDA, bias_saida=EXA_BIAS_SAIDA,
+            rotulos_ocultos=['b1', 'b2'],
+            rotulos_saida=['c1', 'c2'],
+            titulo_janela='Exercicio A  ·  Rede da Fig. 12.32 (1 iteracao)',
+            subtitulo='Rede 3-2-2  ·  Exercicio A (slide 34)  ·  Aula PR_711',
         )

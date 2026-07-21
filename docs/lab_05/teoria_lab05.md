@@ -3,7 +3,9 @@
 **Referência:** Aula PR_711 — Redes Neurais Artificiais (Prof. Robson Pequeno de Sousa)
 **Implementação (item i):** `iris_classifier/models/mlp_backprop.py` (Python puro, sem numpy/scipy/sklearn)
 **Implementação (item ii):** `iris_classifier/models/mlp_sklearn.py` (scikit-learn, uso explicitamente permitido pelo enunciado)
-**Interface:** Aba 5 — *Feedforward (MLP)* da GUI (`iris_classifier/gui/tab_feedforward.py`)
+**Interface:** duas abas da GUI —
+**Lab 5.0** *XOR (MLP)* (`iris_classifier/gui/tab_xor.py`, slides 36-37) e
+**Lab 5.1** *Feedforward (MLP)* (`iris_classifier/gui/tab_feedforward.py`, itens i/ii + exercício extra do slide 34)
 
 ---
 
@@ -156,15 +158,56 @@ Como a rede é treinada com apenas 2 exemplos, ela não generaliza no sentido es
 
 ---
 
-## 8. Estrutura Modular
+## 8. Lab 5.0 — XOR com MLP (slides 36-37)
+
+O laboratório abre com uma aba dedicada, **Lab 5.0** (`iris_classifier/gui/tab_xor.py`), que resolve o exercício do XOR (slide 36) usando o exemplo didático genérico do slide 37 como demonstração do algoritmo. Ela antecede a aba "Lab 5.1" (itens i/ii do enunciado formal) porque tem arquitetura, pesos e visualização próprios.
+
+### 8.1 Exemplo Didático (slide 37) — Rede 2-2-2 Genérica
+
+O slide 37 ("Exemplo didático: treinando uma rede de 3 camadas") **não resolve o XOR** — é um exemplo completo e genérico de como a conta do backpropagation é feita passo a passo, com números diferentes do restante do laboratório: $i_1=0{,}05$, $i_2=0{,}10$, alvo $o_1=0{,}01$ e $o_2=0{,}99$, pesos $w_1..w_8$ e $\eta=0{,}5$. Os slides 38-43 mostram a solução completa (1ª e 2ª iteração, e uma curva de convergência até a época 1000), o que permite conferir a implementação numericamente, exatamente como já era feito para o item (i).
+
+**Particularidade importante deste exemplo:** ao contrário de todos os outros exemplos do laboratório (item i, Exercício A), aqui o bias $b_1$ e $b_2$ é **um único valor por camada, compartilhado por todos os neurônios dela** — não um bias independente por neurônio. Isso é visível na fórmula de atualização do bias do slide: $\partial E/\partial b = \sum \delta$ (soma os deltas de **todos** os neurônios da camada, não apenas um). A classe `JanelaMemoriaCalculoMLP` foi estendida com o parâmetro `bias_compartilhado=True` especificamente para reproduzir essa convenção; sem ele, cada neurônio atualizaria seu próprio bias de forma independente (a convenção padrão, usada no item i e no Exercício A) e o resultado numérico divergiria do slide a partir da 2ª iteração.
+
+Verificação: com `bias_compartilhado=True`, a implementação reproduz **exatamente** todos os valores dos slides 38-42 — alimentação adiante ($\text{out}_{h_1}=0{,}593270$, $\text{out}_{h_2}=0{,}596884$, $\text{out}_{o_1}=0{,}751365$, $\text{out}_{o_2}=0{,}772928$, $E=0{,}298371$), deltas, pesos/bias atualizados ($b_1'=0{,}340637$, $b_2'=0{,}549800$) e a 2ª iteração completa ($E=0{,}285751$).
+
+### 8.2 Exercício XOR (slide 36) — Arquitetura Fig. 12.28(b), 1 Época
+
+Enunciado: *"Resolva o problema XOR utilizando uma MLP de acordo com a arquitetura da rede fig 12.28(b). Exercicte com uma época apenas. Implemente a arquitetura de rede acima."*
+
+A Figura 12.28(b) mostra apenas a **topologia mínima** que resolve o XOR (2 entradas → 2 ocultos → 1 saída, pesos rotulados genericamente $w_1...w_9$, sem valores numéricos no slide) — por isso os pesos iniciais usados na demonstração (`iris_classifier/lab05_exercicio_xor.py`) foram escolhidos pelo grupo, com $\eta=0{,}5$.
+
+"1 época" = os 4 padrões da tabela-verdade do XOR são apresentados **uma vez cada**, em sequência, com atualização de pesos após cada padrão (modo online/estocástico — mesma convenção de `perceptron.py` e `delta_rule.py` deste projeto). Como o XOR não é linearmente separável, uma única época não é suficiente para a rede convergir: as saídas permanecem próximas de 0,5 (região de máxima incerteza da sigmoide) mesmo após processar os 4 padrões.
+
+**Painel interativo:** a Aba Lab 5.0 mostra, ao vivo, uma fronteira de decisão 2D (mapa de calor da saída da rede sobre o plano $x_1 \times x_2$, com os 4 pontos do XOR sobrepostos) e uma curva de convergência (erro médio por época). Os botões "Rodar exatamente 1 época" reproduzem o exercício tal como pedido no slide; os botões "+500/+2000 épocas" continuam o treino além do mínimo exigido — com estes pesos iniciais o erro fica quase estacionado até por volta da época 500 e só converge de fato entre as épocas 2000-5000, o que **confirma na prática** por que uma camada oculta não linear é indispensável para o XOR (o mesmo limite já demonstrado com a Regra Delta linear na Aba 2, onde o MSE estaciona em 0,25 sem nunca zerar) e, ao mesmo tempo, mostra que — diferente da Regra Delta — a MLP eventualmente resolve o problema.
+
+---
+
+## 9. Lab 5.1 — Exercício Extra (slide 34)
+
+Além dos itens (i) e (ii) do enunciado formal, a Aba "Lab 5.1" também resolve um exercício adicional do slide, reaproveitando o mesmo motor `RedeFeedforward` (Python puro).
+
+### 9.1 Exercício A (slide 34) — Rede da Figura 12.32, 1 Iteração
+
+Enunciado: *"Treine a rede abaixo, em que a saída desejada é 1 para C1 e 0 para C2, só uma interação [iteração]."* — reaproveita a "pequena rede totalmente conectada" do exemplo numérico completo da aula (Figuras 12.32/12.33), agora com um alvo explícito ($C_1=1$, $C_2=0$) e pedindo apenas **1 iteração** (1 passo de forward + backward + atualização de pesos).
+
+Arquitetura: **3 entradas → 2 ocultos → 2 saídas**, pesos dados no exemplo do slide. O slide não especifica uma taxa de aprendizagem para este exercício específico — foi adotado $\eta = 0{,}5$ (mesma ordem de grandeza do exemplo didático do slide 37), documentado explicitamente no código (`iris_classifier/lab05_exercicio_fig1232.py`).
+
+Resultado: o erro total cai de $E=0{,}26960$ para $E=0{,}23986$ após a única iteração — confirmando que o passo de gradiente descendente caminha na direção correta, mesmo sem convergir em apenas 1 iteração.
+
+---
+
+## 10. Estrutura Modular
 
 | Arquivo | Responsabilidade | Restrição |
 |---|---|---|
 | `iris_classifier/models/mlp_backprop.py` | Rede feedforward + backprop do zero (item i) | Python puro — sem libs de ML |
 | `iris_classifier/lab05_galinha_homem.py` | Script demonstrativo do item (i), reproduz os valores do slide | Python puro |
+| `iris_classifier/lab05_exercicio_fig1232.py` | Script do Exercício A (slide 34), rede Fig. 12.32, 1 iteração | Python puro |
+| `iris_classifier/lab05_exercicio_xor.py` | Script do exercício XOR (slide 36), MLP, 1 época | Python puro |
 | `iris_classifier/models/mlp_sklearn.py` | Wrapper fino do `MLPClassifier` para o Iris (item ii) | scikit-learn permitido |
 | `iris_classifier/main.py` (`experimento_mlp_iris`) | Orquestra item (ii): treina os 3 modelos, calcula métricas, testes Z | reaproveita `evaluation/` |
-| `iris_classifier/gui/tab_feedforward.py` | Aba 5 da GUI — memória de cálculo do item (i) + comparativo do item (ii) | — |
+| `iris_classifier/gui/tab_xor.py` | Aba Lab 5.0 — exemplo didático (slide 37) + XOR interativo (slide 36) | — |
+| `iris_classifier/gui/tab_feedforward.py` | Aba Lab 5.1 — item (i), item (ii) e Exercício A | — |
 
 ---
 
