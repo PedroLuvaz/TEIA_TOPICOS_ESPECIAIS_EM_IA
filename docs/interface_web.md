@@ -142,10 +142,35 @@ Henze-Zirkler e Mardia por classe.
 ### Lab 5.1 · Feedforward
 - **Item (i)** — memória de cálculo da rede 2-2-2 "galinha vs homem"
 - **Exercício extra (slide 34)** — rede da Fig. 12.32, 1 iteração
+- **Linha do tempo** — treine além da iteração única que o enunciado pede e
+  acompanhe a rede convergindo
 - **Bônus interativo** — canvas 8×8 pintável, classificado ao vivo por uma rede
   64-10-1, com as ativações da camada oculta visíveis
 - **Item (ii)** — comparativo MLP (scikit-learn) × Bayes Ótimo × Naive Bayes no
   Iris, com todas as métricas e testes Z
+
+### Construtor de Rede
+Monte a MLP do zero: adicione ou remova neurônios de cada camada, edite cada
+peso e bias na mão, defina os padrões de treino e veja o diagrama reagir em
+tempo real. A coluna **saída agora** é calculada no próprio navegador enquanto
+você edita, antes mesmo de treinar. Ao treinar, o resultado aparece na mesma
+linha do tempo dos exercícios da aula — e é possível adotar os pesos de
+qualquer época como novo ponto de partida.
+
+---
+
+## 3.1 Linha do tempo do treinamento
+
+Presente no Lab 5.0, no Lab 5.1 e no Construtor. O backend treina todas as
+épocas de uma vez e devolve o histórico completo de erro mais **snapshots dos
+pesos** espaçados logaritmicamente — resolução densa nas primeiras épocas, onde
+o aprendizado muda rápido, e esparsa no fim.
+
+Arrastar o slider (ou usar o play, com velocidade 1×/2×/4×) percorre esses
+snapshots. Como os pesos vêm junto, a superfície de decisão e o diagrama da
+rede são **recalculados no navegador** a cada quadro: o `forward` da MLP foi
+replicado em TypeScript (`src/lib/utils.ts`), então não há uma chamada de rede
+por quadro. O treino em si continua exclusivamente no Python puro do backend.
 
 ---
 
@@ -176,6 +201,9 @@ Todas as rotas ficam sob `/api`. Os parâmetros comuns são `dataset` (`v1`/`v2`
 | POST | `/api/bayes/predizer` | Classifica um vetor arbitrário |
 | GET | `/api/lab5/exercicios` | Lista os exercícios do Lab 5 |
 | GET | `/api/lab5/memoria/{id}` | Traço completo da memória de cálculo |
+| POST | `/api/lab5/trajetoria/{id}` | Histórico de erro + snapshots dos pesos |
+| POST | `/api/lab5/rede/trajetoria` | Treina uma rede montada pelo usuário |
+| POST | `/api/lab5/rede/memoria` | Memória de cálculo de uma rede customizada |
 | GET | `/api/lab5/xor/inicial` | Estado da rede XOR na época 0 |
 | POST | `/api/lab5/xor/treinar` | Treina N épocas a partir de pesos informados |
 | GET | `/api/lab5/imagem/padroes` | Padrões 8×8 de referência |

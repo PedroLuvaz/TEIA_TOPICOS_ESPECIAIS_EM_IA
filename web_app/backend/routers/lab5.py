@@ -482,6 +482,168 @@ def trajetoria(exercicio_id: str, req: TrajetoriaRequest):
 
 
 # ---------------------------------------------------------------------------
+# Construtor de rede — arquitetura e pesos definidos pelo usuario
+# ---------------------------------------------------------------------------
+class PadraoCustom(BaseModel):
+    entrada: list[float]
+    alvo: list[float]
+
+
+class RedeCustomRequest(BaseModel):
+    """Rede montada na interface: arquitetura, pesos e padroes arbitrarios."""
+    pesos_oculta: list[list[float]]
+    bias_oculta: list[float]
+    pesos_saida: list[list[float]]
+    bias_saida: list[float]
+    padroes: list[PadraoCustom] = Field(min_length=1)
+    taxa: float = Field(0.5, gt=0, le=5)
+    epocas: int = Field(1000, ge=0, le=50000)
+    n_snapshots: int = Field(60, ge=2, le=200)
+    rotulos_entrada: list[str] | None = None
+    rotulos_ocultos: list[str] | None = None
+    rotulos_saida: list[str] | None = None
+
+
+def _validar_rede(req: RedeCustomRequest):
+    """Confere a coerencia das dimensoes antes de instanciar a rede."""
+    n_oc = len(req.bias_oculta)
+    n_sa = len(req.bias_saida)
+    if n_oc == 0 or n_sa == 0:
+        raise HTTPException(status_code=400,
+                            detail='A rede precisa de ao menos 1 neuronio oculto e 1 de saida.')
+    if len(req.pesos_oculta) != n_oc:
+        raise HTTPException(
+            status_code=400,
+            detail=f'pesos_oculta tem {len(req.pesos_oculta)} linhas, '
+                   f'mas ha {n_oc} bias na camada oculta.')
+    if len(req.pesos_saida) != n_sa:
+        raise HTTPException(
+            status_code=400,
+            detail=f'pesos_saida tem {len(req.pesos_saida)} linhas, '
+                   f'mas ha {n_sa} bias na camada de saida.')
+
+    n_ent = len(req.pesos_oculta[0])
+    if any(len(linha) != n_ent for linha in req.pesos_oculta):
+        raise HTTPException(status_code=400,
+                            detail='Todas as linhas de pesos_oculta devem ter o mesmo tamanho.')
+    if any(len(linha) != n_oc for linha in req.pesos_saida):
+        raise HTTPException(
+            status_code=400,
+            detail=f'Cada linha de pesos_saida deve ter {n_oc} pesos '
+                   '(um por neuronio oculto).')
+
+    for i, p in enumerate(req.padroes):
+        if len(p.entrada) != n_ent:
+            raise HTTPException(
+                status_code=400,
+                detail=f'Padrao {i + 1}: esperadas {n_ent} entradas, '
+                       f'recebidas {len(p.entrada)}.')
+        if len(p.alvo) != n_sa:
+            raise HTTPException(
+                status_code=400,
+                detail=f'Padrao {i + 1}: esperados {n_sa} alvos, '
+                       f'recebidos {len(p.alvo)}.')
+    return n_ent, n_oc, n_sa
+
+
+def _cfg_custom(req: RedeCustomRequest, n_ent, n_oc, n_sa):
+    """Monta um dicionario no mesmo formato dos exercicios pre-definidos."""
+    return {
+        'id': 'custom',
+        'titulo': 'Rede montada por voce',
+        'subtitulo': f'Arquitetura {n_ent}-{n_oc}-{n_sa}',
+        'slide': None,
+        'taxa': req.taxa,
+        'nota': '',
+        'bias_compartilhado': False,
+        'rotulos_entrada': req.rotulos_entrada or [f'x{i + 1}' for i in range(n_ent)],
+        'rotulos_ocultos': req.rotulos_ocultos or [f'h{i + 1}' for i in range(n_oc)],
+        'rotulos_saida': req.rotulos_saida or [f'y{i + 1}' for i in range(n_sa)],
+        'pesos_oculta': req.pesos_oculta,
+        'bias_oculta': req.bias_oculta,
+        'pesos_saida': req.pesos_saida,
+        'bias_saida': req.bias_saida,
+    }
+
+
+@router.post('/rede/trajetoria')
+def rede_trajetoria(req: RedeCustomRequest):
+    """
+    Treina uma rede montada pelo usuario e devolve o mesmo formato de
+    trajetoria dos exercicios pre-definidos — reaproveitando a linha do
+    tempo do frontend sem nenhuma adaptacao.
+    """
+    n_ent, n_oc, n_sa = _validar_rede(req)
+    cfg = _cfg_custom(req, n_ent, n_oc, n_sa)
+
+    rede = RedeFeedforward(
+        n_entradas=n_ent, n_ocultos=n_oc, n_saidas=n_sa,
+        pesos_oculta=[l[:] for l in req.pesos_oculta],
+        bias_oculta=list(req.bias_oculta),
+        pesos_saida=[l[:] for l in req.pesos_saida],
+        bias_saida=list(req.bias_saida),
+    )
+    padroes = [(p.entrada, p.alvo) for p in req.padroes]
+
+    marcos = set(_indices_snapshots(req.epocas, req.n_snapshots))
+    historico: list[float] = []
+    snapshots: list[dict] = []
+
+    def _snapshot(epoca: int, erro: float | None):
+        snapshots.append({
+            'epoca': epoca,
+            'erro': erro,
+            'pesos_oculta': [l[:] for l in rede.w_oculta],
+            'bias_oculta': list(rede.b_oculta),
+            'pesos_saida': [l[:] for l in rede.w_saida],
+            'bias_saida': list(rede.b_saida),
+            'saidas': [rede.prever(x) for x, _ in padroes],
+        })
+
+    if 0 in marcos:
+        _snapshot(0, None)
+
+    for epoca in range(1, req.epocas + 1):
+        soma = 0.0
+        for x, alvo in padroes:
+            soma += rede.passo_treinamento(x, alvo, req.taxa)['erro_total']
+        erro_medio = soma / len(padroes)
+        historico.append(erro_medio)
+        if epoca in marcos:
+            _snapshot(epoca, erro_medio)
+
+    return {
+        'exercicio': 'custom',
+        'tipo': 'epoca' if len(padroes) > 1 else 'passo-unico',
+        'taxa': req.taxa,
+        'epocas': req.epocas,
+        'historico': historico,
+        'snapshots': snapshots,
+        'padroes': [{'entrada': x, 'alvo': a} for x, a in padroes],
+        'alvos': [a for _, a in padroes],
+        'arquitetura': _arquitetura(cfg),
+        'config': {k: cfg[k] for k in
+                   ('id', 'titulo', 'subtitulo', 'slide', 'nota',
+                    'bias_compartilhado')},
+    }
+
+
+@router.post('/rede/memoria')
+def rede_memoria(req: RedeCustomRequest):
+    """
+    Memoria de calculo de um passo de backprop da rede montada pelo usuario,
+    usando o primeiro padrao — mesmo formato dos exercicios da aula.
+    """
+    n_ent, n_oc, n_sa = _validar_rede(req)
+    cfg = _cfg_custom(req, n_ent, n_oc, n_sa)
+    cfg['entradas'] = req.padroes[0].entrada
+    cfg['alvo'] = req.padroes[0].alvo
+    cfg['nota'] = ('Rede montada na interface — os pesos e a arquitetura vieram '
+                   'dos controles do construtor, nao de um slide da aula.')
+    return _traco_passo_unico(cfg)
+
+
+# ---------------------------------------------------------------------------
 # Lab 5.1 — reconhecimento de imagem 8x8
 # ---------------------------------------------------------------------------
 def _obter_rede_imagem():

@@ -84,6 +84,21 @@ export interface ParamsBase extends Params {
   proporcao?: number
 }
 
+/** Rede montada na interface do construtor. */
+export interface RedeCustom {
+  pesos_oculta: number[][]
+  bias_oculta: number[]
+  pesos_saida: number[][]
+  bias_saida: number[]
+  padroes: { entrada: number[]; alvo: number[] }[]
+  taxa: number
+  epocas: number
+  n_snapshots?: number
+  rotulos_entrada?: string[]
+  rotulos_ocultos?: string[]
+  rotulos_saida?: string[]
+}
+
 export const api = {
   health: () => get<{ status: string; sklearn: boolean }>('/health'),
 
@@ -198,6 +213,9 @@ export const api = {
         bias_saida?: number[]
       },
     ) => post<Trajetoria>(`/lab5/trajetoria/${exercicio}`, corpo),
+    redeTrajetoria: (corpo: RedeCustom) =>
+      post<Trajetoria>('/lab5/rede/trajetoria', corpo),
+    redeMemoria: (corpo: RedeCustom) => post<Traco>('/lab5/rede/memoria', corpo),
     padroesImagem: () => get<PadroesImagem>('/lab5/imagem/padroes'),
     preverImagem: (pixels: number[][]) =>
       post<PredicaoImagem>('/lab5/imagem/prever', { pixels }),

@@ -1,6 +1,7 @@
 /** Shell da aplicacao: barra lateral de navegacao, cabecalho e tema. */
 import { motion } from 'motion/react'
 import {
+  Blocks,
   Boxes,
   BrainCircuit,
   GitCompareArrows,
@@ -64,6 +65,13 @@ export const ABAS: Aba[] = [
     rotulo: 'Lab 5.1 · Feedforward',
     descricao: 'Galinha vs Homem e Iris',
     icone: <BrainCircuit size={17} />,
+    grupo: 'Lab 5 — Redes Neurais',
+  },
+  {
+    id: 'construtor',
+    rotulo: 'Construtor de Rede',
+    descricao: 'Monte a MLP e treine do zero',
+    icone: <Blocks size={17} />,
     grupo: 'Lab 5 — Redes Neurais',
   },
 ]
