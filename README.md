@@ -55,6 +55,17 @@ O projeto é equipado com uma interface gráfica rica e interativa desenvolvida 
 │       ├── tab_xor.py              # Painel do Lab 5.0 — XOR (MLP) + exemplo didático (slides 36-37)
 │       ├── tab_feedforward.py      # Painel do Lab 5.1 — Feedforward (MLP) e Backpropagation (Iris)
 │       └── janela_calculos.py      # Memória de Cálculo LaTeX dinâmica por aba
+├── web_app/                        # Interface Web (React + FastAPI)
+│   ├── backend/                    # API FastAPI — expõe os modelos via JSON
+│   │   ├── main.py                 # App, CORS e entrega do build em produção
+│   │   ├── core.py                 # Carregamento de dados, split e cache
+│   │   ├── lab5_config.py          # Configurações dos exercícios do Lab 5
+│   │   └── routers/                # Um router por laboratório
+│   └── frontend/                   # React 18 + Vite + TypeScript + Tailwind v4
+│       └── src/
+│           ├── lib/                # Cliente da API e tipos
+│           ├── components/         # Design system e visualizações
+│           └── pages/              # Uma página por laboratório
 ├── outputs/                        # Gráficos e resultados gerados automaticamente
 └── requirements.txt                # Dependências de execução (xlrd, matplotlib, pillow, scikit-learn)
 ```
@@ -88,6 +99,32 @@ Para abrir o laboratório interativo multimapas de visualização:
 ```bash
 python iris_classifier/run_gui.py
 ```
+
+### 3. Modo Web (React + FastAPI)
+Interface web com os mesmos experimentos, reutilizando integralmente os modelos
+em Python puro. Em desenvolvimento, use dois terminais:
+
+```bash
+python -m uvicorn web_app.backend.main:app --reload --port 8000
+```
+
+```bash
+npm --prefix web_app/frontend run dev
+```
+
+Acesse **http://localhost:5173**. Para rodar em produção num único servidor,
+gere o build e suba apenas o backend (que passa a servir a interface em
+http://localhost:8000):
+
+```bash
+npm --prefix web_app/frontend run build
+python -m uvicorn web_app.backend.main:app --port 8000
+```
+
+> Na primeira vez, instale as dependências do frontend com
+> `npm --prefix web_app/frontend install`.
+> O guia completo — arquitetura, rotas da API e solução de problemas — está em
+> [`docs/interface_web.md`](docs/interface_web.md).
 
 ---
 

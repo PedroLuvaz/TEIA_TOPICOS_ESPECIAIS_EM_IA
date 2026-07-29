@@ -27,6 +27,7 @@ from data.data_loader import carregar_dados_iris, split_estratificado
 from models.bayes_classifier import treinar_bayes, predizer_todas_classes_bayes
 from models.mlp_sklearn import treinar_mlp_iris, prever_mlp_iris
 from models.mlp_backprop import RedeFeedforward
+from models.padroes_pixels import HOMEM_PIXELS, GALINHA_PIXELS, achatar
 from evaluation.metricas_avancadas import relatorio_completo, z_kappa, p_valor_z
 
 from . import theme as T
@@ -65,35 +66,12 @@ EXA_PESOS_SAIDA = [[0.2, 0.1], [0.1, 0.4]]
 EXA_BIAS_SAIDA = [0.6, 0.3]
 
 # --- Bonus interativo: reconhecimento de imagem 8x8 pixels ---
-# Padroes de referencia desenhados a mao (inspirados no slide da Aula PR_711:
-# "Man" e "Chicken" em uma grade de 8x8 pixels). Valores 0.0 (fundo claro) a
-# 1.0 (pixel escuro / silhueta).
-HOMEM_PIXELS = [
-    [0.00, 0.30, 0.40, 0.40, 0.30, 0.00, 0.00, 0.00],
-    [0.00, 0.40, 0.45, 0.45, 0.40, 0.00, 0.00, 0.00],
-    [0.00, 0.40, 0.90, 0.90, 0.40, 0.00, 0.00, 0.00],
-    [0.35, 0.45, 0.50, 0.50, 0.45, 0.25, 0.15, 0.00],
-    [0.35, 0.55, 0.60, 0.60, 0.55, 0.30, 0.20, 0.00],
-    [0.30, 0.50, 0.50, 0.50, 0.45, 0.00, 0.00, 0.00],
-    [0.00, 0.25, 0.00, 0.25, 0.00, 0.00, 0.00, 0.00],
-    [0.00, 0.15, 0.00, 0.15, 0.00, 0.00, 0.00, 0.00],
-]
-GALINHA_PIXELS = [
-    [0.00, 0.30, 0.40, 0.20, 0.00, 0.00, 0.00, 0.00],
-    [0.00, 0.45, 0.90, 0.55, 0.15, 0.00, 0.00, 0.00],
-    [0.10, 0.55, 0.65, 0.60, 0.35, 0.25, 0.10, 0.00],
-    [0.00, 0.40, 0.60, 0.60, 0.55, 0.45, 0.10, 0.00],
-    [0.00, 0.20, 0.55, 0.60, 0.55, 0.35, 0.00, 0.00],
-    [0.00, 0.00, 0.50, 0.55, 0.20, 0.05, 0.00, 0.00],
-    [0.00, 0.00, 0.20, 0.15, 0.05, 0.00, 0.00, 0.00],
-    [0.00, 0.00, 0.05, 0.05, 0.00, 0.00, 0.00, 0.00],
-]
+# Os padroes de referencia vivem em models/padroes_pixels.py (modulo sem
+# dependencia de interface), compartilhados com a API web.
 COR_HOMEM = '#2563EB'
 COR_GALINHA = T.ACCENT
 
-
-def _achatar(grade):
-    return [v for linha in grade for v in linha]
+_achatar = achatar
 
 
 # ===========================================================================

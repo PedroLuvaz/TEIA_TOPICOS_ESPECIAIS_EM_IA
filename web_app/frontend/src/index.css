@@ -1,0 +1,170 @@
+@import 'tailwindcss';
+@import 'katex/dist/katex.min.css';
+
+/* ==========================================================================
+   Design system — TEIA Reconhecimento de Padroes
+   Paleta neutra em zinc + acento ambar (continuidade visual com a GUI
+   desktop), cores de classe herdadas do tema Tkinter (sky/emerald/rose).
+   ========================================================================== */
+@theme {
+  --color-accent-50: #fffbeb;
+  --color-accent-100: #fef3c7;
+  --color-accent-200: #fde68a;
+  --color-accent-300: #fcd34d;
+  --color-accent-400: #fbbf24;
+  --color-accent-500: #f59e0b;
+  --color-accent-600: #d97706;
+  --color-accent-700: #b45309;
+  --color-accent-800: #92400e;
+  --color-accent-900: #78350f;
+
+  /* Cores das classes do Iris — iguais as do theme.py da GUI */
+  --color-setosa: #0ea5e9;
+  --color-versicolor: #10b981;
+  --color-virginica: #f43f5e;
+
+  --font-sans: 'Inter var', 'Inter', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', ui-monospace,
+    'SF Mono', Consolas, monospace;
+
+  --radius-card: 0.875rem;
+}
+
+/* Tokens semanticos — trocam automaticamente entre claro e escuro */
+@layer base {
+  :root {
+    --surface: 0 0% 100%;
+    --surface-raised: 210 40% 99%;
+    --surface-sunken: 210 40% 97%;
+    --border-subtle: 214 20% 90%;
+    --border-strong: 214 18% 82%;
+    --text-primary: 222 47% 11%;
+    --text-secondary: 215 20% 40%;
+    --text-muted: 215 16% 55%;
+    --grid-line: 214 20% 91%;
+  }
+
+  .dark {
+    --surface: 240 6% 7%;
+    --surface-raised: 240 5% 11%;
+    --surface-sunken: 240 6% 5%;
+    --border-subtle: 240 5% 18%;
+    --border-strong: 240 5% 26%;
+    --text-primary: 210 20% 96%;
+    --text-secondary: 218 11% 70%;
+    --text-muted: 218 9% 52%;
+    --grid-line: 240 5% 17%;
+  }
+
+  * {
+    border-color: hsl(var(--border-subtle));
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: hsl(var(--surface-sunken));
+    color: hsl(var(--text-primary));
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+  }
+
+  /* Barra de rolagem discreta, coerente com o tema */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border-strong));
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--text-muted));
+    background-clip: content-box;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Respeita quem prefere menos movimento */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .bg-surface {
+    background-color: hsl(var(--surface));
+  }
+  .bg-raised {
+    background-color: hsl(var(--surface-raised));
+  }
+  .bg-sunken {
+    background-color: hsl(var(--surface-sunken));
+  }
+  .text-primary {
+    color: hsl(var(--text-primary));
+  }
+  .text-secondary {
+    color: hsl(var(--text-secondary));
+  }
+  .text-muted {
+    color: hsl(var(--text-muted));
+  }
+  .border-subtle {
+    border-color: hsl(var(--border-subtle));
+  }
+  .border-strong {
+    border-color: hsl(var(--border-strong));
+  }
+
+  /* Rotulo em caixa alta usado nos cabecalhos de cartao (kicker) */
+  .kicker {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-accent-600);
+  }
+  .dark .kicker {
+    color: var(--color-accent-400);
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Formulas KaTeX herdam a cor do tema */
+.katex {
+  color: hsl(var(--text-primary));
+  font-size: 1.02em;
+}
+.katex-display {
+  margin: 0.6em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.15em 0;
+}
