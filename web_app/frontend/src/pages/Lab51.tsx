@@ -6,9 +6,11 @@
  * · item (ii) comparativo MLP (sklearn) x Bayes Otimo x Naive Bayes no Iris
  */
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { Eraser, FileText } from 'lucide-react'
+import { Eraser, FileText, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { PainelConfig, usarConfig } from '@/components/Controles'
+import { DiagramaRede } from '@/components/DiagramaRede'
+import { LinhaDoTempo, usarLinhaDoTempo } from '@/components/LinhaDoTempo'
 import { MemoriaCalculo } from '@/components/MemoriaCalculo'
 import {
   MatrizConfusao,
@@ -22,6 +24,7 @@ import {
   Carregando,
   ErroBox,
   Legenda,
+  Metrica,
   Nota,
   Segmentos,
   Slider,
@@ -52,14 +55,37 @@ export function PaginaLab51() {
 }
 
 /* ------------------------------------------------------------- item (i) --- */
+const EXERCICIOS_ITEM_I = [
+  { id: 'galinha-homem', rotulo: 'Item (i) — Galinha vs Homem', arq: '2-2-2' },
+  { id: 'fig-1232', rotulo: 'Exercício extra — Fig. 12.32', arq: '3-2-2' },
+] as const
+
 function PainelItemI() {
   const [exercicio, setExercicio] = useState<string | null>(null)
+  const [alvoTreino, setAlvoTreino] =
+    useState<(typeof EXERCICIOS_ITEM_I)[number]['id']>('galinha-homem')
+  const [epocas, setEpocas] = useState(3000)
 
   const memoria = useQuery({
     queryKey: ['lab5', 'memoria', exercicio],
     queryFn: () => api.lab5.memoria(exercicio!),
     enabled: !!exercicio,
   })
+
+  // O slider mexe no rascunho; so o botao promove a parametro efetivo.
+  const [epocasAplicadas, setEpocasAplicadas] = useState(epocas)
+
+  const treino = useQuery({
+    queryKey: ['lab5', 'trajetoria', alvoTreino, epocasAplicadas],
+    queryFn: () =>
+      api.lab5.trajetoria(alvoTreino, {
+        epocas: epocasAplicadas,
+        n_snapshots: 80,
+      }),
+  })
+
+  const trajetoria = treino.data
+  const { indice, setIndice, snapshot } = usarLinhaDoTempo(trajetoria)
 
   return (
     <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
@@ -103,9 +129,127 @@ function PainelItemI() {
             sem alterar uma linha de código.
           </p>
         </Card>
+
+        <Card titulo="treinar além de 1 iteração">
+          <div className="space-y-4">
+            <Segmentos
+              valor={alvoTreino}
+              onChange={setAlvoTreino}
+              opcoes={EXERCICIOS_ITEM_I.map((e) => ({
+                valor: e.id,
+                rotulo: e.arq,
+              }))}
+              className="w-full"
+            />
+            <Slider
+              rotulo="Épocas a treinar"
+              valor={epocas}
+              onChange={setEpocas}
+              min={1}
+              max={20000}
+              passo={100}
+              formatar={(v) => v.toLocaleString('pt-BR')}
+            />
+            <Botao
+              variante="primario"
+              className="w-full"
+              onClick={() => setEpocasAplicadas(epocas)}
+              disabled={treino.isFetching}
+            >
+              <Sparkles size={15} />
+              {treino.isFetching
+                ? 'Treinando…'
+                : epocas !== epocasAplicadas
+                  ? 'Aplicar e treinar'
+                  : 'Gerar linha do tempo'}
+            </Botao>
+          </div>
+          <Nota tom="info" className="mt-4">
+            O enunciado pede só 1 iteração. Aqui você pode continuar o treino e{' '}
+            <strong>arrastar a linha do tempo</strong> para ver o erro cair até
+            a rede separar de fato as duas classes.
+          </Nota>
+        </Card>
       </div>
 
       <div className="space-y-6">
+        {treino.isPending && !trajetoria && (
+          <Card>
+            <Carregando texto="Treinando a rede…" />
+          </Card>
+        )}
+        {treino.error ? <ErroBox erro={treino.error} /> : null}
+
+        {trajetoria && snapshot && (
+          <Card titulo="linha do tempo do treinamento">
+            <div className="mb-4 grid gap-3 sm:grid-cols-3">
+              <Metrica rotulo="Época" valor={snapshot.epoca} />
+              <Metrica
+                rotulo="Erro nesta época"
+                valor={snapshot.erro !== null ? num(snapshot.erro, 6) : '—'}
+              />
+              <Metrica
+                rotulo="Arquitetura"
+                valor={trajetoria.arquitetura.texto}
+                detalhe={`η = ${trajetoria.taxa}`}
+              />
+            </div>
+
+            <LinhaDoTempo
+              trajetoria={trajetoria}
+              indice={indice}
+              onMudarIndice={setIndice}
+            />
+
+            <div className="mt-5 space-y-4">
+              <div>
+                <p className="kicker mb-2">saídas da rede nesta época</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {trajetoria.arquitetura.rotulos_saida.map((nome, i) => {
+                    const saida = snapshot.saidas[0]?.[i] ?? 0
+                    const alvo = trajetoria.alvos[0]?.[i] ?? 0
+                    return (
+                      <div
+                        key={nome}
+                        className="rounded-lg border border-subtle bg-sunken px-3 py-2.5"
+                      >
+                        <p className="text-xs text-muted">
+                          {nome} · alvo {alvo}
+                        </p>
+                        <p className="tabular text-lg font-semibold text-primary">
+                          {num(saida, 5)}
+                        </p>
+                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-zinc-500/20">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${Math.max(1, saida * 100)}%`,
+                              backgroundColor:
+                                Math.abs(saida - alvo) < 0.1
+                                  ? '#10b981'
+                                  : '#f59e0b',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <DiagramaRede
+                arquitetura={{
+                  ...trajetoria.arquitetura,
+                  pesos_oculta: snapshot.pesos_oculta,
+                  bias_oculta: snapshot.bias_oculta,
+                  pesos_saida: snapshot.pesos_saida,
+                  bias_saida: snapshot.bias_saida,
+                }}
+              />
+            </div>
+          </Card>
+        )}
+
         <CanvasPixels />
       </div>
 

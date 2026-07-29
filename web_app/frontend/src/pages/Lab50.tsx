@@ -1,15 +1,15 @@
 /**
  * Lab 5.0 — XOR com MLP (slides 36-37 da Aula PR_711).
  *
- * Exemplo didatico do slide 37 + exercicio do XOR, com treino interativo,
- * superficie de saida da rede e memoria de calculo em LaTeX.
+ * Exemplo didatico do slide 37 + exercicio do XOR, com linha do tempo de
+ * treinamento arrastavel, superficie de saida da rede e memoria de calculo.
  */
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { CheckCircle2, FileText, Play, RotateCcw, XCircle } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { CheckCircle2, FileText, Sparkles, XCircle } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { DiagramaRede } from '@/components/DiagramaRede'
 import { BlocoFormula } from '@/components/Formula'
-import { GraficoLinha } from '@/components/GraficoLinha'
+import { LinhaDoTempo, usarLinhaDoTempo } from '@/components/LinhaDoTempo'
 import { MemoriaCalculo } from '@/components/MemoriaCalculo'
 import {
   Botao,
@@ -19,29 +19,32 @@ import {
   Legenda,
   Metrica,
   Nota,
+  Slider,
 } from '@/components/ui'
 import { api } from '@/lib/api'
-import type { EstadoXor } from '@/lib/types'
-import { cn, escalaDivergente, num } from '@/lib/utils'
+import type { SnapshotRede } from '@/lib/types'
+import type { PesosRede } from '@/lib/utils'
+import {
+  cn,
+  escalaDivergente,
+  forward,
+  num,
+  superficieDeSaida,
+} from '@/lib/utils'
+
+const PADROES_XOR = [
+  { entrada: [0, 0], alvo: 0 },
+  { entrada: [0, 1], alvo: 1 },
+  { entrada: [1, 0], alvo: 1 },
+  { entrada: [1, 1], alvo: 0 },
+]
 
 export function PaginaLab50() {
   const [exercicio, setExercicio] = useState<string | null>(null)
-  const [estado, setEstado] = useState<EstadoXor | null>(null)
-  const [epocaAtual, setEpocaAtual] = useState(0)
-  const [historico, setHistorico] = useState<number[]>([])
-
-  const inicial = useQuery({
-    queryKey: ['lab5', 'xor', 'inicial'],
-    queryFn: () => api.lab5.xorInicial({ resolucao: 70 }),
-  })
-
-  useEffect(() => {
-    if (inicial.data && !estado) {
-      setEstado(inicial.data)
-      setEpocaAtual(0)
-      setHistorico([])
-    }
-  }, [inicial.data, estado])
+  // Os sliders mexem no rascunho; so o botao "Treinar" o promove a parametro
+  // efetivo — assim arrastar nao dispara um treino a cada quadro.
+  const [rascunho, setRascunho] = useState({ epocas: 5000, taxa: 0.5 })
+  const [parametros, setParametros] = useState(rascunho)
 
   const memoria = useQuery({
     queryKey: ['lab5', 'memoria', exercicio],
@@ -49,48 +52,28 @@ export function PaginaLab50() {
     enabled: !!exercicio,
   })
 
-  const treinar = useMutation({
-    mutationFn: (epocas: number) =>
-      api.lab5.xorTreinar({
-        epocas,
-        taxa: 0.5,
-        resolucao: 70,
-        pesos_oculta: estado?.pesos.oculta,
-        bias_oculta: estado?.pesos.bias_oculta,
-        pesos_saida: estado?.pesos.saida,
-        bias_saida: estado?.pesos.bias_saida,
-      }),
-    onSuccess: (novo, epocas) => {
-      setEstado(novo)
-      setEpocaAtual((e) => e + epocas)
-      setHistorico((h) => [...h, ...novo.historico])
-    },
+  const treino = useQuery({
+    queryKey: ['lab5', 'trajetoria', 'xor', parametros],
+    queryFn: () =>
+      api.lab5.trajetoria('xor', { ...parametros, n_snapshots: 80 }),
   })
 
-  const reiniciar = () => {
-    if (inicial.data) {
-      setEstado(inicial.data)
-      setEpocaAtual(0)
-      setHistorico([])
-    }
-  }
+  const trajetoria = treino.data
+  const { indice, setIndice, snapshot } = usarLinhaDoTempo(trajetoria)
 
-  const rodarExercicio = () => {
-    reiniciar()
-    // Roda exatamente 1 epoca a partir dos pesos iniciais — como pede o slide
-    api.lab5
-      .xorTreinar({ epocas: 1, taxa: 0.5, resolucao: 70 })
-      .then((novo) => {
-        setEstado(novo)
-        setEpocaAtual(1)
-        setHistorico(novo.historico)
-      })
+  const epocas = rascunho.epocas
+  const taxa = rascunho.taxa
+  const setEpocas = (v: number) => setRascunho((r) => ({ ...r, epocas: v }))
+  const setTaxa = (v: number) => setRascunho((r) => ({ ...r, taxa: v }))
+  const treinar = (ajuste?: Partial<typeof rascunho>) => {
+    const novo = { ...rascunho, ...ajuste }
+    setRascunho(novo)
+    setParametros(novo)
   }
-
-  const dadosCurva = useMemo(
-    () => historico.map((v, i) => ({ x: i + 1, erro: v })),
-    [historico],
-  )
+  const pendente =
+    treino.isFetching ||
+    rascunho.epocas !== parametros.epocas ||
+    rascunho.taxa !== parametros.taxa
 
   return (
     <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
@@ -130,196 +113,116 @@ export function PaginaLab50() {
           </div>
           <p className="mt-3 text-xs leading-relaxed text-muted">
             Cada janela traz o diagrama da rede, as fórmulas em LaTeX e a
-            substituição numérica de cada etapa — forward, erro, deltas,
-            atualização dos pesos e nova predição.
+            substituição numérica de cada etapa.
           </p>
         </Card>
 
-        <Card titulo="treinamento interativo">
-          <div className="space-y-2">
+        <Card titulo="treinar a rede">
+          <div className="space-y-4">
+            <Slider
+              rotulo="Épocas a treinar"
+              valor={epocas}
+              onChange={setEpocas}
+              min={1}
+              max={20000}
+              passo={100}
+              formatar={(v) => v.toLocaleString('pt-BR')}
+            />
+            <Slider
+              rotulo="Taxa de aprendizagem (η)"
+              valor={taxa}
+              onChange={setTaxa}
+              min={0.05}
+              max={2}
+              passo={0.05}
+              formatar={(v) => v.toFixed(2)}
+            />
             <Botao
               variante="primario"
               className="w-full"
-              onClick={rodarExercicio}
-              disabled={treinar.isPending}
+              onClick={() => treinar()}
+              disabled={treino.isFetching}
             >
-              <Play size={15} />
-              Rodar 1 época (o exercício)
+              <Sparkles size={15} />
+              {treino.isFetching
+                ? 'Treinando…'
+                : pendente
+                  ? 'Aplicar e treinar'
+                  : 'Treinar de novo'}
             </Botao>
             <div className="grid grid-cols-2 gap-2">
               <Botao
-                onClick={() => treinar.mutate(500)}
-                disabled={treinar.isPending}
+                tamanho="sm"
+                onClick={() => treinar({ epocas: 1 })}
+                disabled={treino.isFetching}
               >
-                +500 épocas
+                Só 1 época
               </Botao>
               <Botao
-                onClick={() => treinar.mutate(2000)}
-                disabled={treinar.isPending}
+                tamanho="sm"
+                onClick={() => treinar({ epocas: 5000 })}
+                disabled={treino.isFetching}
               >
-                +2000 épocas
+                5000 épocas
               </Botao>
             </div>
-            <Botao
-              variante="fantasma"
-              className="w-full"
-              onClick={reiniciar}
-              disabled={treinar.isPending}
-            >
-              <RotateCcw size={14} />
-              Reiniciar rede
-            </Botao>
           </div>
           <Nota tom="atencao" className="mt-4">
-            Com estes pesos iniciais o erro fica quase parado até a época ~500 e
-            só converge de fato entre 2000 e 5000 — algo que a Regra Delta
-            linear (Lab 2) <strong>nunca</strong> consegue fazer.
+            Treine bastante e depois <strong>arraste a linha do tempo</strong>:
+            com estes pesos o erro fica quase parado até a época ~500 e só
+            converge de fato entre 2000 e 5000 — algo que a Regra Delta linear
+            (Lab 2) <strong>nunca</strong> consegue fazer.
           </Nota>
         </Card>
       </div>
 
       {/* ------------------------------------------------------- resultados */}
       <div className="space-y-6">
-        {inicial.isPending && (
+        {treino.isPending && (
           <Card>
-            <Carregando texto="Inicializando a rede…" />
+            <Carregando texto="Treinando a rede…" />
           </Card>
         )}
-        {inicial.error && <ErroBox erro={inicial.error} />}
+        {treino.error ? <ErroBox erro={treino.error} /> : null}
 
-        {estado && (
+        {trajetoria && snapshot && (
           <>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Metrica
-                rotulo="Época atual"
-                valor={epocaAtual}
-                detalhe={treinar.isPending ? 'treinando…' : undefined}
-              />
-              <Metrica
-                rotulo="Erro médio da época"
-                valor={
-                  estado.erro_medio !== null ? num(estado.erro_medio, 5) : '—'
-                }
-              />
-              <Metrica
-                rotulo="Padrões corretos"
-                valor={`${estado.acertos} / 4`}
-                destaque={
-                  estado.acertos === 4
-                    ? 'bom'
-                    : estado.acertos >= 2
-                      ? 'medio'
-                      : 'ruim'
-                }
-              />
-            </div>
+            <ResumoEpoca snapshot={snapshot} />
 
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
-              <Card titulo="saída da rede sobre o plano x₁ × x₂">
-                <SuperficieXor estado={estado} />
-              </Card>
-
-              <Card titulo="convergência">
-                {dadosCurva.length ? (
-                  <>
-                    <GraficoLinha
-                      dados={dadosCurva}
-                      series={[
-                        { chave: 'erro', rotulo: 'erro médio', cor: '#f59e0b' },
-                      ]}
-                      rotuloX="época"
-                      rotuloY="erro médio"
-                      altura={300}
-                    />
-                    <Legenda
-                      className="mt-2"
-                      itens={[
-                        {
-                          cor: '#f59e0b',
-                          forma: 'linha',
-                          rotulo: 'erro médio da época',
-                          descricao: 'média dos 4 padrões',
-                        },
-                      ]}
-                    />
-                  </>
-                ) : (
-                  <div className="flex h-[300px] items-center justify-center text-sm text-muted">
-                    Treine a rede para ver a curva
-                  </div>
-                )}
-              </Card>
-            </div>
-
-            <Card titulo="tabela-verdade e saídas atuais">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-subtle">
-                      <th className="py-2 text-left text-[11px] font-semibold text-muted">
-                        Padrão (x₁, x₂)
-                      </th>
-                      <th className="py-2 text-right text-[11px] font-semibold text-muted">
-                        Alvo
-                      </th>
-                      <th className="py-2 text-right text-[11px] font-semibold text-muted">
-                        Saída da rede
-                      </th>
-                      <th className="py-2 text-right text-[11px] font-semibold text-muted">
-                        Classe prevista
-                      </th>
-                      <th className="py-2 text-right text-[11px] font-semibold text-muted">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {estado.resultados.map((r, i) => (
-                      <tr key={i} className="border-b border-subtle/60 last:border-0">
-                        <td className="py-2.5 font-mono text-secondary">
-                          ({r.entrada.map((v) => v.toFixed(0)).join(', ')})
-                        </td>
-                        <td className="py-2.5 text-right tabular text-secondary">
-                          {r.alvo}
-                        </td>
-                        <td className="py-2.5 text-right tabular font-semibold text-primary">
-                          {num(r.saida, 4)}
-                        </td>
-                        <td className="py-2.5 text-right tabular text-secondary">
-                          {r.previsto}
-                        </td>
-                        <td className="py-2.5 text-right">
-                          <span
-                            className={cn(
-                              'inline-flex items-center gap-1 text-xs font-medium',
-                              r.correto
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : 'text-rose-600 dark:text-rose-400',
-                            )}
-                          >
-                            {r.correto ? (
-                              <CheckCircle2 size={14} />
-                            ) : (
-                              <XCircle size={14} />
-                            )}
-                            {r.correto ? 'correto' : 'incorreto'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <Card titulo="linha do tempo do treinamento">
+              <LinhaDoTempo
+                trajetoria={trajetoria}
+                indice={indice}
+                onMudarIndice={setIndice}
+              />
             </Card>
 
-            <Card titulo="arquitetura atual da rede">
-              <DiagramaRede arquitetura={estado.arquitetura} />
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
+              <Card titulo="saída da rede sobre o plano x₁ × x₂">
+                <SuperficieXor snapshot={snapshot} />
+              </Card>
+
+              <Card titulo="tabela-verdade nesta época">
+                <TabelaXor snapshot={snapshot} />
+              </Card>
+            </div>
+
+            <Card titulo={`arquitetura na época ${snapshot.epoca}`}>
+              <DiagramaRede
+                arquitetura={{
+                  ...trajetoria.arquitetura,
+                  pesos_oculta: snapshot.pesos_oculta,
+                  bias_oculta: snapshot.bias_oculta,
+                  pesos_saida: snapshot.pesos_saida,
+                  bias_saida: snapshot.bias_saida,
+                }}
+              />
               <BlocoFormula
                 className="mt-4"
                 titulo="a solução do XOR"
                 latex={String.raw`\text{XOR}(x_1,x_2) = \sigma\!\left(w_7 h_1 + w_8 h_2 + b\right),\quad
                   h_i = \sigma\!\left(w_{i1}x_1 + w_{i2}x_2 + b_i\right)`}
-                explicacao="A camada oculta transforma o espaço de entrada — no espaço de h₁ × h₂ o problema passa a ser linearmente separável."
+                explicacao="A camada oculta transforma o espaço de entrada — no espaço de h₁ × h₂ o problema passa a ser linearmente separável. Arraste a linha do tempo e veja os pesos mudarem."
               />
             </Card>
           </>
@@ -338,11 +241,111 @@ export function PaginaLab50() {
   )
 }
 
-/* ------------------------------------- superficie de saida (canvas + pontos) */
-function SuperficieXor({ estado }: { estado: EstadoXor }) {
+/* ------------------------------------------------------------------ resumo */
+function ResumoEpoca({ snapshot }: { snapshot: SnapshotRede }) {
+  const acertos = PADROES_XOR.filter((p, i) => {
+    const saida = snapshot.saidas[i]?.[0] ?? 0.5
+    return (saida >= 0.5 ? 1 : 0) === p.alvo
+  }).length
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      <Metrica rotulo="Época" valor={snapshot.epoca} />
+      <Metrica
+        rotulo="Erro nesta época"
+        valor={snapshot.erro !== null ? num(snapshot.erro, 6) : '—'}
+      />
+      <Metrica
+        rotulo="Padrões corretos"
+        valor={`${acertos} / 4`}
+        destaque={acertos === 4 ? 'bom' : acertos >= 2 ? 'medio' : 'ruim'}
+      />
+    </div>
+  )
+}
+
+/* ---------------------------------------------------------- tabela-verdade */
+function TabelaXor({ snapshot }: { snapshot: SnapshotRede }) {
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b border-subtle">
+          <th className="py-2 text-left text-[11px] font-semibold text-muted">
+            (x₁, x₂)
+          </th>
+          <th className="py-2 text-right text-[11px] font-semibold text-muted">
+            Alvo
+          </th>
+          <th className="py-2 text-right text-[11px] font-semibold text-muted">
+            Saída
+          </th>
+          <th className="py-2 text-right text-[11px] font-semibold text-muted">
+            Status
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {PADROES_XOR.map((p, i) => {
+          const saida = snapshot.saidas[i]?.[0] ?? 0.5
+          const previsto = saida >= 0.5 ? 1 : 0
+          const correto = previsto === p.alvo
+          return (
+            <tr key={i} className="border-b border-subtle/60 last:border-0">
+              <td className="py-2.5 font-mono text-secondary">
+                ({p.entrada.join(', ')})
+              </td>
+              <td className="py-2.5 text-right tabular text-secondary">
+                {p.alvo}
+              </td>
+              <td className="py-2.5 text-right tabular font-semibold text-primary">
+                {num(saida, 4)}
+              </td>
+              <td className="py-2.5 text-right">
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1 text-xs font-medium',
+                    correto
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-rose-600 dark:text-rose-400',
+                  )}
+                >
+                  {correto ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                  {correto ? 'correto' : 'incorreto'}
+                </span>
+              </td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
+  )
+}
+
+/* --------------------------------------- superficie de saida (canvas local) */
+function SuperficieXor({ snapshot }: { snapshot: SnapshotRede }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const tamanho = 400
+  const tamanho = 380
   const margem = 42
+  const area = tamanho - margem - 12
+  const lo = -0.35
+  const hi = 1.35
+
+  const pesos: PesosRede = useMemo(
+    () => ({
+      pesos_oculta: snapshot.pesos_oculta,
+      bias_oculta: snapshot.bias_oculta,
+      pesos_saida: snapshot.pesos_saida,
+      bias_saida: snapshot.bias_saida,
+    }),
+    [snapshot],
+  )
+
+  // A superficie e recalculada no cliente a cada quadro do slider — como e
+  // so uma rede 2-2-1 numa grade 70x70, o custo e desprezivel.
+  const superficie = useMemo(
+    () => superficieDeSaida(pesos, 70, lo, hi),
+    [pesos],
+  )
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -356,7 +359,7 @@ function SuperficieXor({ estado }: { estado: EstadoXor }) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, tamanho, tamanho)
 
-    const n = estado.superficie.length
+    const n = superficie.length
     const aux = document.createElement('canvas')
     aux.width = n
     aux.height = n
@@ -366,8 +369,8 @@ function SuperficieXor({ estado }: { estado: EstadoXor }) {
     const img = auxCtx.createImageData(n, n)
     for (let i = 0; i < n; i++) {
       for (let j = 0; j < n; j++) {
-        // A superficie vem de baixo para cima; a imagem, de cima para baixo
-        const cor = escalaDivergente(estado.superficie[n - 1 - i][j])
+        // A grade cresce de baixo para cima; a imagem, de cima para baixo
+        const cor = escalaDivergente(superficie[n - 1 - i][j])
         const p = (i * n + j) * 4
         img.data[p] = parseInt(cor.slice(1, 3), 16)
         img.data[p + 1] = parseInt(cor.slice(3, 5), 16)
@@ -379,20 +382,19 @@ function SuperficieXor({ estado }: { estado: EstadoXor }) {
 
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
-    const area = tamanho - margem - 12
     ctx.drawImage(aux, margem, 12, area, area)
-  }, [estado.superficie])
+  }, [superficie, area])
 
-  const lo = estado.limites.min
-  const hi = estado.limites.max
-  const area = tamanho - margem - 12
   const px = (x: number) => margem + ((x - lo) / (hi - lo)) * area
   const py = (y: number) => 12 + area - ((y - lo) / (hi - lo)) * area
 
   return (
     <div>
       <div className="flex flex-wrap items-start gap-4">
-        <div className="relative shrink-0" style={{ width: tamanho, height: tamanho }}>
+        <div
+          className="relative shrink-0"
+          style={{ width: tamanho, height: tamanho }}
+        >
           <canvas
             ref={canvasRef}
             className="absolute inset-0 rounded"
@@ -406,13 +408,15 @@ function SuperficieXor({ estado }: { estado: EstadoXor }) {
             role="img"
             aria-label="Superfície de saída da rede sobre o plano x1 × x2"
           >
-            {estado.resultados.map((r, i) => {
-              const [x1, x2] = r.entrada
-              const cor = r.alvo === 1 ? '#f43f5e' : '#0ea5e9'
-              const borda = r.correto ? '#15803d' : '#dc2626'
+            {PADROES_XOR.map((p, i) => {
+              const [x1, x2] = p.entrada
+              const saida = forward([x1, x2], pesos).saidas[0]
+              const correto = (saida >= 0.5 ? 1 : 0) === p.alvo
+              const cor = p.alvo === 1 ? '#f43f5e' : '#0ea5e9'
+              const borda = correto ? '#15803d' : '#dc2626'
               return (
                 <g key={i}>
-                  {r.alvo === 1 ? (
+                  {p.alvo === 1 ? (
                     <polygon
                       points={`${px(x1)},${py(x2) - 9} ${px(x1) + 8},${py(x2) + 6} ${px(x1) - 8},${py(x2) + 6}`}
                       fill={cor}
@@ -438,13 +442,12 @@ function SuperficieXor({ estado }: { estado: EstadoXor }) {
                     stroke="hsl(var(--surface))"
                     strokeWidth={3}
                   >
-                    {num(r.saida, 3)}
+                    {num(saida, 3)}
                   </text>
                 </g>
               )
             })}
 
-            {/* Eixos */}
             {[0, 0.5, 1].map((t) => (
               <g key={t}>
                 <text
@@ -489,16 +492,15 @@ function SuperficieXor({ estado }: { estado: EstadoXor }) {
           </svg>
         </div>
 
-        {/* Barra de cores */}
         <div className="flex items-center gap-2 pt-3">
           <div
-            className="h-[260px] w-4 rounded border border-subtle"
+            className="h-[240px] w-4 rounded border border-subtle"
             style={{
               background: `linear-gradient(to top, ${escalaDivergente(0)}, ${escalaDivergente(0.5)}, ${escalaDivergente(1)})`,
             }}
             aria-hidden
           />
-          <div className="flex h-[260px] flex-col justify-between text-[10px] tabular text-muted">
+          <div className="flex h-[240px] flex-col justify-between text-[10px] tabular text-muted">
             <span>1,0</span>
             <span>0,5</span>
             <span>0,0</span>

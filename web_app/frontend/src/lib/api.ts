@@ -19,6 +19,7 @@ import type {
   RespostaRegioes,
   RespostaXorDelta,
   Traco,
+  Trajetoria,
 } from './types'
 
 export class ErroApi extends Error {
@@ -185,6 +186,18 @@ export const api = {
       pesos_saida?: number[][]
       bias_saida?: number[]
     }) => post<EstadoXor>('/lab5/xor/treinar', corpo),
+    trajetoria: (
+      exercicio: string,
+      corpo: {
+        epocas: number
+        taxa?: number
+        n_snapshots?: number
+        pesos_oculta?: number[][]
+        bias_oculta?: number[]
+        pesos_saida?: number[][]
+        bias_saida?: number[]
+      },
+    ) => post<Trajetoria>(`/lab5/trajetoria/${exercicio}`, corpo),
     padroesImagem: () => get<PadroesImagem>('/lab5/imagem/padroes'),
     preverImagem: (pixels: number[][]) =>
       post<PredicaoImagem>('/lab5/imagem/prever', { pixels }),

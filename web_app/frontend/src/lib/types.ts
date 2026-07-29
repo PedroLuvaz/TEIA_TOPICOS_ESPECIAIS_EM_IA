@@ -377,6 +377,29 @@ export interface EstadoXor {
   arquitetura: Arquitetura
 }
 
+export interface SnapshotRede {
+  epoca: number
+  erro: number | null
+  pesos_oculta: number[][]
+  bias_oculta: number[]
+  pesos_saida: number[][]
+  bias_saida: number[]
+  saidas: number[][]
+}
+
+export interface Trajetoria {
+  exercicio: string
+  tipo: 'passo-unico' | 'epoca'
+  taxa: number
+  epocas: number
+  historico: number[]
+  snapshots: SnapshotRede[]
+  padroes: { entrada: number[]; alvo: number[] }[]
+  alvos: number[][]
+  arquitetura: Arquitetura
+  config: ConfigExercicio
+}
+
 export interface PadroesImagem {
   homem: { pixels: number[][]; saida: number }
   galinha: { pixels: number[][]; saida: number }

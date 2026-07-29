@@ -44,6 +44,16 @@ class PixelsRequest(BaseModel):
     pixels: list[list[float]]
 
 
+class TrajetoriaRequest(BaseModel):
+    epocas: int = Field(2000, ge=1, le=50000)
+    taxa: float | None = Field(None, gt=0, le=5)
+    n_snapshots: int = Field(60, ge=2, le=200)
+    pesos_oculta: list[list[float]] | None = None
+    bias_oculta: list[float] | None = None
+    pesos_saida: list[list[float]] | None = None
+    bias_saida: list[float] | None = None
+
+
 # ---------------------------------------------------------------------------
 # Exercicios / memoria de calculo
 # ---------------------------------------------------------------------------
@@ -372,6 +382,103 @@ def treinar_xor(req: TreinoXORRequest):
 def xor_inicial(resolucao: int = Query(60, ge=20, le=120)):
     """Estado inicial do XOR (epoca 0), antes de qualquer treino."""
     return treinar_xor(TreinoXORRequest(epocas=0, resolucao=resolucao))
+
+
+# ---------------------------------------------------------------------------
+# Trajetoria de treino — alimenta o slider de epocas do frontend
+# ---------------------------------------------------------------------------
+def _indices_snapshots(epocas: int, quantidade: int) -> list[int]:
+    """
+    Epocas em que gravar um snapshot, espacadas logaritmicamente.
+
+    O aprendizado muda muito rapido no inicio e quase nada no fim, entao o
+    espacamento log da uma resolucao util nas primeiras epocas sem gerar
+    milhares de snapshots.
+    """
+    if epocas <= quantidade:
+        return list(range(epocas + 1))
+    indices = {0, epocas}
+    for k in range(quantidade):
+        t = k / (quantidade - 1)
+        indices.add(int(round((epocas + 1) ** t)) - 1 + 1)
+    return sorted(i for i in indices if 0 <= i <= epocas)
+
+
+@router.post('/trajetoria/{exercicio_id}')
+def trajetoria(exercicio_id: str, req: TrajetoriaRequest):
+    """
+    Treina o exercicio por N epocas de uma vez e devolve o historico completo
+    de erro mais snapshots dos pesos ao longo do caminho.
+
+    O frontend usa isso para o slider de epocas: como os pesos de cada
+    snapshot vem juntos, a superficie de decisao e recalculada localmente
+    enquanto o usuario arrasta — sem uma chamada de rede por quadro.
+    """
+    cfg = EXERCICIOS.get(exercicio_id)
+    if cfg is None:
+        raise HTTPException(status_code=404,
+                            detail=f"Exercicio '{exercicio_id}' nao encontrado.")
+
+    taxa = req.taxa if req.taxa is not None else cfg['taxa']
+    rede = RedeFeedforward(
+        n_entradas=len(cfg['rotulos_entrada']),
+        n_ocultos=len(cfg['bias_oculta']),
+        n_saidas=len(cfg['bias_saida']),
+        pesos_oculta=[l[:] for l in (req.pesos_oculta or cfg['pesos_oculta'])],
+        bias_oculta=list(req.bias_oculta or cfg['bias_oculta']),
+        pesos_saida=[l[:] for l in (req.pesos_saida or cfg['pesos_saida'])],
+        bias_saida=list(req.bias_saida or cfg['bias_saida']),
+    )
+
+    # Um exercicio de passo unico e tratado como um "padrao so" repetido:
+    # cada epoca aplica um passo de backprop sobre a mesma amostra.
+    if exercicio_id in PASSO_UNICO:
+        padroes = [(cfg['entradas'], cfg['alvo'])]
+    else:
+        padroes = [(p['entrada'], p['alvo']) for p in cfg['padroes']]
+
+    marcos = set(_indices_snapshots(req.epocas, req.n_snapshots))
+    historico: list[float] = []
+    snapshots: list[dict] = []
+
+    def _snapshot(epoca: int, erro: float | None):
+        snapshots.append({
+            'epoca': epoca,
+            'erro': erro,
+            'pesos_oculta': [l[:] for l in rede.w_oculta],
+            'bias_oculta': list(rede.b_oculta),
+            'pesos_saida': [l[:] for l in rede.w_saida],
+            'bias_saida': list(rede.b_saida),
+            'saidas': [rede.prever(x) for x, _ in padroes],
+        })
+
+    if 0 in marcos:
+        _snapshot(0, None)
+
+    for epoca in range(1, req.epocas + 1):
+        soma = 0.0
+        for x, alvo in padroes:
+            soma += rede.passo_treinamento(x, alvo, taxa)['erro_total']
+        erro_medio = soma / len(padroes)
+        historico.append(erro_medio)
+        if epoca in marcos:
+            _snapshot(epoca, erro_medio)
+
+    alvos = [alvo for _, alvo in padroes]
+    return {
+        'exercicio': exercicio_id,
+        'tipo': 'passo-unico' if exercicio_id in PASSO_UNICO else 'epoca',
+        'taxa': taxa,
+        'epocas': req.epocas,
+        'historico': historico,
+        'snapshots': snapshots,
+        'padroes': [{'entrada': x, 'alvo': a} for x, a in padroes],
+        'alvos': alvos,
+        'arquitetura': _arquitetura(cfg),
+        'config': {k: cfg[k] for k in
+                   ('id', 'titulo', 'subtitulo', 'slide', 'nota',
+                    'bias_compartilhado')},
+    }
 
 
 # ---------------------------------------------------------------------------

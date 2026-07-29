@@ -99,3 +99,53 @@ export function tomCinza(v: number): string {
   const h = t.toString(16).padStart(2, '0')
   return `#${h}${h}${h}`
 }
+
+/* ------------------------------------------------ rede feedforward local --- */
+
+export interface PesosRede {
+  pesos_oculta: number[][]
+  bias_oculta: number[]
+  pesos_saida: number[][]
+  bias_saida: number[]
+}
+
+export function sigmoide(z: number): number {
+  return 1 / (1 + Math.exp(-z))
+}
+
+/**
+ * Alimentacao adiante da MLP, replicando `models/mlp_backprop.py`.
+ *
+ * Roda no cliente para que arrastar o slider de epocas recalcule a superficie
+ * de decisao instantaneamente, sem uma chamada de rede por quadro. Os pesos
+ * vem sempre do backend — aqui so ha a propagacao, nunca treino.
+ */
+export function forward(
+  entradas: number[],
+  pesos: PesosRede,
+): { ocultas: number[]; saidas: number[] } {
+  const ocultas = pesos.bias_oculta.map((bias, i) =>
+    sigmoide(
+      bias +
+        pesos.pesos_oculta[i].reduce((s, w, j) => s + w * entradas[j], 0),
+    ),
+  )
+  const saidas = pesos.bias_saida.map((bias, i) =>
+    sigmoide(
+      bias + pesos.pesos_saida[i].reduce((s, w, j) => s + w * ocultas[j], 0),
+    ),
+  )
+  return { ocultas, saidas }
+}
+
+/** Amostra a saida da rede numa grade quadrada — usado no mapa do XOR. */
+export function superficieDeSaida(
+  pesos: PesosRede,
+  resolucao: number,
+  min = -0.35,
+  max = 1.35,
+): number[][] {
+  const passo = (max - min) / (resolucao - 1)
+  const eixo = Array.from({ length: resolucao }, (_, k) => min + k * passo)
+  return eixo.map((y) => eixo.map((x) => forward([x, y], pesos).saidas[0]))
+}
