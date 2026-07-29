@@ -1,9 +1,11 @@
 /** Lab 3 — Metricas avancadas: Kappa, Tau, teste Z e matriz editavel. */
 import { useQuery } from '@tanstack/react-query'
+import { FileText } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { PainelConfig, usarConfig } from '@/components/Controles'
 import { BlocoFormula } from '@/components/Formula'
 import { GraficoLinha } from '@/components/GraficoLinha'
+import { MemoriaGenerica } from '@/components/MemoriaGenerica'
 import {
   MatrizConfusao,
   ResumoGlobal,
@@ -52,10 +54,19 @@ export function PaginaMetricas() {
 function PainelModelos() {
   const { config, set } = usarConfig()
   const [selecionado, setSelecionado] = useState('distancia_minima')
+  const [memoriaAberta, setMemoriaAberta] = useState(false)
 
   const q = useQuery({
     queryKey: ['metricas', 'modelos', config],
     queryFn: () => api.metricas.compararModelos(config),
+  })
+
+  const rel0 = q.data?.relatorios[selecionado]
+  const memoria = useQuery({
+    queryKey: ['metricas', 'memoria-modelo', rel0?.nome, rel0?.matriz],
+    queryFn: () =>
+      api.metricas.memoria({ matriz: rel0!.matriz, nome: rel0!.nome }),
+    enabled: memoriaAberta && !!rel0,
   })
 
   const d = q.data
@@ -137,7 +148,15 @@ function PainelModelos() {
 
             {rel && (
               <>
-                <Card titulo={`detalhes — ${rel.nome}`}>
+                <Card
+                  titulo={`detalhes — ${rel.nome}`}
+                  acao={
+                    <Botao tamanho="sm" onClick={() => setMemoriaAberta(true)}>
+                      <FileText size={13} />
+                      Ver cálculos
+                    </Botao>
+                  }
+                >
                   <ResumoGlobal relatorio={rel} />
                 </Card>
 
@@ -164,6 +183,15 @@ function PainelModelos() {
           </>
         )}
       </div>
+
+      {memoriaAberta && (
+        <MemoriaGenerica
+          traco={memoria.data}
+          carregando={memoria.isPending}
+          erro={memoria.error}
+          onFechar={() => setMemoriaAberta(false)}
+        />
+      )}
     </div>
   )
 }
@@ -180,6 +208,7 @@ function matrizInicial(): Record<string, Record<string, number>> {
 function PainelEditor() {
   const [matriz, setMatriz] = useState(matrizInicial)
   const [debounced, setDebounced] = useState(matriz)
+  const [memoriaAberta, setMemoriaAberta] = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(matriz), 250)
@@ -192,6 +221,13 @@ function PainelEditor() {
       api.metricas.avaliar({ matriz: debounced, nome: 'Matriz personalizada' }),
   })
 
+  const memoria = useQuery({
+    queryKey: ['metricas', 'memoria', debounced],
+    queryFn: () =>
+      api.metricas.memoria({ matriz: debounced, nome: 'Matriz personalizada' }),
+    enabled: memoriaAberta,
+  })
+
   const editar = (predito: string, real: string, valor: number) =>
     setMatriz((m) => ({ ...m, [predito]: { ...m[predito], [real]: valor } }))
 
@@ -200,13 +236,19 @@ function PainelEditor() {
       <Card
         titulo="matriz de confusão editável"
         acao={
-          <Botao
-            variante="fantasma"
-            tamanho="sm"
-            onClick={() => setMatriz(matrizInicial())}
-          >
-            restaurar
-          </Botao>
+          <span className="flex gap-2">
+            <Botao tamanho="sm" onClick={() => setMemoriaAberta(true)}>
+              <FileText size={13} />
+              Ver cálculos
+            </Botao>
+            <Botao
+              variante="fantasma"
+              tamanho="sm"
+              onClick={() => setMatriz(matrizInicial())}
+            >
+              restaurar
+            </Botao>
+          </span>
         }
       >
         {q.data && (
@@ -245,6 +287,15 @@ function PainelEditor() {
           </>
         )}
       </div>
+
+      {memoriaAberta && (
+        <MemoriaGenerica
+          traco={memoria.data}
+          carregando={memoria.isPending}
+          erro={memoria.error}
+          onFechar={() => setMemoriaAberta(false)}
+        />
+      )}
     </div>
   )
 }

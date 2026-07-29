@@ -9,15 +9,17 @@ Duas frentes:
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from evaluation.metricas_avancadas import (acerto_global, kappa, p_valor_z,
-                                           relatorio_completo, tau,
-                                           variancia_kappa, variancia_tau,
-                                           z_kappa, z_tau)
+from evaluation.metricas_avancadas import (_acerto_casual, _extrair_binario,
+                                           acerto_global, fb_score, kappa,
+                                           mcc, p_valor_z, relatorio_completo,
+                                           tau, variancia_kappa,
+                                           variancia_tau, z_kappa, z_tau)
 from models.bayes_classifier import (predizer_todas_classes_bayes,
                                      treinar_bayes)
 from models.classifier import predizer_todas_classes, treinar
 from models.delta_rule import predizer_delta_ova, treinar_delta_ova
 
+from .. import traco as T
 from ..core import CLASSES, indices_de, obter_split
 
 router = APIRouter(prefix='/api/metricas', tags=['metricas'])
@@ -153,6 +155,184 @@ def simular(acerto: float = Query(0.9, ge=0.0, le=1.0),
     relatorio = _metricas_da_matriz(matriz, CLASSES, f'Simulacao ({acerto:.0%})')
     return {'relatorio': relatorio, 'acerto_alvo': acerto,
             'n_por_classe': n_por_classe}
+
+
+@router.post('/memoria')
+def memoria(req: MatrizRequest):
+    """
+    Memoria de calculo do Lab 3 — equivalente web da janela LaTeX da GUI.
+    Recebe a matriz de confusao e detalha cada metrica passo a passo.
+    """
+    classes = req.classes or CLASSES
+    rel = _metricas_da_matriz(req.matriz, classes, req.nome)
+    m = rel['matriz']
+    n_total = sum(sum(linha.values()) for linha in m.values())
+    diagonal = sum(m[c][c] for c in classes)
+    ac = _acerto_casual(m, classes)
+
+    # --- Acerto global ---
+    termos_diag = ' + '.join(str(m[c][c]) for c in classes)
+
+    # --- Acerto casual: produto dos marginais ---
+    linhas_casual = []
+    for c in classes:
+        linha = sum(m[c][r] for r in classes)      # total predito como c
+        coluna = sum(m[p][c] for p in classes)     # total real de c
+        linhas_casual.append(
+            f'{c:<12} predito={linha:<4} real={coluna:<4} '
+            f'produto = {linha}·{coluna} = {linha * coluna}')
+    soma_produtos = sum(
+        sum(m[c][r] for r in classes) * sum(m[p][c] for p in classes)
+        for c in classes)
+
+    # --- OvR de uma classe de referencia ---
+    foco = classes[0]
+    vp, fp, fn, vn = _extrair_binario(m, foco, classes)
+    mf = rel['por_classe'][foco]
+
+    # --- Tau ---
+    n_classes = len(classes)
+
+    return T.montar(
+        'Métricas Avançadas',
+        f'{req.nome} · {n_total} amostras · {n_classes} classes',
+        T.secao(
+            'Matriz de confusão · base de todos os cálculos',
+            T.texto('Linha = classe predita, coluna = classe real. A diagonal '
+                    'concentra os acertos; tudo fora dela é erro.'),
+            T.tabela(
+                ['Predito \\ Real'] + [c for c in classes] + ['Total'],
+                [[p] + [m[p][r] for r in classes]
+                 + [sum(m[p][r] for r in classes)] for p in classes]
+                + [['Total'] + [sum(m[p][r] for p in classes) for r in classes]
+                   + [n_total]],
+            ),
+        ),
+        T.secao(
+            'Acerto Global (Ag)',
+            T.texto('A proporção bruta de acertos — a métrica mais simples, e '
+                    'a que mais engana quando as classes são desbalanceadas.'),
+            T.formula(r'A_g \;=\; \frac{\sum_i x_{ii}}{N}'),
+            T.ref(acerto_global),
+            T.passos([
+                f'Σ diagonal = {termos_diag} = {diagonal}',
+                f'N          = {n_total}',
+                f'Ag         = {diagonal} / {n_total} = {T.n(rel["acerto_global"], 6)}',
+            ]),
+            T.resultado(f'Ag = {T.pct(rel["acerto_global"])}',
+                        tom='bom' if rel['acerto_global'] >= 0.9 else 'medio'),
+        ),
+        T.secao(
+            'Acerto casual (Ac) e Coeficiente Kappa',
+            T.texto('O acerto casual estima quanto um classificador acertaria '
+                    'só por sorte, dados os totais marginais. O Kappa desconta '
+                    'esse valor do acerto global.'),
+            T.formula(r'A_c \;=\; \frac{1}{N^2}\sum_i x_{i+}\, x_{+i}'),
+            T.formula(r'\kappa \;=\; \frac{A_g - A_c}{1 - A_c}'),
+            T.ref(_acerto_casual),
+            T.ref(kappa),
+            T.passos(linhas_casual, titulo='marginais por classe'),
+            T.passos([
+                f'Σ produtos = {soma_produtos}',
+                f'Ac  = {soma_produtos} / {n_total}² = {T.n(ac, 6)}',
+                f'κ   = ({T.n(rel["acerto_global"], 6)} − {T.n(ac, 6)}) / '
+                f'(1 − {T.n(ac, 6)})',
+                f'    = {T.n(rel["kappa"], 6)}',
+            ]),
+            T.resultado(f'κ = {T.n(rel["kappa"], 6)}',
+                        tom='bom' if rel['kappa'] > 0.8 else
+                            'medio' if rel['kappa'] > 0.4 else 'ruim'),
+            T.nota('Escala de Landis & Koch: κ > 0,8 excelente · 0,6–0,8 '
+                   'substancial · 0,4–0,6 moderada · < 0,4 fraca. Note que o '
+                   'Kappa fica sempre abaixo do acerto global.', tom='info'),
+        ),
+        T.secao(
+            'Coeficiente Tau',
+            T.texto('Alternativa ao Kappa que assume classes equiprováveis — '
+                    'em vez dos marginais observados, usa 1/M como acerto '
+                    'esperado ao acaso.'),
+            T.formula(r'\tau \;=\; \frac{A_g - 1/M}{1 - 1/M}'),
+            T.ref(tau),
+            T.passos([
+                f'M     = {n_classes} classes   →   1/M = {T.n(1 / n_classes, 6)}',
+                f'τ     = ({T.n(rel["acerto_global"], 6)} − {T.n(1 / n_classes, 6)}) / '
+                f'(1 − {T.n(1 / n_classes, 6)})',
+                f'      = {T.n(rel["tau"], 6)}',
+            ]),
+            T.resultado(f'τ = {T.n(rel["tau"], 6)}'),
+        ),
+        T.secao(
+            'Variâncias · necessárias para o teste Z',
+            T.texto('Sem a variância não dá para dizer se a diferença entre '
+                    'dois classificadores é real ou ruído amostral.'),
+            T.ref(variancia_kappa),
+            T.ref(variancia_tau),
+            T.passos([
+                f'Var(κ) = {rel["variancia_kappa"]:.8f}',
+                f'Var(τ) = {rel["variancia_tau"]:.8f}',
+                f'σ(κ)   = {rel["variancia_kappa"] ** 0.5:.6f}',
+            ]),
+        ),
+        T.secao(
+            'Teste Z de significância',
+            T.texto('Compara dois classificadores treinados no mesmo conjunto. '
+                    'Rejeita-se a equivalência quando |Z| > 1,96 (α = 5%).'),
+            T.formula(r'Z \;=\; \frac{\kappa_1 - \kappa_2}'
+                      r'{\sqrt{\operatorname{Var}(\kappa_1) + \operatorname{Var}(\kappa_2)}}'),
+            T.ref(z_kappa),
+            T.ref(p_valor_z),
+            T.nota('Na aba "Comparar modelos" este teste é aplicado a cada par '
+                   'de classificadores do projeto — é lá que se vê que '
+                   'acurácias diferentes nem sempre significam modelos '
+                   'diferentes.', tom='info'),
+        ),
+        T.secao(
+            f'Extração binária One-vs-Rest · classe {foco}',
+            T.texto('Cada métrica por classe nasce de uma matriz 2×2: a classe '
+                    'de interesse contra todas as outras.'),
+            T.ref(_extrair_binario),
+            T.tabela(
+                ['', f'Real = {foco}', 'Real = resto'],
+                [[f'Predito = {foco}', vp, fp],
+                 ['Predito = resto', fn, vn]],
+                alinhamento=['esq', 'dir', 'dir'],
+            ),
+            T.passos([
+                f'VP = {vp}   FP = {fp}   FN = {fn}   VN = {vn}',
+                f'Acurácia do produtor (revocação) = VP/(VP+FN) = '
+                f'{vp}/{vp + fn} = {T.n(mf["acuracia_produtor"], 6)}',
+                f'Acurácia do usuário (precisão)   = VP/(VP+FP) = '
+                f'{vp}/{vp + fp} = {T.n(mf["acuracia_usuario"], 6)}',
+                f'Especificidade = VN/(VN+FP) = {vn}/{vn + fp} = '
+                f'{T.n(mf["especificidade"], 6)}',
+            ]),
+        ),
+        T.secao(
+            'MCC e F-beta',
+            T.texto('O F-beta pondera precisão e revocação; o MCC leva em '
+                    'conta as quatro células da matriz 2×2, sendo robusto ao '
+                    'desbalanceamento.'),
+            T.formula(r'F_\beta = (1+\beta^2)\,\frac{P \cdot R}'
+                      r'{\beta^2 P + R}'),
+            T.formula(r'\text{MCC} = \frac{VP \cdot VN - FP \cdot FN}'
+                      r'{\sqrt{(VP+FP)(VP+FN)(VN+FP)(VN+FN)}}'),
+            T.ref(fb_score),
+            T.ref(mcc),
+            T.passos([
+                f'F1 (β=1) = {T.n(mf["f1"], 6)}',
+                f'F2 (β=2) = {T.n(mf["f2"], 6)}   (mais peso à revocação)',
+                f'MCC      = {T.n(mf["mcc"], 6)}',
+            ]),
+            T.resultado(f'Classe {foco}: F1 = {T.n(mf["f1"], 4)}  ·  '
+                        f'MCC = {T.n(mf["mcc"], 4)}'),
+        ),
+        cabecalho=[
+            {'rotulo': 'Matriz', 'valor': req.nome},
+            {'rotulo': 'Amostras', 'valor': str(n_total)},
+            {'rotulo': 'Ag', 'valor': T.pct(rel['acerto_global'])},
+            {'rotulo': 'κ', 'valor': T.n(rel['kappa'], 4)},
+        ],
+    )
 
 
 @router.get('/curva-kappa')

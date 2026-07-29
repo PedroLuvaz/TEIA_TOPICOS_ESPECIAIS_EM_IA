@@ -1,10 +1,11 @@
 /** Lab 1 — Classificador de Distancia Minima. */
 import { useQuery } from '@tanstack/react-query'
-import { Crosshair, Target } from 'lucide-react'
+import { Crosshair, FileText, Target } from 'lucide-react'
 import { useState } from 'react'
 import { PainelConfig, usarConfig } from '@/components/Controles'
 import { BlocoFormula } from '@/components/Formula'
 import { GraficoDecisao } from '@/components/GraficoDecisao'
+import { MemoriaGenerica } from '@/components/MemoriaGenerica'
 import {
   MatrizConfusao,
   ResumoGlobal,
@@ -25,6 +26,7 @@ import { cap, corDaClasse, num, pct } from '@/lib/utils'
 export function PaginaDistanciaMinima() {
   const { config, set } = usarConfig()
   const [consulta, setConsulta] = useState<{ x: number; y: number } | null>(null)
+  const [memoriaAberta, setMemoriaAberta] = useState(false)
 
   const treino = useQuery({
     queryKey: ['dm', 'treinar', config],
@@ -51,6 +53,17 @@ export function PaginaDistanciaMinima() {
     enabled: !!consulta,
   })
 
+  const memoria = useQuery({
+    queryKey: ['dm', 'memoria', config, consulta],
+    queryFn: () =>
+      api.distanciaMinima.memoria({
+        ...config,
+        x1: consulta?.x,
+        x2: consulta?.y,
+      }),
+    enabled: memoriaAberta,
+  })
+
   const d = treino.data
 
   return (
@@ -58,6 +71,22 @@ export function PaginaDistanciaMinima() {
       {/* ------------------------------------------------------- controles */}
       <div className="space-y-5">
         <PainelConfig config={config} set={set} />
+
+        <Card titulo="memória de cálculo">
+          <Botao
+            variante="primario"
+            className="w-full"
+            onClick={() => setMemoriaAberta(true)}
+          >
+            <FileText size={15} />
+            Ver teoria e cálculos
+          </Botao>
+          <p className="mt-3 text-xs leading-relaxed text-muted">
+            Protótipos, função discriminante, equivalência com a distância
+            euclidiana e as equações das três fronteiras — com a substituição
+            numérica de cada etapa.
+          </p>
+        </Card>
 
         <Card titulo="sobre este laboratório">
           <p className="text-sm leading-relaxed text-secondary">
@@ -290,6 +319,15 @@ export function PaginaDistanciaMinima() {
           </>
         )}
       </div>
+
+      {memoriaAberta && (
+        <MemoriaGenerica
+          traco={memoria.data}
+          carregando={memoria.isPending}
+          erro={memoria.error}
+          onFechar={() => setMemoriaAberta(false)}
+        />
+      )}
     </div>
   )
 }

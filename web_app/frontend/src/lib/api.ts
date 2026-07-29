@@ -1,4 +1,5 @@
 /** Cliente HTTP tipado da API do projeto. */
+import type { TracoGenerico } from '@/components/MemoriaGenerica'
 import type {
   ComparacaoModelos,
   Estatisticas,
@@ -112,6 +113,8 @@ export const api = {
   distanciaMinima: {
     treinar: (p: ParamsBase) =>
       get<RespostaDistanciaMinima>('/distancia-minima/treinar', p),
+    memoria: (p: ParamsBase & { x1?: number; x2?: number }) =>
+      get<TracoGenerico>('/distancia-minima/memoria', p),
     regioes: (p: ParamsBase & { resolucao?: number }) =>
       get<RespostaRegioes>('/distancia-minima/regioes', p),
     predizer: (corpo: {
@@ -136,6 +139,15 @@ export const api = {
       get<RespostaOva>('/perceptron-delta/ova', p),
     xor: (p: { taxa?: number; max_epocas?: number }) =>
       get<RespostaXorDelta>('/perceptron-delta/xor', p),
+    memoria: (
+      p: ParamsBase & {
+        algoritmo: 'perceptron' | 'delta'
+        classe_pos?: string
+        classe_neg?: string
+        taxa?: number
+        max_epocas?: number
+      },
+    ) => get<TracoGenerico>('/perceptron-delta/memoria', p),
   },
 
   metricas: {
@@ -163,6 +175,11 @@ export const api = {
         kappa: { z: number; p: number; significativo: boolean }
         tau: { z: number; p: number; significativo: boolean }
       }>('/metricas/comparar-matrizes', corpo),
+    memoria: (corpo: {
+      matriz: Record<string, Record<string, number>>
+      classes?: string[]
+      nome?: string
+    }) => post<TracoGenerico>('/metricas/memoria', corpo),
     simular: (p: { acerto?: number; n_por_classe?: number }) =>
       get<{ relatorio: Relatorio; acerto_alvo: number; n_por_classe: number }>(
         '/metricas/simular',
@@ -177,6 +194,8 @@ export const api = {
     regioes: (
       p: ParamsBase & { classificador?: 'bayes' | 'naive'; resolucao?: number },
     ) => get<RespostaRegioes>('/bayes/regioes', p),
+    memoria: (p: ParamsBase & { classificador?: 'bayes' | 'naive' }) =>
+      get<TracoGenerico>('/bayes/memoria', p),
     normalidade: (p: { dataset?: string; atributos?: string }) =>
       get<RespostaNormalidade>('/bayes/normalidade', p),
     predizer: (corpo: {

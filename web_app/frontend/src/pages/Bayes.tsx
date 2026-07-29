@@ -1,10 +1,11 @@
 /** Lab 4 — Bayes Otimo (QDA), Naive Bayes e normalidade multivariada. */
 import { useQuery } from '@tanstack/react-query'
-import { Target } from 'lucide-react'
+import { FileText, Target } from 'lucide-react'
 import { useState } from 'react'
 import { PainelConfig, usarConfig } from '@/components/Controles'
 import { BlocoFormula } from '@/components/Formula'
 import { GraficoDecisao } from '@/components/GraficoDecisao'
+import { MemoriaGenerica } from '@/components/MemoriaGenerica'
 import {
   MatrizConfusao,
   ResumoGlobal,
@@ -30,6 +31,7 @@ export function PaginaBayes() {
   const { config, set } = usarConfig()
   const [classificador, setClassificador] = useState<'bayes' | 'naive'>('bayes')
   const [consulta, setConsulta] = useState<{ x: number; y: number } | null>(null)
+  const [memoriaAberta, setMemoriaAberta] = useState(false)
 
   const treino = useQuery({
     queryKey: ['bayes', 'treinar', config],
@@ -66,6 +68,12 @@ export function PaginaBayes() {
     enabled: !!consulta,
   })
 
+  const memoria = useQuery({
+    queryKey: ['bayes', 'memoria', config, classificador],
+    queryFn: () => api.bayes.memoria({ ...config, classificador }),
+    enabled: memoriaAberta,
+  })
+
   const d = treino.data
   const atual = d?.[classificador]
 
@@ -95,6 +103,21 @@ export function PaginaBayes() {
             latex={String.raw`d_j(x) = -\tfrac{1}{2}\ln|\Sigma_j| - \tfrac{1}{2}(x-m_j)^{T}\Sigma_j^{-1}(x-m_j)`}
             explicacao="Máximo a posteriori com prioris iguais. O segundo termo é a distância de Mahalanobis ao quadrado."
           />
+        </Card>
+
+        <Card titulo="memória de cálculo">
+          <Botao
+            variante="primario"
+            className="w-full"
+            onClick={() => setMemoriaAberta(true)}
+          >
+            <FileText size={15} />
+            Ver teoria e cálculos
+          </Botao>
+          <p className="mt-3 text-xs leading-relaxed text-muted">
+            Parâmetros estimados, discriminante quadrático passo a passo, por
+            que as fronteiras são curvas e o teste Z entre Bayes e Naive.
+          </p>
         </Card>
 
         {consulta && (
@@ -326,6 +349,15 @@ export function PaginaBayes() {
           </>
         )}
       </div>
+
+      {memoriaAberta && (
+        <MemoriaGenerica
+          traco={memoria.data}
+          carregando={memoria.isPending}
+          erro={memoria.error}
+          onFechar={() => setMemoriaAberta(false)}
+        />
+      )}
     </div>
   )
 }

@@ -1,13 +1,15 @@
 /** Lab 2 — Perceptron de Rosenblatt, Regra Delta e o limite do XOR. */
 import { useQuery } from '@tanstack/react-query'
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { CheckCircle2, FileText, XCircle } from 'lucide-react'
 import { useState } from 'react'
 import { PainelConfig, usarConfig, usarMetadata } from '@/components/Controles'
 import { BlocoFormula } from '@/components/Formula'
 import { GraficoDecisao } from '@/components/GraficoDecisao'
 import { GraficoLinha } from '@/components/GraficoLinha'
+import { MemoriaGenerica } from '@/components/MemoriaGenerica'
 import { MatrizConfusao } from '@/components/Metricas'
 import {
+  Botao,
   Card,
   Carregando,
   ErroBox,
@@ -58,6 +60,7 @@ function PainelBinario({ algoritmo }: { algoritmo: 'perceptron' | 'delta' }) {
   const [par, setPar] = useState(0)
   const [taxa, setTaxa] = useState(algoritmo === 'perceptron' ? 0.03 : 0.02)
   const [epocas, setEpocas] = useState(100)
+  const [memoriaAberta, setMemoriaAberta] = useState(false)
 
   const pares = meta?.pares ?? [{ pos: 'setosa', neg: 'versicolor' } as const]
   const parAtual = pares[Math.min(par, pares.length - 1)]
@@ -73,6 +76,20 @@ function PainelBinario({ algoritmo }: { algoritmo: 'perceptron' | 'delta' }) {
         taxa,
         max_epocas: epocas,
       }),
+  })
+
+  const memoria = useQuery({
+    queryKey: ['pd', 'memoria', algoritmo, config, parAtual, taxa, epocas],
+    queryFn: () =>
+      api.perceptronDelta.memoria({
+        ...config,
+        algoritmo,
+        classe_pos: parAtual.pos,
+        classe_neg: parAtual.neg,
+        taxa,
+        max_epocas: epocas,
+      }),
+    enabled: memoriaAberta,
   })
 
   const d = q.data
@@ -109,6 +126,21 @@ function PainelBinario({ algoritmo }: { algoritmo: 'perceptron' | 'delta' }) {
             passo={10}
           />
         </PainelConfig>
+
+        <Card titulo="memória de cálculo">
+          <Botao
+            variante="primario"
+            className="w-full"
+            onClick={() => setMemoriaAberta(true)}
+          >
+            <FileText size={15} />
+            Ver teoria e cálculos
+          </Botao>
+          <p className="mt-3 text-xs leading-relaxed text-muted">
+            Bias trick, regra de atualização, pesos treinados e a
+            classificação de uma amostra com substituição numérica.
+          </p>
+        </Card>
 
         <Card titulo={ehPerceptron ? 'perceptron de rosenblatt' : 'regra delta'}>
           <p className="text-sm leading-relaxed text-secondary">
@@ -261,6 +293,15 @@ function PainelBinario({ algoritmo }: { algoritmo: 'perceptron' | 'delta' }) {
           </>
         )}
       </div>
+
+      {memoriaAberta && (
+        <MemoriaGenerica
+          traco={memoria.data}
+          carregando={memoria.isPending}
+          erro={memoria.error}
+          onFechar={() => setMemoriaAberta(false)}
+        />
+      )}
     </div>
   )
 }
