@@ -11,6 +11,7 @@ import {
   Ruler,
   Sigma,
   Sun,
+  Trees,
   X,
 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
@@ -66,6 +67,13 @@ export const ABAS: Aba[] = [
     descricao: 'Galinha vs Homem e Iris',
     icone: <BrainCircuit size={17} />,
     grupo: 'Lab 5 — Redes Neurais',
+  },
+  {
+    id: 'floresta',
+    rotulo: 'Florestas Aleatórias',
+    descricao: 'Seminário · ensemble de árvores',
+    icone: <Trees size={17} />,
+    grupo: 'Seminário',
   },
   {
     id: 'construtor',

@@ -35,6 +35,8 @@ O projeto é equipado com uma interface gráfica rica e interativa desenvolvida 
 │   ├── metricas_avancadas.py       # Cálculo de Kappa, Tau, variâncias, Z-test, Fb, MCC
 │   ├── models/mlp_backprop.py      # Rede feedforward + backprop do zero (Lab 5, item i — Python puro)
 │   ├── models/mlp_sklearn.py       # Wrapper do MLPClassifier para o Iris (Lab 5, item ii — sklearn permitido)
+│   ├── models/random_forest.py     # Florestas Aleatorias do zero (Seminario — Python puro)
+│   ├── evaluation/validacao_cruzada.py # k-fold estratificado em Python puro
 │   ├── lab05_galinha_homem.py      # Script demonstrativo do Lab 5, item i (reproduz os valores do slide)
 │   ├── lab05_exercicio_fig1232.py  # Exercicio extra do Lab 5.1 (slide 34): rede Fig. 12.32, 1 iteracao
 │   ├── lab05_exercicio_xor.py      # Exercicio XOR do Lab 5.0 (slide 36): XOR com MLP, 1 epoca
@@ -161,6 +163,12 @@ A GUI do projeto foi projetada seguindo regras estéticas premium (**Slate Light
 *   **Exemplo didático (slide 37):** memória de cálculo passo a passo de uma rede 2-2-2 genérica, com bias único compartilhado por camada — reproduz exatamente os valores dos slides 38-42, incluindo a 2ª iteração completa.
 *   **Exercício XOR (slide 36):** resolve o XOR com a arquitetura mínima da Fig. 12.28(b) (2 entradas → 2 ocultos → 1 saída) em 1 época, com sua própria memória de cálculo em LaTeX.
 *   **Painel interativo:** fronteira de decisão 2D ao vivo (mapa de calor da saída da rede) e curva de convergência, com botões para treinar além da 1 época exigida e observar o XOR sendo efetivamente resolvido (algo que a Regra Delta linear, na Aba 2, nunca consegue fazer).
+
+### **Aba 7 · Seminário: Florestas Aleatórias**
+*   Implementação própria em Python puro: árvore CART (Gini/entropia), bagging com amostragem bootstrap, subespaço aleatório de atributos, erro *out-of-bag* e importância dos atributos.
+*   Diagrama navegável de qualquer árvore da floresta, regiões de decisão em escada e votação árvore a árvore ao clicar num ponto.
+*   Comparativo por validação cruzada contra a árvore única, o Bayes Ótimo e a Distância Mínima.
+*   Documentação completa em [`docs/seminario_florestas_aleatorias.md`](docs/seminario_florestas_aleatorias.md).
 
 ### **Aba 6 · Lab 5.1: Feedforward (MLP)**
 *   **Item (i):** memória de cálculo passo a passo da rede 2-2-2 "galinha vs homem" (Python puro) — alimentação adiante, deltas da retropropagação e pesos atualizados, reproduzindo os valores exatos do slide da Aula PR_711.

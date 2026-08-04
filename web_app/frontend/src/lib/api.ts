@@ -19,9 +19,13 @@ import type {
   RespostaPredicao,
   RespostaRegioes,
   RespostaXorDelta,
+  PredicaoFloresta,
+  RespostaArvore,
+  RespostaFloresta,
   Traco,
   Trajetoria,
   ValidacaoCruzada,
+  ValidacaoFloresta,
 } from './types'
 
 export class ErroApi extends Error {
@@ -84,6 +88,15 @@ export interface ParamsBase extends Params {
   dataset?: string
   atributos?: string
   proporcao?: number
+}
+
+/** Parametros da floresta aleatoria. */
+export interface ParamsFloresta extends ParamsBase {
+  n_arvores?: number
+  criterio?: string
+  profundidade_max?: number
+  max_atributos?: string
+  min_amostras_folha?: number
 }
 
 /** Rede montada na interface do construtor. */
@@ -245,5 +258,27 @@ export const api = {
     compararIris: (
       p: ParamsBase & { camada_oculta?: number; max_iter?: number },
     ) => get<ComparacaoModelos>('/lab5/iris/comparar', p),
+  },
+
+  floresta: {
+    treinar: (p: ParamsFloresta) => get<RespostaFloresta>('/floresta/treinar', p),
+    arvore: (indice: number, p: ParamsFloresta) =>
+      get<RespostaArvore>(`/floresta/arvore/${indice}`, p),
+    regioes: (p: ParamsFloresta & { resolucao?: number }) =>
+      get<RespostaRegioes & { confianca: number[][] }>('/floresta/regioes', p),
+    // POST: corpo JSON, sem a assinatura de indice dos query params
+    predizer: (corpo: {
+      dataset?: string
+      atributos?: string
+      proporcao?: number
+      n_arvores?: number
+      criterio?: string
+      profundidade_max?: number
+      max_atributos?: string
+      valores: number[]
+    }) => post<PredicaoFloresta>('/floresta/predizer', corpo),
+    validacaoCruzada: (p: ParamsFloresta & { k?: number; repeticoes?: number }) =>
+      get<ValidacaoFloresta>('/floresta/validacao-cruzada', p),
+    memoria: (p: ParamsFloresta) => get<TracoGenerico>('/floresta/memoria', p),
   },
 }

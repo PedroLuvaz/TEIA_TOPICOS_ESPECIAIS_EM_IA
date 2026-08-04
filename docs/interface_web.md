@@ -178,6 +178,14 @@ Henze-Zirkler e Mardia por classe.
 - **Item (ii)** — comparativo MLP (scikit-learn) × Bayes Ótimo × Naive Bayes no
   Iris, com todas as métricas e testes Z
 
+### Seminário · Florestas Aleatórias
+Implementação própria em Python puro (árvore CART, bagging, subespaço
+aleatório, OOB, importâncias). Três sub-abas: **A floresta** (métricas,
+regiões em escada, importâncias, votação ao clicar), **Árvores individuais**
+(diagrama navegável de cada árvore) e **Comparativo** (validação cruzada
+contra árvore única, Bayes e Distância Mínima). Teoria completa em
+[`seminario_florestas_aleatorias.md`](seminario_florestas_aleatorias.md).
+
 ### Construtor de Rede
 Monte a MLP do zero: adicione ou remova neurônios de cada camada, edite cada
 peso e bias na mão, defina os padrões de treino e veja o diagrama reagir em
@@ -228,6 +236,13 @@ Todas as rotas ficam sob `/api`. Os parâmetros comuns são `dataset` (`v1`/`v2`
 | GET | `/api/bayes/regioes` | Regiões + superfícies para as fronteiras exatas |
 | GET | `/api/bayes/normalidade` | Henze-Zirkler e Mardia por classe |
 | POST | `/api/bayes/predizer` | Classifica um vetor arbitrário |
+| GET | `/api/metricas/validacao-cruzada` | k-fold de todos os classificadores |
+| GET | `/api/floresta/treinar` | Treina a floresta: métricas, OOB, importâncias |
+| GET | `/api/floresta/arvore/{i}` | Estrutura completa de uma árvore |
+| GET | `/api/floresta/regioes` | Regiões de decisão + confiança do voto |
+| POST | `/api/floresta/predizer` | Votação árvore a árvore de um ponto |
+| GET | `/api/floresta/validacao-cruzada` | Floresta × árvore única × demais |
+| GET | `/api/floresta/memoria` | Memória de cálculo do seminário |
 | GET | `/api/lab5/exercicios` | Lista os exercícios do Lab 5 |
 | GET | `/api/lab5/memoria/{id}` | Traço completo da memória de cálculo |
 | POST | `/api/lab5/trajetoria/{id}` | Histórico de erro + snapshots dos pesos |

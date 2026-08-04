@@ -26,6 +26,9 @@ const PaginaLab50 = lazy(() =>
 const PaginaLab51 = lazy(() =>
   import('./pages/Lab51').then((m) => ({ default: m.PaginaLab51 })),
 )
+const PaginaFloresta = lazy(() =>
+  import('./pages/Floresta').then((m) => ({ default: m.PaginaFloresta })),
+)
 const PaginaConstrutor = lazy(() =>
   import('./pages/Construtor').then((m) => ({ default: m.PaginaConstrutor })),
 )
@@ -42,6 +45,7 @@ export function App() {
         {rota === 'bayes' && <PaginaBayes />}
         {rota === 'lab-5-0' && <PaginaLab50 />}
         {rota === 'lab-5-1' && <PaginaLab51 />}
+        {rota === 'floresta' && <PaginaFloresta />}
         {rota === 'construtor' && <PaginaConstrutor />}
       </Suspense>
     </Layout>

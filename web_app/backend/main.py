@@ -16,7 +16,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .core import BASE_DIR
-from .routers import bayes, dataset, distancia_minima, lab5, metricas, perceptron_delta
+from .routers import (bayes, dataset, distancia_minima, floresta, lab5,
+                      metricas, perceptron_delta)
 
 app = FastAPI(
     title='TEIA · Reconhecimento de Padroes',
@@ -33,7 +34,8 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-for r in (dataset, distancia_minima, perceptron_delta, metricas, bayes, lab5):
+for r in (dataset, distancia_minima, perceptron_delta, metricas, bayes,
+          lab5, floresta):
     app.include_router(r.router)
 
 

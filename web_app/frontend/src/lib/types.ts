@@ -458,3 +458,84 @@ export interface PontoCurvaKappa {
   var_kappa: number
   var_tau: number
 }
+
+/* --------------------------------------------------------------- floresta */
+export interface NoArvoreApi {
+  folha: boolean
+  n_amostras: number
+  impureza: number
+  distribuicao: Record<string, number>
+  profundidade: number
+  classe?: string
+  atributo?: number
+  limiar?: number
+  ganho?: number
+  esquerda?: NoArvoreApi
+  direita?: NoArvoreApi
+}
+
+export interface ResumoArvore {
+  indice: number
+  profundidade: number
+  nos: number
+  folhas: number
+  amostras_unicas_bag: number
+  amostras_oob: number
+}
+
+export interface RespostaFloresta {
+  relatorio: Relatorio
+  relatorio_arvore_unica: Relatorio
+  oob: { acuracia: number | null; erro: number | null }
+  importancias: { indice: number; nome: string; importancia: number }[]
+  arvores: ResumoArvore[]
+  config: {
+    n_arvores: number
+    criterio: string
+    profundidade_max: number | null
+    max_atributos: string | number | null
+    atributos: string
+    n_atributos_por_no: number
+  }
+  amostras: Amostra[]
+  n_treino: number
+  n_teste: number
+  eixo_x: string
+  eixo_y: string
+  dimensoes: number
+}
+
+export interface RespostaArvore {
+  indice: number
+  arvore: NoArvoreApi
+  profundidade: number
+  nos: number
+  folhas: number
+  amostras_oob: number
+  amostras_unicas_bag: number
+  nomes_features: string[]
+  total_arvores: number
+}
+
+export interface PredicaoFloresta {
+  classe: ClasseIris
+  votos: Record<string, number>
+  probabilidades: Record<string, number>
+  total_arvores: number
+  valores: number[]
+}
+
+export interface ValidacaoFloresta {
+  resultados: Record<string, ResultadoValidacao>
+  comparacoes: Comparacao[]
+  config: {
+    k: number
+    repeticoes: number
+    n_avaliacoes: number
+    n_amostras: number
+    atributos: string
+    n_arvores: number
+    criterio: string
+  }
+  classes: ClasseIris[]
+}
