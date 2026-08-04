@@ -101,8 +101,13 @@ python iris_classifier/run_gui.py
 ```
 
 ### 3. Modo Web (React + FastAPI)
-Interface web com os mesmos experimentos, reutilizando integralmente os modelos
-em Python puro. Em desenvolvimento, use dois terminais:
+
+**Jeito rápido — um duplo clique:** na raiz do projeto, abra
+**`Iniciar Projeto.bat`** (Windows) ou rode `./iniciar.sh` (macOS/Linux). O
+script sobe o servidor e abre o navegador já na interface, compilando o
+frontend sozinho na primeira vez.
+
+Para desenvolver com hot reload, use dois terminais:
 
 ```bash
 python -m uvicorn web_app.backend.main:app --reload --port 8000

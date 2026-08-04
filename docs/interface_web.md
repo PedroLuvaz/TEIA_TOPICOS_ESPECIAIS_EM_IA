@@ -37,6 +37,35 @@ diferente entre as duas interfaces, é bug — não diferença de implementaçã
 
 ## 2. Como rodar
 
+### 2.0 Jeito rápido — um duplo clique (recomendado para apresentar)
+
+Na raiz do projeto:
+
+- **Windows:** duplo clique em **`Iniciar Projeto.bat`**
+- **macOS / Linux:** `./iniciar.sh`
+
+O script sobe o servidor, espera ele responder e abre o navegador já na
+interface. Se o frontend ainda não estiver compilado, ele compila sozinho na
+primeira execução (aí precisa do Node instalado); nas vezes seguintes só o
+Python roda, e a abertura é quase instantânea.
+
+Opções úteis:
+
+```bash
+python iniciar.py --dev          # hot reload do Vite, para desenvolver
+python iniciar.py --rebuild      # recompila a interface antes de subir
+python iniciar.py --porta 9000   # troca a porta
+python iniciar.py --sem-browser  # não abre o navegador
+```
+
+Se a porta 8000 estiver ocupada, ele procura a próxima livre e avisa qual
+usou. Para encerrar, `Ctrl+C` na janela — os dois processos são finalizados
+juntos.
+
+> Para a apresentação, deixe a interface já compilada
+> (`npm --prefix web_app/frontend run build`). Assim o duplo clique não
+> depende do Node e abre em segundos.
+
 ### 2.1 Pré-requisitos
 
 - **Python 3.10+** com o venv do projeto já criado
