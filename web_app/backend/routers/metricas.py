@@ -14,6 +14,7 @@ from evaluation.metricas_avancadas import (_acerto_casual, _extrair_binario,
                                            mcc, p_valor_z, relatorio_completo,
                                            tau, variancia_kappa,
                                            variancia_tau, z_kappa, z_tau)
+from evaluation.validacao_cruzada import intervalo_confianca, validar_cruzado
 from models.bayes_classifier import (predizer_todas_classes_bayes,
                                      treinar_bayes)
 from models.classifier import predizer_todas_classes, treinar
@@ -333,6 +334,102 @@ def memoria(req: MatrizRequest):
             {'rotulo': 'κ', 'valor': T.n(rel['kappa'], 4)},
         ],
     )
+
+
+@router.get('/validacao-cruzada')
+def validacao_cruzada(dataset: str = 'v1', atributos: str = 'petalas',
+                      k: int = Query(5, ge=2, le=10),
+                      repeticoes: int = Query(5, ge=1, le=20)):
+    """
+    Avalia todos os classificadores por validacao cruzada k-fold estratificada,
+    reportando media, desvio e intervalo de confianca.
+
+    Um unico split de 70/30 deixa so 45 amostras de teste — o resultado varia
+    muito com a semente sorteada. Aqui toda amostra e testada, e o desvio
+    entre as dobras mostra o quanto o numero e confiavel.
+    """
+    try:
+        dados, _, _ = obter_split(dataset)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    idx = indices_de(atributos)
+
+    def _dist_min(treino):
+        return treinar(treino, idx)
+
+    def _dist_min_pred(modelo, amostra):
+        return predizer_todas_classes(amostra['atributos'], modelo, idx)[1]
+
+    def _ova(treino):
+        return treinar_delta_ova(treino, idx)[0]
+
+    def _ova_pred(modelo, amostra):
+        return predizer_delta_ova(
+            [amostra['atributos'][i] for i in idx], modelo)[0]
+
+    def _bayes(naive):
+        return lambda treino: treinar_bayes(treino, idx, naive=naive)
+
+    def _bayes_pred(modelo, amostra):
+        return predizer_todas_classes_bayes(amostra['atributos'], modelo, idx)[1]
+
+    modelos = {
+        'distancia_minima': ('Distancia Minima', _dist_min, _dist_min_pred),
+        'delta_ova': ('Regra Delta OvA', _ova, _ova_pred),
+        'bayes': ('Bayes Otimo (QDA)', _bayes(False), _bayes_pred),
+        'naive': ('Naive Bayes', _bayes(True), _bayes_pred),
+    }
+
+    resultados = {}
+    for chave, (nome, treinar_fn, predizer_fn) in modelos.items():
+        r = validar_cruzado(dados, treinar_fn, predizer_fn, CLASSES,
+                            k=k, repeticoes=repeticoes)
+        baixo, alto = intervalo_confianca(r['media'], r['desvio'],
+                                          r['n_avaliacoes'])
+        relatorio = relatorio_completo([], [], CLASSES, nome)
+        relatorio['matriz'] = r['matriz']
+        # Recalcula as metricas a partir da matriz acumulada de todas as dobras
+        relatorio = _metricas_da_matriz(r['matriz'], CLASSES, nome)
+
+        resultados[chave] = {
+            'nome': nome,
+            'media': r['media'],
+            'desvio': r['desvio'],
+            'minimo': r['minimo'],
+            'maximo': r['maximo'],
+            'ic_baixo': baixo,
+            'ic_alto': alto,
+            'acuracias': r['acuracias'],
+            'n_avaliacoes': r['n_avaliacoes'],
+            'relatorio': relatorio,
+        }
+
+    # Ordena para o ranking e monta comparacoes par a par pelo Kappa acumulado
+    chaves = list(resultados.keys())
+    comparacoes = []
+    for i in range(len(chaves)):
+        for j in range(i + 1, len(chaves)):
+            ra = resultados[chaves[i]]['relatorio']
+            rb = resultados[chaves[j]]['relatorio']
+            z = z_kappa(ra['kappa'], ra['variancia_kappa'],
+                        rb['kappa'], rb['variancia_kappa'])
+            p = p_valor_z(z)
+            comparacoes.append({
+                'a': chaves[i], 'b': chaves[j],
+                'nome_a': ra['nome'], 'nome_b': rb['nome'],
+                'z': z, 'p': p, 'significativo': p < 0.05,
+            })
+
+    return {
+        'resultados': resultados,
+        'comparacoes': comparacoes,
+        'config': {'k': k, 'repeticoes': repeticoes,
+                   'atributos': atributos, 'dataset': dataset,
+                   'n_amostras': len(dados),
+                   'n_avaliacoes': k * repeticoes},
+        'classes': CLASSES,
+    }
 
 
 @router.get('/curva-kappa')

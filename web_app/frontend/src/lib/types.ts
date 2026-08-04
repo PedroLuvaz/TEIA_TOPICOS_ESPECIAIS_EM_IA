@@ -423,6 +423,33 @@ export interface ComparacaoModelos {
   config?: { camada_oculta: number; max_iter: number; atributos: string }
 }
 
+export interface ResultadoValidacao {
+  nome: string
+  media: number
+  desvio: number
+  minimo: number
+  maximo: number
+  ic_baixo: number
+  ic_alto: number
+  acuracias: number[]
+  n_avaliacoes: number
+  relatorio: Relatorio
+}
+
+export interface ValidacaoCruzada {
+  resultados: Record<string, ResultadoValidacao>
+  comparacoes: Comparacao[]
+  config: {
+    k: number
+    repeticoes: number
+    atributos: string
+    dataset: string
+    n_amostras: number
+    n_avaliacoes: number
+  }
+  classes: ClasseIris[]
+}
+
 export interface PontoCurvaKappa {
   acerto_alvo: number
   acerto_global: number

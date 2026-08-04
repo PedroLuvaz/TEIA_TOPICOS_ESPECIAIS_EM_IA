@@ -21,6 +21,7 @@ import type {
   RespostaXorDelta,
   Traco,
   Trajetoria,
+  ValidacaoCruzada,
 } from './types'
 
 export class ErroApi extends Error {
@@ -185,6 +186,9 @@ export const api = {
         '/metricas/simular',
         p,
       ),
+    validacaoCruzada: (
+      p: ParamsBase & { k?: number; repeticoes?: number },
+    ) => get<ValidacaoCruzada>('/metricas/validacao-cruzada', p),
     curvaKappa: (p: { n_por_classe?: number; passos?: number }) =>
       get<{ pontos: PontoCurvaKappa[] }>('/metricas/curva-kappa', p),
   },

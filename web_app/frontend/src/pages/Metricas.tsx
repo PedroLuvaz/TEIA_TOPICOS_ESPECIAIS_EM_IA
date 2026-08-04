@@ -27,10 +27,10 @@ import { api } from '@/lib/api'
 import { CORES_MODELO, num, pct } from '@/lib/utils'
 
 const CLASSES = ['setosa', 'versicolor', 'virginica']
-type Modo = 'modelos' | 'editor' | 'curva'
+type Modo = 'validacao' | 'modelos' | 'editor' | 'curva'
 
 export function PaginaMetricas() {
-  const [modo, setModo] = useState<Modo>('modelos')
+  const [modo, setModo] = useState<Modo>('validacao')
 
   return (
     <div className="space-y-6">
@@ -38,14 +38,264 @@ export function PaginaMetricas() {
         valor={modo}
         onChange={setModo}
         opcoes={[
-          { valor: 'modelos', rotulo: 'Comparar modelos' },
+          { valor: 'validacao', rotulo: 'Validação cruzada' },
+          { valor: 'modelos', rotulo: 'Split único' },
           { valor: 'editor', rotulo: 'Matriz editável' },
           { valor: 'curva', rotulo: 'Ag × Kappa × Tau' },
         ]}
       />
+      {modo === 'validacao' && <PainelValidacao />}
       {modo === 'modelos' && <PainelModelos />}
       {modo === 'editor' && <PainelEditor />}
       {modo === 'curva' && <PainelCurva />}
+    </div>
+  )
+}
+
+/* -------------------------------------------------------- validacao cruzada */
+function PainelValidacao() {
+  const { config, set } = usarConfig()
+  const [k, setK] = useState(5)
+  const [repeticoes, setRepeticoes] = useState(5)
+
+  const q = useQuery({
+    queryKey: ['metricas', 'validacao', config, k, repeticoes],
+    queryFn: () => api.metricas.validacaoCruzada({ ...config, k, repeticoes }),
+  })
+
+  const d = q.data
+  const ordenados = d
+    ? Object.entries(d.resultados).sort((a, b) => b[1].media - a[1].media)
+    : []
+  const melhor = ordenados[0]?.[1].media ?? 1
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="space-y-5">
+        <PainelConfig config={config} set={set} mostrarProporcao={false} />
+
+        <Card titulo="parâmetros da validação">
+          <div className="space-y-4">
+            <Slider
+              rotulo="Dobras (k)"
+              valor={k}
+              onChange={setK}
+              min={2}
+              max={10}
+              passo={1}
+            />
+            <Slider
+              rotulo="Repetições"
+              valor={repeticoes}
+              onChange={setRepeticoes}
+              min={1}
+              max={20}
+              passo={1}
+            />
+          </div>
+          <p className="mt-3 text-xs leading-relaxed text-muted">
+            {k} dobras × {repeticoes} repetições ={' '}
+            <strong>{k * repeticoes} avaliações</strong> por classificador.
+          </p>
+        </Card>
+
+        <Card titulo="por que validação cruzada?">
+          <p className="text-sm leading-relaxed text-secondary">
+            Um único split de 70/30 deixa apenas 45 amostras de teste. Um erro
+            a mais muda a acurácia em 2,2 pontos, e o resultado oscila muito
+            conforme a semente sorteada.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-secondary">
+            Na validação cruzada <strong>toda</strong> amostra é testada
+            exatamente uma vez, e o desvio entre as dobras mostra o quanto o
+            número é confiável.
+          </p>
+          <BlocoFormula
+            className="mt-3"
+            latex={String.raw`\bar{A} \pm z\,\frac{s}{\sqrt{n}}`}
+            explicacao="Média das acurácias das dobras, com o intervalo de confiança de 95%."
+          />
+        </Card>
+      </div>
+
+      <div className="space-y-6">
+        {q.isPending && (
+          <Card>
+            <Carregando texto="Rodando a validação cruzada…" />
+          </Card>
+        )}
+        {q.error && <ErroBox erro={q.error} />}
+
+        {d && (
+          <>
+            <Card titulo="acurácia média por classificador">
+              <div className="space-y-4">
+                {ordenados.map(([chave, r]) => (
+                  <div key={chave}>
+                    <div className="mb-1 flex items-baseline justify-between gap-3">
+                      <span className="flex items-center gap-2 text-sm font-medium text-primary">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: CORES_MODELO[chave] }}
+                        />
+                        {r.nome}
+                      </span>
+                      <span className="tabular text-sm">
+                        <span className="font-semibold text-primary">
+                          {pct(r.media)}
+                        </span>
+                        <span className="text-muted"> ± {pct(r.desvio)}</span>
+                      </span>
+                    </div>
+                    <div className="relative h-5 overflow-hidden rounded bg-sunken">
+                      <div
+                        className="absolute inset-y-0 left-0 opacity-25"
+                        style={{
+                          width: `${(r.media / melhor) * 100}%`,
+                          backgroundColor: CORES_MODELO[chave],
+                        }}
+                      />
+                      <div
+                        className="absolute inset-y-1 rounded-sm"
+                        style={{
+                          left: `${(r.ic_baixo / melhor) * 100}%`,
+                          width: `${((r.ic_alto - r.ic_baixo) / melhor) * 100}%`,
+                          backgroundColor: CORES_MODELO[chave],
+                        }}
+                      />
+                    </div>
+                    <div className="mt-0.5 flex justify-between text-[10px] tabular text-muted">
+                      <span>
+                        IC 95%: [{pct(r.ic_baixo, 1)}, {pct(r.ic_alto, 1)}]
+                      </span>
+                      <span>
+                        min {pct(r.minimo, 1)} · max {pct(r.maximo, 1)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Legenda
+                className="mt-4"
+                itens={[
+                  {
+                    cor: 'hsl(var(--text-muted))',
+                    rotulo: 'faixa clara',
+                    descricao: 'acurácia média',
+                  },
+                  {
+                    cor: 'hsl(var(--text-secondary))',
+                    rotulo: 'faixa sólida',
+                    descricao: 'intervalo de confiança de 95%',
+                  },
+                ]}
+              />
+
+              <p className="mt-3 text-xs text-muted">
+                {d.config.n_amostras} amostras · {d.config.k} dobras ×{' '}
+                {d.config.repeticoes} repetições = {d.config.n_avaliacoes}{' '}
+                avaliações por classificador.
+              </p>
+            </Card>
+
+            <Card titulo="métricas acumuladas (todas as dobras)">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-subtle">
+                      <th className="py-2 pr-3 text-left text-[11px] font-semibold text-muted">
+                        Classificador
+                      </th>
+                      <th className="px-2 py-2 text-right text-[11px] font-semibold text-muted">
+                        Acerto médio
+                      </th>
+                      <th className="px-2 py-2 text-right text-[11px] font-semibold text-muted">
+                        Desvio
+                      </th>
+                      <th className="px-2 py-2 text-right text-[11px] font-semibold text-muted">
+                        Kappa
+                      </th>
+                      <th className="px-2 py-2 text-right text-[11px] font-semibold text-muted">
+                        Tau
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ordenados.map(([chave, r]) => (
+                      <tr
+                        key={chave}
+                        className="border-b border-subtle/60 last:border-0"
+                      >
+                        <td className="py-2.5 pr-3">
+                          <span className="inline-flex items-center gap-2">
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: CORES_MODELO[chave] }}
+                            />
+                            <span className="font-medium text-primary">
+                              {r.nome}
+                            </span>
+                          </span>
+                        </td>
+                        <td className="px-2 py-2.5 text-right tabular text-primary">
+                          {pct(r.media)}
+                        </td>
+                        <td className="px-2 py-2.5 text-right tabular text-muted">
+                          ± {pct(r.desvio)}
+                        </td>
+                        <td className="px-2 py-2.5 text-right tabular text-secondary">
+                          {num(r.relatorio.kappa, 4)}
+                        </td>
+                        <td className="px-2 py-2.5 text-right tabular text-secondary">
+                          {num(r.relatorio.tau, 4)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            <Card titulo="teste Z sobre o Kappa acumulado">
+              <TabelaTestesZ comparacoes={d.comparacoes} />
+            </Card>
+
+            <Card titulo="como ler estes números">
+              <Nota tom="atencao" titulo="Por que as pétalas dão quase 100%">
+                As pétalas do Iris são quase perfeitamente separáveis — é uma
+                propriedade conhecida da base, não um erro de implementação.
+                Troque para <strong>Sépalas</strong> no painel ao lado: os
+                classificadores caem para a faixa de 76 a 81%, as diferenças
+                entre eles ficam visíveis e o teste Z passa a acusar
+                significância.
+              </Nota>
+              <Nota
+                tom="info"
+                className="mt-3"
+                titulo="Split único × validação cruzada"
+              >
+                Na aba <strong>Split único</strong>, com a semente 42, vários
+                classificadores marcam 100% nas pétalas. Aqui a mesma
+                configuração dá 96 a 98%: o split único testa 45 amostras uma
+                vez, enquanto a validação cruzada testa todas as{' '}
+                {d.config.n_amostras}, várias vezes.
+              </Nota>
+              <Nota
+                tom="info"
+                className="mt-3"
+                titulo="A Regra Delta OvA e o versicolor"
+              >
+                O Um-Contra-Todos linear fica preso perto de 67% nas pétalas
+                porque o <em>versicolor</em> ocupa a faixa central entre as
+                outras duas classes — não existe uma única reta que o separe do
+                conjunto das outras. É o mesmo limite do XOR reaparecendo, e é
+                o que motiva os classificadores não lineares.
+              </Nota>
+            </Card>
+          </>
+        )}
+      </div>
     </div>
   )
 }
