@@ -539,3 +539,90 @@ export interface ValidacaoFloresta {
   }
   classes: ClasseIris[]
 }
+
+/* --------------------------------------------------- testes de significancia */
+export interface McNemar {
+  a: number
+  b: number
+  c: number
+  d: number
+  discordantes: number
+  metodo: string
+  estatistica: number | null
+  p_valor: number
+  significativo: boolean
+  observacao: string
+}
+
+export interface BootstrapDiferenca {
+  metrica_a: number
+  metrica_b: number
+  diferenca: number
+  ic_baixo: number
+  ic_alto: number
+  erro_padrao: number
+  contem_zero: boolean
+  significativo: boolean
+  n_reamostragens: number
+  confianca: number
+  distribuicao: { faixas: number[]; contagens: number[] }
+}
+
+export interface TestePermutacao {
+  diferenca_observada: number
+  p_valor: number
+  significativo: boolean
+  n_permutacoes: number
+  extremos: number
+}
+
+export interface RespostaSignificancia {
+  metrica: string
+  nome_metrica: string
+  n_amostras: number
+  mcnemar: McNemar
+  bootstrap: BootstrapDiferenca
+  permutacao: TestePermutacao
+  modelo_a: { id: string; nome: string }
+  modelo_b: { id: string; nome: string }
+  metricas: Record<string, { nome: string; a: number; b: number }>
+  teste_z_kappa: { z: number; p: number; significativo: boolean }
+  mcc_multiclasse: { a: number; b: number }
+  config: {
+    dataset: string
+    atributos: string
+    proporcao: number
+    n_teste: number
+  }
+}
+
+export interface ParSignificancia {
+  a: string
+  b: string
+  nome_a: string
+  nome_b: string
+  valor_a: number
+  valor_b: number
+  diferenca: number
+  ic_baixo: number
+  ic_alto: number
+  p_mcnemar: number
+  p_permutacao: number
+  significativo_mcnemar: boolean
+  significativo_bootstrap: boolean
+  significativo_permutacao: boolean
+  discordantes: number
+}
+
+export interface MatrizSignificancia {
+  metrica: string
+  nome_metrica: string
+  modelos: { id: string; nome: string; valor: number }[]
+  pares: ParSignificancia[]
+  config: { dataset: string; atributos: string; n_teste: number }
+}
+
+export interface ListaClassificadores {
+  classificadores: { id: string; nome: string }[]
+  metricas: { id: string; nome: string }[]
+}

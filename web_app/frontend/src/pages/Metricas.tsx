@@ -25,9 +25,10 @@ import {
 } from '@/components/ui'
 import { api } from '@/lib/api'
 import { CORES_MODELO, num, pct } from '@/lib/utils'
+import { PaginaSignificancia } from './Significancia'
 
 const CLASSES = ['setosa', 'versicolor', 'virginica']
-type Modo = 'validacao' | 'modelos' | 'editor' | 'curva'
+type Modo = 'validacao' | 'modelos' | 'significancia' | 'editor' | 'curva'
 
 export function PaginaMetricas() {
   const [modo, setModo] = useState<Modo>('validacao')
@@ -40,12 +41,14 @@ export function PaginaMetricas() {
         opcoes={[
           { valor: 'validacao', rotulo: 'Validação cruzada' },
           { valor: 'modelos', rotulo: 'Split único' },
+          { valor: 'significancia', rotulo: 'Significância' },
           { valor: 'editor', rotulo: 'Matriz editável' },
           { valor: 'curva', rotulo: 'Ag × Kappa × Tau' },
         ]}
       />
       {modo === 'validacao' && <PainelValidacao />}
       {modo === 'modelos' && <PainelModelos />}
+      {modo === 'significancia' && <PaginaSignificancia />}
       {modo === 'editor' && <PainelEditor />}
       {modo === 'curva' && <PainelCurva />}
     </div>

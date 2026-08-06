@@ -149,8 +149,16 @@ Quatro experimentos em sub-abas:
 - **XOR** — demonstra o limite teórico: o MSE estaciona em 0,25 e nunca zera
 
 ### Métricas Avançadas (Lab 3)
-- **Comparar modelos** — todos os classificadores no mesmo split, com teste Z
-  de Kappa entre cada par
+- **Validação cruzada** — k-fold estratificado com repetições, média ± desvio e
+  IC 95%; é a resposta ao "por que tudo dá quase 100%" do split único
+- **Split único** — todos os classificadores no mesmo split, com teste Z de
+  Kappa entre cada par
+- **Significância** — testes pareados de significância para o MCC e as demais
+  métricas (McNemar, bootstrap pareado e permutação). Ver
+  [`lab_03/testes_significancia.md`](lab_03/testes_significancia.md)
+  - *Testar um par* — escolha A, B e a métrica; veredito dos 3 testes, tabela de
+    McNemar, histograma do bootstrap com o IC 95% e contraste com o teste Z
+  - *Todos os pares* — os 10 pares de uma vez, com os selos M / B / P
 - **Matriz editável** — edite as células e veja Kappa, Tau e todas as métricas
   reagirem em tempo real
 - **Ag × Kappa × Tau** — curva mostrando por que o acerto global superestima a
@@ -237,6 +245,10 @@ Todas as rotas ficam sob `/api`. Os parâmetros comuns são `dataset` (`v1`/`v2`
 | GET | `/api/bayes/normalidade` | Henze-Zirkler e Mardia por classe |
 | POST | `/api/bayes/predizer` | Classifica um vetor arbitrário |
 | GET | `/api/metricas/validacao-cruzada` | k-fold de todos os classificadores |
+| GET | `/api/metricas/classificadores` | Classificadores e métricas testáveis |
+| GET | `/api/metricas/significancia` | McNemar + bootstrap + permutação de um par |
+| GET | `/api/metricas/significancia/matriz` | Os 10 pares de uma vez |
+| GET | `/api/metricas/significancia/memoria` | Memória de cálculo dos 3 testes |
 | GET | `/api/floresta/treinar` | Treina a floresta: métricas, OOB, importâncias |
 | GET | `/api/floresta/arvore/{i}` | Estrutura completa de uma árvore |
 | GET | `/api/floresta/regioes` | Regiões de decisão + confiança do voto |

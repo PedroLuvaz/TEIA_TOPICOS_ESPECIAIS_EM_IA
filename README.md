@@ -37,6 +37,7 @@ O projeto é equipado com uma interface gráfica rica e interativa desenvolvida 
 │   ├── models/mlp_sklearn.py       # Wrapper do MLPClassifier para o Iris (Lab 5, item ii — sklearn permitido)
 │   ├── models/random_forest.py     # Florestas Aleatorias do zero (Seminario — Python puro)
 │   ├── evaluation/validacao_cruzada.py # k-fold estratificado em Python puro
+│   ├── evaluation/testes_significancia.py # McNemar, bootstrap pareado, permutacao e MCC multiclasse
 │   ├── lab05_galinha_homem.py      # Script demonstrativo do Lab 5, item i (reproduz os valores do slide)
 │   ├── lab05_exercicio_fig1232.py  # Exercicio extra do Lab 5.1 (slide 34): rede Fig. 12.32, 1 iteracao
 │   ├── lab05_exercicio_xor.py      # Exercicio XOR do Lab 5.0 (slide 36): XOR com MLP, 1 epoca
@@ -153,6 +154,7 @@ A GUI do projeto foi projetada seguindo regras estéticas premium (**Slate Light
 *   Cálculo automático de estatísticas robustas: Coeficientes **Kappa ($K$)** e **Tau ($\tau$)**, suas variâncias e teste de hipóteses Z.
 *   Métricas binárias detalhadas: Sensibilidade, Especificidade, F1-Score, F2-Score e Coeficiente de Matthews (MCC).
 *   Sub-aba interativa para auditar e testar o exercício clássico do slide 15 do Prof. Robson (comparando Matrizes de Confusão A e B em tempo real).
+*   **Testes de significância pareados** (interface web, sub-aba *Significância*): após o MCC e as demais métricas, o usuário escolhe dois classificadores e vê o veredito de **McNemar**, **bootstrap pareado** e **teste de permutação** — os testes corretos quando os dois modelos são avaliados no mesmo conjunto de teste. Detalhes em [`docs/lab_03/testes_significancia.md`](docs/lab_03/testes_significancia.md).
 
 ### **Aba 4: Bayes & Normalidade**
 *   Classificação Bayesianas Probabilística por meio do **Bayes Ótimo (QDA)** e do **Naive Bayes**.

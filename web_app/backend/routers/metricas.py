@@ -14,7 +14,10 @@ from evaluation.metricas_avancadas import (_acerto_casual, _extrair_binario,
                                            mcc, p_valor_z, relatorio_completo,
                                            tau, variancia_kappa,
                                            variancia_tau, z_kappa, z_tau)
+from evaluation.testes_significancia import METRICAS, comparar, mcc_multiclasse
 from evaluation.validacao_cruzada import intervalo_confianca, validar_cruzado
+from models.mlp_backprop import RedeFeedforward
+from models.random_forest import treinar_floresta
 from models.bayes_classifier import (predizer_todas_classes_bayes,
                                      treinar_bayes)
 from models.classifier import predizer_todas_classes, treinar
@@ -24,6 +27,12 @@ from .. import traco as T
 from ..core import CLASSES, indices_de, obter_split
 
 router = APIRouter(prefix='/api/metricas', tags=['metricas'])
+
+ROTULO_ATRIBUTOS = {
+    'petalas': 'pétalas (comprimento × largura)',
+    'sepalas': 'sépalas (comprimento × largura)',
+    'todas': 'as 4 features',
+}
 
 
 class MatrizRequest(BaseModel):
@@ -332,6 +341,418 @@ def memoria(req: MatrizRequest):
             {'rotulo': 'Amostras', 'valor': str(n_total)},
             {'rotulo': 'Ag', 'valor': T.pct(rel['acerto_global'])},
             {'rotulo': 'κ', 'valor': T.n(rel['kappa'], 4)},
+        ],
+    )
+
+
+def _predicoes_dos_classificadores(treino, teste, idx):
+    """
+    Predicoes de cada classificador no MESMO conjunto de teste.
+
+    O pareamento e o que permite aplicar McNemar e o bootstrap pareado —
+    os classificadores acertam e erram as mesmas amostras dificeis.
+    """
+    preds = {}
+
+    prototipos = treinar(treino, idx)
+    preds['distancia_minima'] = (
+        'Distância Mínima',
+        [predizer_todas_classes(d['atributos'], prototipos, idx)[1] for d in teste])
+
+    pesos_ova, _, _ = treinar_delta_ova(treino, idx)
+    preds['delta_ova'] = (
+        'Regra Delta OvA',
+        [predizer_delta_ova([d['atributos'][i] for i in idx], pesos_ova)[0]
+         for d in teste])
+
+    for chave, naive, nome in (('bayes', False, 'Bayes Ótimo (QDA)'),
+                               ('naive', True, 'Naive Bayes')):
+        modelo = treinar_bayes(treino, idx, naive=naive)
+        preds[chave] = (
+            nome,
+            [predizer_todas_classes_bayes(d['atributos'], modelo, idx)[1]
+             for d in teste])
+
+    floresta = treinar_floresta(treino, idx, n_arvores=50, semente=42)
+    preds['floresta'] = (
+        'Floresta Aleatória',
+        [floresta.predizer(d['atributos']) for d in teste])
+
+    return preds
+
+
+@router.get('/classificadores')
+def listar_classificadores():
+    """Classificadores e metricas disponiveis para os testes de significancia."""
+    return {
+        'classificadores': [
+            {'id': 'distancia_minima', 'nome': 'Distância Mínima'},
+            {'id': 'delta_ova', 'nome': 'Regra Delta OvA'},
+            {'id': 'bayes', 'nome': 'Bayes Ótimo (QDA)'},
+            {'id': 'naive', 'nome': 'Naive Bayes'},
+            {'id': 'floresta', 'nome': 'Floresta Aleatória'},
+        ],
+        'metricas': [{'id': k, 'nome': v[0]} for k, v in METRICAS.items()],
+    }
+
+
+@router.get('/significancia')
+def significancia(dataset: str = 'v1', atributos: str = 'petalas',
+                  proporcao: float = Query(0.7, ge=0.1, le=0.9),
+                  modelo_a: str = 'bayes', modelo_b: str = 'naive',
+                  metrica: str = 'mcc',
+                  n_reamostragens: int = Query(2000, ge=200, le=10000),
+                  n_permutacoes: int = Query(2000, ge=200, le=10000)):
+    """
+    Testa se a diferenca entre dois classificadores e estatisticamente
+    significativa — para o MCC e as demais metricas, nao so o Kappa.
+
+    Roda tres testes complementares:
+      · McNemar (pareado, sobre os acertos)
+      · Bootstrap pareado (IC da diferenca da metrica escolhida)
+      · Teste de permutacao (nao parametrico)
+    """
+    try:
+        _, treino, teste = obter_split(dataset, proporcao)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    if metrica not in METRICAS:
+        raise HTTPException(
+            status_code=400,
+            detail=f'Métrica inválida. Use uma de: {", ".join(sorted(METRICAS))}.')
+
+    idx = indices_de(atributos)
+    preds = _predicoes_dos_classificadores(treino, teste, idx)
+
+    if modelo_a not in preds or modelo_b not in preds:
+        raise HTTPException(
+            status_code=400,
+            detail=f'Classificador inválido. Use um de: {", ".join(sorted(preds))}.')
+    if modelo_a == modelo_b:
+        raise HTTPException(status_code=400,
+                            detail='Escolha dois classificadores diferentes.')
+
+    nome_a, pa = preds[modelo_a]
+    nome_b, pb = preds[modelo_b]
+    gabarito = [d['classe'] for d in teste]
+
+    resultado = comparar(pa, pb, gabarito, CLASSES, metrica,
+                         n_reamostragens, n_permutacoes)
+
+    # Todas as metricas dos dois, para a tabela de contexto
+    todas = {}
+    for chave, fn in ((k, v[1]) for k, v in METRICAS.items()):
+        todas[chave] = {
+            'nome': METRICAS[chave][0],
+            'a': fn(pa, gabarito, CLASSES),
+            'b': fn(pb, gabarito, CLASSES),
+        }
+
+    # Teste Z classico do Kappa, para contrastar com o McNemar
+    ra = relatorio_completo(pa, gabarito, CLASSES, nome_a)
+    rb = relatorio_completo(pb, gabarito, CLASSES, nome_b)
+    z = z_kappa(ra['kappa'], ra['variancia_kappa'], rb['kappa'], rb['variancia_kappa'])
+    p_z = p_valor_z(z)
+
+    return {
+        **resultado,
+        'modelo_a': {'id': modelo_a, 'nome': nome_a},
+        'modelo_b': {'id': modelo_b, 'nome': nome_b},
+        'metricas': todas,
+        'teste_z_kappa': {'z': z, 'p': p_z, 'significativo': p_z < 0.05},
+        'mcc_multiclasse': {
+            'a': mcc_multiclasse(ra['matriz'], CLASSES),
+            'b': mcc_multiclasse(rb['matriz'], CLASSES),
+        },
+        'config': {'dataset': dataset, 'atributos': atributos,
+                   'proporcao': proporcao, 'n_teste': len(teste)},
+    }
+
+
+@router.get('/significancia/matriz')
+def significancia_matriz(dataset: str = 'v1', atributos: str = 'petalas',
+                         proporcao: float = Query(0.7, ge=0.1, le=0.9),
+                         metrica: str = 'mcc',
+                         n_reamostragens: int = Query(600, ge=200, le=3000)):
+    """
+    Matriz de significancia: testa TODOS os pares de classificadores de uma
+    vez, para o comparativo geral pedido pelo professor.
+    """
+    try:
+        _, treino, teste = obter_split(dataset, proporcao)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    if metrica not in METRICAS:
+        raise HTTPException(status_code=400, detail='Métrica inválida.')
+
+    idx = indices_de(atributos)
+    preds = _predicoes_dos_classificadores(treino, teste, idx)
+    gabarito = [d['classe'] for d in teste]
+    fn = METRICAS[metrica][1]
+
+    modelos = list(preds)
+    valores = {m: fn(preds[m][1], gabarito, CLASSES) for m in modelos}
+
+    pares = []
+    for i in range(len(modelos)):
+        for j in range(i + 1, len(modelos)):
+            a, b = modelos[i], modelos[j]
+            r = comparar(preds[a][1], preds[b][1], gabarito, CLASSES,
+                         metrica, n_reamostragens, n_reamostragens)
+            pares.append({
+                'a': a, 'b': b,
+                'nome_a': preds[a][0], 'nome_b': preds[b][0],
+                'valor_a': valores[a], 'valor_b': valores[b],
+                'diferenca': r['bootstrap']['diferenca'],
+                'ic_baixo': r['bootstrap']['ic_baixo'],
+                'ic_alto': r['bootstrap']['ic_alto'],
+                'p_mcnemar': r['mcnemar']['p_valor'],
+                'p_permutacao': r['permutacao']['p_valor'],
+                'significativo_mcnemar': r['mcnemar']['significativo'],
+                'significativo_bootstrap': r['bootstrap']['significativo'],
+                'significativo_permutacao': r['permutacao']['significativo'],
+                'discordantes': r['mcnemar']['discordantes'],
+            })
+
+    return {
+        'metrica': metrica,
+        'nome_metrica': METRICAS[metrica][0],
+        'modelos': [{'id': m, 'nome': preds[m][0], 'valor': valores[m]}
+                    for m in sorted(modelos, key=lambda x: -valores[x])],
+        'pares': pares,
+        'config': {'dataset': dataset, 'atributos': atributos,
+                   'n_teste': len(teste)},
+    }
+
+
+@router.get('/significancia/memoria')
+def significancia_memoria(dataset: str = 'v1', atributos: str = 'petalas',
+                          proporcao: float = Query(0.7, ge=0.1, le=0.9),
+                          modelo_a: str = 'bayes', modelo_b: str = 'naive',
+                          metrica: str = 'mcc',
+                          n_reamostragens: int = Query(2000, ge=200, le=10000),
+                          n_permutacoes: int = Query(2000, ge=200, le=10000)):
+    """Memoria de calculo completa dos tres testes de significancia."""
+    r = significancia(dataset, atributos, proporcao, modelo_a, modelo_b,
+                      metrica, n_reamostragens, n_permutacoes)
+
+    mn, bs, pm = r['mcnemar'], r['bootstrap'], r['permutacao']
+    na, nb = r['modelo_a']['nome'], r['modelo_b']['nome']
+    nome_m = r['nome_metrica']
+    n_disc = mn['discordantes']
+
+    # No regime exato a "estatistica" e min(b, c) — um inteiro, nao um qui2
+    if mn['estatistica'] is None:
+        est_mcnemar = '—'
+    elif mn['metodo'] == 'binomial exato':
+        est_mcnemar = f'min(b, c) = {int(mn["estatistica"])}'
+    else:
+        est_mcnemar = f'χ² = {T.n(mn["estatistica"], 4)}'
+
+    return T.montar(
+        'Testes de Significância Estatística',
+        f'{na} × {nb} — métrica: {nome_m}',
+
+        T.secao(
+            'O problema: por que o teste Z do Kappa não basta',
+            T.texto(
+                'O teste Z clássico dos laboratórios compara dois Kappas '
+                'somando as variâncias, o que só é válido se as duas '
+                'avaliações forem INDEPENDENTES. Aqui os dois '
+                'classificadores foram avaliados no MESMO conjunto de teste: '
+                'eles erram as mesmas amostras difíceis, então as estimativas '
+                'são pareadas e correlacionadas.'),
+            T.formula(
+                r'Z = \frac{\kappa_A - \kappa_B}'
+                r'{\sqrt{\hat{\sigma}^2_{\kappa_A} + \hat{\sigma}^2_{\kappa_B}}}',
+                titulo='Teste Z de Kappa (assume independência)',
+                explicacao='Somar variâncias ignora a covariância positiva '
+                           'entre os dois — o teste fica conservador demais.'),
+            T.passos([
+                f'Z            = {T.n(r["teste_z_kappa"]["z"], 4)}',
+                f'p-valor      = {T.n(r["teste_z_kappa"]["p"], 6)}',
+                f'significativo= '
+                f'{"sim" if r["teste_z_kappa"]["significativo"] else "não"}',
+            ], titulo='Resultado do teste Z clássico (para contraste)'),
+            T.nota(
+                'Os três testes abaixo são pareados e, por isso, corretos '
+                'para este cenário. Compare o p-valor de cada um com o do '
+                'teste Z acima.', tom='atencao',
+                titulo='Independente × pareado'),
+        ),
+
+        T.secao(
+            'Métrica escolhida — Coeficiente de Matthews (MCC)',
+            T.texto(
+                'O MCC é o coeficiente de correlação de Pearson entre a '
+                'predição e o gabarito. Vale +1 na predição perfeita, 0 no '
+                'acaso e −1 na inversão total. Por usar as quatro células da '
+                'matriz, é robusto a classes desbalanceadas — mais do que a '
+                'acurácia ou o F1.'),
+            T.formula(
+                r'\mathrm{MCC} = \frac{VP \cdot VN - FP \cdot FN}'
+                r'{\sqrt{(VP+FP)(VP+FN)(VN+FP)(VN+FN)}}',
+                titulo='MCC binário'),
+            T.formula(
+                r'\mathrm{MCC}_K = \frac{c\,s - \sum_k p_k t_k}'
+                r'{\sqrt{(s^2 - \sum_k p_k^2)\,(s^2 - \sum_k t_k^2)}}',
+                titulo='MCC multiclasse (Gorodkin, 2004)',
+                explicacao='c = acertos totais, s = amostras, '
+                           'p_k = preditos da classe k, t_k = reais da classe k.'),
+            T.passos([
+                f'MCC multiclasse  {na:<24} = '
+                f'{T.n(r["mcc_multiclasse"]["a"], 4)}',
+                f'MCC multiclasse  {nb:<24} = '
+                f'{T.n(r["mcc_multiclasse"]["b"], 4)}',
+            ]),
+            T.tabela(
+                ['Métrica', na, nb, 'Diferença'],
+                [[m['nome'], T.n(m['a'], 4), T.n(m['b'], 4),
+                  f'{m["a"] - m["b"]:+.4f}']
+                 for m in r['metricas'].values()],
+                titulo='Todas as métricas no mesmo conjunto de teste'),
+            T.ref(mcc_multiclasse),
+        ),
+
+        T.secao(
+            'Teste 1 — McNemar (pareado, exato)',
+            T.texto(
+                'Monta a tabela 2×2 dos acertos e olha SÓ para as amostras '
+                'em que os dois discordam. As que ambos acertaram (a) e as '
+                'que ambos erraram (d) não carregam informação sobre qual é '
+                'o melhor, e por isso são descartadas.'),
+            T.tabela(
+                ['', f'{nb} acertou', f'{nb} errou'],
+                [[f'{na} acertou', str(mn['a']), str(mn['b'])],
+                 [f'{na} errou', str(mn['c']), str(mn['d'])]],
+                titulo='Tabela de contingência dos acertos'),
+            T.formula(
+                r'\chi^2 = \frac{(|b - c| - 1)^2}{b + c}',
+                titulo='Estatística de McNemar com correção de continuidade',
+                explicacao='1 grau de liberdade. Com poucos discordantes '
+                           '(b+c < 25) usa-se o binomial exato.'),
+            T.formula(
+                r'p = 2 \sum_{i=0}^{\min(b,c)} \binom{b+c}{i} (0{,}5)^{b+c}',
+                titulo='Versão exata (binomial bilateral)',
+                explicacao='Sob H₀ cada discordância é um cara-ou-coroa justo.'),
+            T.passos([
+                f'b (só {na} acertou)  = {mn["b"]}',
+                f'c (só {nb} acertou)  = {mn["c"]}',
+                f'discordantes b + c    = {n_disc}',
+                f'método                = {mn["metodo"]}',
+                f'estatística           = {est_mcnemar}',
+                f'p-valor               = {T.n(mn["p_valor"], 6)}',
+            ], titulo='Substituição numérica'),
+            T.resultado(
+                f'p = {T.n(mn["p_valor"], 6)} — '
+                + ('diferença SIGNIFICATIVA (p < 0,05)'
+                   if mn['significativo'] else
+                   'não há evidência de diferença (p ≥ 0,05)'),
+                tom='bom' if mn['significativo'] else 'medio'),
+            T.nota(mn['observacao'], tom='info'),
+        ),
+
+        T.secao(
+            'Teste 2 — Bootstrap pareado da diferença',
+            T.texto(
+                f'Reamostra {bs["n_reamostragens"]} vezes o conjunto de teste '
+                'COM reposição, sempre levando o par (predição de A, predição '
+                'de B) da mesma amostra. Em cada reamostragem recalcula a '
+                f'{nome_m} dos dois e guarda a diferença. Os percentis 2,5 e '
+                '97,5 dessa distribuição formam o intervalo de confiança.'),
+            T.formula(
+                r'\Delta = M(A) - M(B), \qquad '
+                r'IC_{95\%} = [\Delta_{(2{,}5\%)},\ \Delta_{(97{,}5\%)}]',
+                explicacao='Se o IC não contém zero, a diferença é '
+                           'significativa a 5%.'),
+            T.passos([
+                f'{nome_m} de {na:<22} = {T.n(bs["metrica_a"], 4)}',
+                f'{nome_m} de {nb:<22} = {T.n(bs["metrica_b"], 4)}',
+                f'diferença observada Δ        = {bs["diferenca"]:+.4f}',
+                f'erro padrão bootstrap        = {T.n(bs["erro_padrao"], 4)}',
+                f'IC 95%                       = '
+                f'[{bs["ic_baixo"]:+.4f}, {bs["ic_alto"]:+.4f}]',
+                f'contém zero?                 = '
+                f'{"sim" if bs["contem_zero"] else "não"}',
+            ], titulo='Substituição numérica'),
+            T.resultado(
+                f'IC 95% = [{bs["ic_baixo"]:+.4f}, {bs["ic_alto"]:+.4f}] — '
+                + ('não contém zero: diferença SIGNIFICATIVA'
+                   if bs['significativo'] else
+                   'contém zero: diferença compatível com o acaso'),
+                tom='bom' if bs['significativo'] else 'medio'),
+        ),
+
+        T.secao(
+            'Teste 3 — Permutação (não paramétrico)',
+            T.texto(
+                'Sob a hipótese nula os dois classificadores são '
+                'intercambiáveis: trocar aleatoriamente as predições de A e B '
+                'em cada amostra não deveria mudar nada. Fazendo essa troca '
+                f'{pm["n_permutacoes"]} vezes constrói-se a distribuição da '
+                'diferença sob H₀; o p-valor é a fração de permutações tão '
+                'extremas quanto a observada.'),
+            T.formula(
+                r'p = \frac{1 + \#\{|\Delta^{*}| \geq |\Delta_{obs}|\}}{1 + B}',
+                explicacao='O +1 no numerador e denominador evita p = 0 e '
+                           'mantém o teste válido.'),
+            T.passos([
+                f'diferença observada  = {pm["diferenca_observada"]:+.4f}',
+                f'permutações extremas = {pm["extremos"]} de '
+                f'{pm["n_permutacoes"]}',
+                f'p-valor              = {T.n(pm["p_valor"], 6)}',
+            ], titulo='Substituição numérica'),
+            T.resultado(
+                f'p = {T.n(pm["p_valor"], 6)} — '
+                + ('diferença SIGNIFICATIVA'
+                   if pm['significativo'] else
+                   'diferença não significativa'),
+                tom='bom' if pm['significativo'] else 'medio'),
+            T.ref(comparar),
+        ),
+
+        T.secao(
+            'Veredito',
+            T.tabela(
+                ['Teste', 'Estatística', 'p-valor', 'Conclusão (α = 5%)'],
+                [
+                    ['Z de Kappa (independente)',
+                     T.n(r['teste_z_kappa']['z'], 4),
+                     T.n(r['teste_z_kappa']['p'], 6),
+                     'significativo' if r['teste_z_kappa']['significativo']
+                     else 'não significativo'],
+                    [f'McNemar ({mn["metodo"]})',
+                     est_mcnemar,
+                     T.n(mn['p_valor'], 6),
+                     'significativo' if mn['significativo']
+                     else 'não significativo'],
+                    ['Bootstrap pareado',
+                     f'{bs["diferenca"]:+.4f}',
+                     f'IC [{bs["ic_baixo"]:+.3f}, {bs["ic_alto"]:+.3f}]',
+                     'significativo' if bs['significativo']
+                     else 'não significativo'],
+                    ['Permutação',
+                     f'{pm["diferenca_observada"]:+.4f}',
+                     T.n(pm['p_valor'], 6),
+                     'significativo' if pm['significativo']
+                     else 'não significativo'],
+                ]),
+            T.nota(
+                'Os três testes pareados devem concordar na maioria dos '
+                'casos. Quando discordam, o McNemar é o mais conservador '
+                '(usa só os acertos, ignorando qual classe foi predita) e o '
+                'bootstrap é o mais informativo, pois entrega o tamanho do '
+                'efeito com incerteza, não apenas um sim/não.',
+                tom='info', titulo='Como conciliar os três'),
+        ),
+
+        cabecalho=[
+            {'rotulo': 'Métrica', 'valor': nome_m},
+            {'rotulo': 'Amostras de teste', 'valor': str(r['n_amostras'])},
+            {'rotulo': 'Atributos', 'valor': ROTULO_ATRIBUTOS.get(
+                atributos, atributos)},
         ],
     )
 

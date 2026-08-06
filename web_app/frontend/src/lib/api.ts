@@ -19,9 +19,12 @@ import type {
   RespostaPredicao,
   RespostaRegioes,
   RespostaXorDelta,
+  ListaClassificadores,
+  MatrizSignificancia,
   PredicaoFloresta,
   RespostaArvore,
   RespostaFloresta,
+  RespostaSignificancia,
   Traco,
   Trajetoria,
   ValidacaoCruzada,
@@ -202,6 +205,28 @@ export const api = {
     validacaoCruzada: (
       p: ParamsBase & { k?: number; repeticoes?: number },
     ) => get<ValidacaoCruzada>('/metricas/validacao-cruzada', p),
+    classificadores: () => get<ListaClassificadores>('/metricas/classificadores'),
+    significancia: (
+      p: ParamsBase & {
+        modelo_a: string
+        modelo_b: string
+        metrica: string
+        n_reamostragens?: number
+        n_permutacoes?: number
+      },
+    ) => get<RespostaSignificancia>('/metricas/significancia', p),
+    matrizSignificancia: (
+      p: ParamsBase & { metrica: string; n_reamostragens?: number },
+    ) => get<MatrizSignificancia>('/metricas/significancia/matriz', p),
+    memoriaSignificancia: (
+      p: ParamsBase & {
+        modelo_a: string
+        modelo_b: string
+        metrica: string
+        n_reamostragens?: number
+        n_permutacoes?: number
+      },
+    ) => get<TracoGenerico>('/metricas/significancia/memoria', p),
     curvaKappa: (p: { n_por_classe?: number; passos?: number }) =>
       get<{ pontos: PontoCurvaKappa[] }>('/metricas/curva-kappa', p),
   },

@@ -45,6 +45,7 @@ export const CORES_MODELO: Record<string, string> = {
   delta_ova: '#f59e0b',
   bayes: '#0ea5e9',
   naive: '#10b981',
+  floresta: '#14b8a6',
   mlp: '#f43f5e',
   perceptron: '#8b5cf6',
   delta: '#f59e0b',
