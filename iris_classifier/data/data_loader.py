@@ -66,3 +66,64 @@ def filtrar_por_classes(dados, classes_para_manter):
     Filtra os dados para incluir apenas amostras das classes especificadas.
     """
     return [d for d in dados if d['classe'] in classes_para_manter]
+
+
+# ---------------------------------------------------------------------------
+# Dataset do seminario de Florestas Aleatorias (fim de semana)
+# ---------------------------------------------------------------------------
+FDS_COLUNAS_TEXTO = ['clima', 'pais', 'dinheiro']
+FDS_COLUNAS_CODIGO = ['clima_cod', 'pais_cod', 'dinheiro_cod']
+FDS_NOMES_ATRIBUTOS = ['Clima', 'Pais visitam?', 'Dinheiro']
+FDS_CLASSES = ['Cinema', 'Compras', 'Ficar em casa', 'Tenis']
+
+
+def carregar_fim_de_semana(caminho_arquivo, numerico=False):
+    """
+    Le o CSV gerado por `data.gerar_fim_de_semana`.
+
+    Devolve a mesma estrutura usada no resto do projeto:
+
+        {'atributos': [...], 'classe': 'Cinema', 'ruido': 0, 'id': 1}
+
+    `numerico=False` (padrao) devolve os atributos em texto ('Sol', 'Sim',
+    'Rico') — o formato esperado por `models.floresta_categorica`, que faz as
+    divisoes multi-way do ID3 como nos slides.
+
+    `numerico=True` devolve os codigos ordinais das colunas `_cod`, para que
+    os demais modulos do projeto (Distancia Minima, Bayes, Regra Delta,
+    metricas) possam consumir o mesmo arquivo sem alteracao.
+
+    A chave `ruido` marca as instancias cujo rotulo foi trocado na geracao —
+    util para separar o erro irredutivel do erro do classificador.
+    """
+    with open(caminho_arquivo, 'r', encoding='utf-8') as f:
+        linhas = [linha.rstrip('\n\r') for linha in f if linha.strip()]
+
+    if not linhas:
+        return []
+
+    cabecalho = [c.strip() for c in linhas[0].split(',')]
+    pos = {nome: i for i, nome in enumerate(cabecalho)}
+
+    colunas = FDS_COLUNAS_CODIGO if numerico else FDS_COLUNAS_TEXTO
+    faltando = [c for c in colunas + ['decisao'] if c not in pos]
+    if faltando:
+        raise ValueError(
+            f'CSV sem as colunas esperadas: {", ".join(faltando)}. '
+            f'Gere o arquivo com `python -m data.gerar_fim_de_semana`.')
+
+    dados = []
+    for linha in linhas[1:]:
+        campos = linha.split(',')
+        if len(campos) < len(cabecalho):
+            continue
+        atributos = [campos[pos[c]].strip() for c in colunas]
+        if numerico:
+            atributos = [float(v) for v in atributos]
+        dados.append({
+            'atributos': atributos,
+            'classe': campos[pos['decisao']].strip(),
+            'ruido': int(campos[pos['ruido']]) if 'ruido' in pos else 0,
+            'id': int(campos[pos['id']]) if 'id' in pos else len(dados) + 1,
+        })
+    return dados

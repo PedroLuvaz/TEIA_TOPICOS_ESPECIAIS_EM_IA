@@ -1,0 +1,1001 @@
+id,clima,pais,dinheiro,decisao,clima_cod,pais_cod,dinheiro_cod,ruido
+1,Vento,Sim,Rico,Cinema,1,1,1,0
+2,Chuva,Nao,Pobre,Cinema,2,0,0,0
+3,Vento,Sim,Rico,Cinema,1,1,1,0
+4,Sol,Sim,Rico,Cinema,0,1,1,0
+5,Sol,Nao,Pobre,Tenis,0,0,0,1
+6,Vento,Sim,Rico,Cinema,1,1,1,0
+7,Vento,Sim,Rico,Cinema,1,1,1,0
+8,Vento,Nao,Pobre,Cinema,1,0,0,0
+9,Chuva,Sim,Rico,Cinema,2,1,1,0
+10,Vento,Nao,Rico,Compras,1,0,1,0
+11,Sol,Sim,Rico,Tenis,0,1,1,1
+12,Chuva,Sim,Rico,Cinema,2,1,1,0
+13,Sol,Sim,Rico,Cinema,0,1,1,0
+14,Vento,Sim,Rico,Cinema,1,1,1,0
+15,Sol,Sim,Rico,Cinema,0,1,1,0
+16,Vento,Sim,Rico,Cinema,1,1,1,0
+17,Sol,Nao,Pobre,Cinema,0,0,0,0
+18,Sol,Nao,Rico,Tenis,0,0,1,0
+19,Sol,Sim,Pobre,Cinema,0,1,0,0
+20,Sol,Sim,Pobre,Cinema,0,1,0,0
+21,Chuva,Sim,Rico,Cinema,2,1,1,0
+22,Chuva,Sim,Rico,Cinema,2,1,1,0
+23,Chuva,Sim,Rico,Cinema,2,1,1,0
+24,Vento,Sim,Rico,Cinema,1,1,1,0
+25,Sol,Nao,Pobre,Cinema,0,0,0,0
+26,Sol,Nao,Pobre,Cinema,0,0,0,0
+27,Vento,Sim,Rico,Ficar em casa,1,1,1,1
+28,Chuva,Sim,Rico,Cinema,2,1,1,0
+29,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+30,Vento,Sim,Pobre,Cinema,1,1,0,0
+31,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+32,Sol,Nao,Pobre,Cinema,0,0,0,0
+33,Vento,Sim,Pobre,Cinema,1,1,0,0
+34,Sol,Sim,Rico,Cinema,0,1,1,0
+35,Chuva,Sim,Rico,Cinema,2,1,1,0
+36,Sol,Nao,Rico,Tenis,0,0,1,0
+37,Vento,Nao,Rico,Compras,1,0,1,0
+38,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+39,Sol,Sim,Rico,Cinema,0,1,1,0
+40,Sol,Sim,Rico,Cinema,0,1,1,0
+41,Sol,Nao,Pobre,Tenis,0,0,0,1
+42,Sol,Sim,Rico,Cinema,0,1,1,0
+43,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+44,Vento,Sim,Rico,Cinema,1,1,1,0
+45,Vento,Nao,Rico,Compras,1,0,1,0
+46,Vento,Sim,Pobre,Cinema,1,1,0,0
+47,Sol,Sim,Rico,Cinema,0,1,1,0
+48,Sol,Sim,Pobre,Ficar em casa,0,1,0,1
+49,Sol,Nao,Rico,Cinema,0,0,1,1
+50,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+51,Sol,Sim,Rico,Cinema,0,1,1,0
+52,Chuva,Sim,Pobre,Cinema,2,1,0,0
+53,Vento,Nao,Pobre,Cinema,1,0,0,0
+54,Chuva,Sim,Rico,Cinema,2,1,1,0
+55,Vento,Nao,Pobre,Ficar em casa,1,0,0,1
+56,Vento,Nao,Rico,Ficar em casa,1,0,1,1
+57,Sol,Sim,Rico,Cinema,0,1,1,0
+58,Sol,Sim,Pobre,Cinema,0,1,0,0
+59,Vento,Nao,Rico,Compras,1,0,1,0
+60,Vento,Nao,Rico,Compras,1,0,1,0
+61,Sol,Sim,Rico,Cinema,0,1,1,0
+62,Vento,Nao,Rico,Compras,1,0,1,0
+63,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+64,Sol,Nao,Pobre,Cinema,0,0,0,0
+65,Vento,Sim,Pobre,Cinema,1,1,0,0
+66,Vento,Nao,Rico,Ficar em casa,1,0,1,1
+67,Sol,Nao,Pobre,Cinema,0,0,0,0
+68,Sol,Sim,Rico,Cinema,0,1,1,0
+69,Vento,Nao,Rico,Compras,1,0,1,0
+70,Sol,Sim,Pobre,Cinema,0,1,0,0
+71,Sol,Sim,Rico,Tenis,0,1,1,1
+72,Vento,Sim,Pobre,Cinema,1,1,0,0
+73,Vento,Sim,Rico,Cinema,1,1,1,0
+74,Chuva,Nao,Pobre,Cinema,2,0,0,0
+75,Sol,Sim,Rico,Cinema,0,1,1,0
+76,Chuva,Nao,Pobre,Cinema,2,0,0,0
+77,Sol,Sim,Pobre,Cinema,0,1,0,0
+78,Vento,Nao,Rico,Compras,1,0,1,0
+79,Chuva,Nao,Pobre,Cinema,2,0,0,0
+80,Sol,Nao,Rico,Tenis,0,0,1,0
+81,Chuva,Nao,Pobre,Cinema,2,0,0,0
+82,Chuva,Sim,Pobre,Cinema,2,1,0,0
+83,Sol,Nao,Rico,Tenis,0,0,1,0
+84,Chuva,Sim,Rico,Cinema,2,1,1,0
+85,Vento,Nao,Pobre,Cinema,1,0,0,0
+86,Vento,Sim,Pobre,Cinema,1,1,0,0
+87,Chuva,Sim,Pobre,Cinema,2,1,0,0
+88,Chuva,Sim,Rico,Cinema,2,1,1,0
+89,Chuva,Sim,Rico,Cinema,2,1,1,0
+90,Vento,Nao,Rico,Compras,1,0,1,0
+91,Sol,Nao,Rico,Tenis,0,0,1,0
+92,Chuva,Nao,Rico,Compras,2,0,1,1
+93,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+94,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+95,Vento,Nao,Rico,Compras,1,0,1,0
+96,Vento,Nao,Rico,Compras,1,0,1,0
+97,Vento,Nao,Rico,Compras,1,0,1,0
+98,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+99,Vento,Nao,Pobre,Cinema,1,0,0,0
+100,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+101,Vento,Sim,Pobre,Cinema,1,1,0,0
+102,Vento,Nao,Rico,Tenis,1,0,1,1
+103,Vento,Nao,Rico,Compras,1,0,1,0
+104,Vento,Nao,Rico,Compras,1,0,1,0
+105,Sol,Nao,Pobre,Cinema,0,0,0,0
+106,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+107,Vento,Sim,Rico,Cinema,1,1,1,0
+108,Sol,Sim,Rico,Cinema,0,1,1,0
+109,Vento,Sim,Pobre,Cinema,1,1,0,0
+110,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+111,Vento,Sim,Pobre,Cinema,1,1,0,0
+112,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+113,Vento,Sim,Rico,Cinema,1,1,1,0
+114,Sol,Sim,Pobre,Cinema,0,1,0,0
+115,Sol,Sim,Rico,Cinema,0,1,1,0
+116,Vento,Sim,Rico,Compras,1,1,1,1
+117,Vento,Nao,Pobre,Ficar em casa,1,0,0,1
+118,Vento,Sim,Rico,Cinema,1,1,1,0
+119,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+120,Vento,Nao,Rico,Compras,1,0,1,0
+121,Vento,Sim,Rico,Cinema,1,1,1,0
+122,Vento,Sim,Rico,Cinema,1,1,1,0
+123,Vento,Sim,Rico,Cinema,1,1,1,0
+124,Sol,Nao,Rico,Tenis,0,0,1,0
+125,Sol,Sim,Rico,Cinema,0,1,1,0
+126,Chuva,Sim,Pobre,Cinema,2,1,0,0
+127,Sol,Sim,Rico,Cinema,0,1,1,0
+128,Chuva,Sim,Rico,Cinema,2,1,1,0
+129,Vento,Nao,Pobre,Cinema,1,0,0,0
+130,Sol,Sim,Rico,Cinema,0,1,1,0
+131,Vento,Sim,Rico,Cinema,1,1,1,0
+132,Sol,Nao,Pobre,Cinema,0,0,0,0
+133,Chuva,Nao,Rico,Tenis,2,0,1,1
+134,Vento,Nao,Rico,Compras,1,0,1,0
+135,Sol,Nao,Pobre,Cinema,0,0,0,0
+136,Vento,Sim,Rico,Cinema,1,1,1,0
+137,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+138,Vento,Sim,Rico,Compras,1,1,1,1
+139,Chuva,Sim,Pobre,Cinema,2,1,0,0
+140,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+141,Chuva,Sim,Pobre,Cinema,2,1,0,0
+142,Vento,Sim,Pobre,Cinema,1,1,0,0
+143,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+144,Sol,Sim,Rico,Cinema,0,1,1,0
+145,Sol,Nao,Rico,Tenis,0,0,1,0
+146,Chuva,Sim,Pobre,Cinema,2,1,0,0
+147,Sol,Sim,Pobre,Cinema,0,1,0,0
+148,Chuva,Sim,Pobre,Cinema,2,1,0,0
+149,Vento,Sim,Pobre,Cinema,1,1,0,0
+150,Sol,Nao,Rico,Tenis,0,0,1,0
+151,Vento,Nao,Rico,Compras,1,0,1,0
+152,Vento,Nao,Rico,Compras,1,0,1,0
+153,Sol,Sim,Rico,Cinema,0,1,1,0
+154,Chuva,Sim,Rico,Cinema,2,1,1,0
+155,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+156,Sol,Sim,Rico,Cinema,0,1,1,0
+157,Sol,Nao,Rico,Tenis,0,0,1,0
+158,Vento,Nao,Rico,Compras,1,0,1,0
+159,Vento,Nao,Rico,Compras,1,0,1,0
+160,Vento,Sim,Rico,Cinema,1,1,1,0
+161,Vento,Nao,Rico,Ficar em casa,1,0,1,1
+162,Vento,Sim,Pobre,Cinema,1,1,0,0
+163,Sol,Sim,Rico,Cinema,0,1,1,0
+164,Vento,Nao,Pobre,Cinema,1,0,0,0
+165,Chuva,Sim,Rico,Cinema,2,1,1,0
+166,Vento,Sim,Pobre,Cinema,1,1,0,0
+167,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+168,Sol,Nao,Rico,Tenis,0,0,1,0
+169,Vento,Sim,Rico,Cinema,1,1,1,0
+170,Sol,Nao,Rico,Tenis,0,0,1,0
+171,Sol,Nao,Rico,Tenis,0,0,1,0
+172,Sol,Sim,Rico,Cinema,0,1,1,0
+173,Sol,Sim,Rico,Cinema,0,1,1,0
+174,Vento,Nao,Pobre,Cinema,1,0,0,0
+175,Vento,Sim,Rico,Cinema,1,1,1,0
+176,Vento,Sim,Rico,Cinema,1,1,1,0
+177,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+178,Vento,Nao,Rico,Ficar em casa,1,0,1,1
+179,Chuva,Nao,Pobre,Cinema,2,0,0,0
+180,Vento,Sim,Rico,Cinema,1,1,1,0
+181,Vento,Nao,Pobre,Cinema,1,0,0,0
+182,Vento,Sim,Rico,Cinema,1,1,1,0
+183,Vento,Sim,Rico,Cinema,1,1,1,0
+184,Chuva,Sim,Rico,Cinema,2,1,1,0
+185,Sol,Nao,Pobre,Cinema,0,0,0,0
+186,Sol,Nao,Rico,Ficar em casa,0,0,1,1
+187,Vento,Nao,Rico,Compras,1,0,1,0
+188,Sol,Nao,Pobre,Cinema,0,0,0,0
+189,Vento,Sim,Pobre,Cinema,1,1,0,0
+190,Sol,Sim,Rico,Cinema,0,1,1,0
+191,Sol,Nao,Pobre,Cinema,0,0,0,0
+192,Sol,Nao,Rico,Tenis,0,0,1,0
+193,Vento,Sim,Pobre,Cinema,1,1,0,0
+194,Sol,Nao,Rico,Tenis,0,0,1,0
+195,Vento,Nao,Pobre,Cinema,1,0,0,0
+196,Chuva,Sim,Pobre,Cinema,2,1,0,0
+197,Chuva,Sim,Rico,Cinema,2,1,1,0
+198,Chuva,Sim,Rico,Cinema,2,1,1,0
+199,Vento,Nao,Rico,Compras,1,0,1,0
+200,Vento,Sim,Rico,Cinema,1,1,1,0
+201,Sol,Nao,Rico,Tenis,0,0,1,0
+202,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+203,Chuva,Nao,Rico,Compras,2,0,1,1
+204,Chuva,Sim,Rico,Cinema,2,1,1,0
+205,Sol,Nao,Rico,Tenis,0,0,1,0
+206,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+207,Sol,Nao,Rico,Tenis,0,0,1,0
+208,Vento,Nao,Rico,Compras,1,0,1,0
+209,Vento,Nao,Rico,Compras,1,0,1,0
+210,Vento,Sim,Rico,Cinema,1,1,1,0
+211,Sol,Sim,Pobre,Cinema,0,1,0,0
+212,Chuva,Sim,Rico,Cinema,2,1,1,0
+213,Sol,Sim,Rico,Cinema,0,1,1,0
+214,Vento,Sim,Rico,Cinema,1,1,1,0
+215,Sol,Sim,Rico,Cinema,0,1,1,0
+216,Vento,Sim,Rico,Cinema,1,1,1,0
+217,Vento,Sim,Rico,Cinema,1,1,1,0
+218,Vento,Sim,Rico,Compras,1,1,1,1
+219,Chuva,Sim,Pobre,Cinema,2,1,0,0
+220,Vento,Sim,Pobre,Cinema,1,1,0,0
+221,Sol,Sim,Rico,Cinema,0,1,1,0
+222,Vento,Sim,Pobre,Cinema,1,1,0,0
+223,Sol,Nao,Pobre,Cinema,0,0,0,0
+224,Chuva,Nao,Pobre,Cinema,2,0,0,0
+225,Chuva,Sim,Pobre,Cinema,2,1,0,0
+226,Sol,Sim,Pobre,Cinema,0,1,0,0
+227,Vento,Sim,Rico,Cinema,1,1,1,0
+228,Sol,Nao,Rico,Tenis,0,0,1,0
+229,Sol,Nao,Rico,Tenis,0,0,1,0
+230,Sol,Nao,Pobre,Cinema,0,0,0,0
+231,Vento,Sim,Rico,Cinema,1,1,1,0
+232,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+233,Chuva,Sim,Rico,Cinema,2,1,1,0
+234,Sol,Nao,Rico,Tenis,0,0,1,0
+235,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+236,Sol,Sim,Rico,Cinema,0,1,1,0
+237,Sol,Sim,Rico,Cinema,0,1,1,0
+238,Vento,Sim,Rico,Cinema,1,1,1,0
+239,Vento,Nao,Rico,Compras,1,0,1,0
+240,Vento,Nao,Rico,Compras,1,0,1,0
+241,Sol,Sim,Pobre,Cinema,0,1,0,0
+242,Sol,Nao,Rico,Tenis,0,0,1,0
+243,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+244,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+245,Vento,Nao,Rico,Compras,1,0,1,0
+246,Sol,Sim,Rico,Cinema,0,1,1,0
+247,Chuva,Sim,Pobre,Cinema,2,1,0,0
+248,Sol,Sim,Pobre,Cinema,0,1,0,0
+249,Chuva,Sim,Rico,Cinema,2,1,1,0
+250,Chuva,Sim,Rico,Cinema,2,1,1,0
+251,Chuva,Sim,Pobre,Cinema,2,1,0,0
+252,Vento,Nao,Rico,Compras,1,0,1,0
+253,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+254,Chuva,Nao,Pobre,Cinema,2,0,0,0
+255,Chuva,Sim,Rico,Cinema,2,1,1,0
+256,Vento,Sim,Rico,Cinema,1,1,1,0
+257,Vento,Sim,Rico,Cinema,1,1,1,0
+258,Vento,Nao,Rico,Compras,1,0,1,0
+259,Vento,Nao,Pobre,Cinema,1,0,0,0
+260,Vento,Nao,Rico,Compras,1,0,1,0
+261,Chuva,Sim,Rico,Cinema,2,1,1,0
+262,Vento,Nao,Rico,Compras,1,0,1,0
+263,Sol,Nao,Rico,Tenis,0,0,1,0
+264,Vento,Nao,Rico,Compras,1,0,1,0
+265,Vento,Nao,Rico,Compras,1,0,1,0
+266,Chuva,Nao,Pobre,Cinema,2,0,0,0
+267,Chuva,Sim,Pobre,Cinema,2,1,0,0
+268,Chuva,Sim,Rico,Cinema,2,1,1,0
+269,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+270,Sol,Sim,Pobre,Cinema,0,1,0,0
+271,Sol,Sim,Pobre,Cinema,0,1,0,0
+272,Vento,Sim,Pobre,Cinema,1,1,0,0
+273,Vento,Nao,Rico,Compras,1,0,1,0
+274,Vento,Sim,Rico,Cinema,1,1,1,0
+275,Vento,Nao,Rico,Compras,1,0,1,0
+276,Sol,Sim,Rico,Cinema,0,1,1,0
+277,Vento,Nao,Rico,Compras,1,0,1,0
+278,Vento,Nao,Rico,Compras,1,0,1,0
+279,Sol,Sim,Pobre,Cinema,0,1,0,0
+280,Vento,Sim,Rico,Cinema,1,1,1,0
+281,Sol,Nao,Pobre,Cinema,0,0,0,0
+282,Vento,Sim,Rico,Cinema,1,1,1,0
+283,Vento,Sim,Pobre,Cinema,1,1,0,0
+284,Chuva,Sim,Pobre,Tenis,2,1,0,1
+285,Sol,Nao,Rico,Tenis,0,0,1,0
+286,Sol,Nao,Rico,Tenis,0,0,1,0
+287,Sol,Nao,Rico,Tenis,0,0,1,0
+288,Sol,Sim,Rico,Compras,0,1,1,1
+289,Chuva,Nao,Pobre,Cinema,2,0,0,0
+290,Sol,Sim,Rico,Cinema,0,1,1,0
+291,Vento,Sim,Rico,Cinema,1,1,1,0
+292,Vento,Sim,Pobre,Cinema,1,1,0,0
+293,Vento,Sim,Rico,Cinema,1,1,1,0
+294,Vento,Nao,Rico,Compras,1,0,1,0
+295,Chuva,Sim,Pobre,Cinema,2,1,0,0
+296,Vento,Sim,Rico,Cinema,1,1,1,0
+297,Vento,Sim,Rico,Cinema,1,1,1,0
+298,Chuva,Sim,Pobre,Ficar em casa,2,1,0,1
+299,Sol,Nao,Pobre,Cinema,0,0,0,0
+300,Chuva,Nao,Pobre,Cinema,2,0,0,0
+301,Sol,Sim,Rico,Cinema,0,1,1,0
+302,Vento,Sim,Pobre,Cinema,1,1,0,0
+303,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+304,Vento,Nao,Rico,Compras,1,0,1,0
+305,Vento,Sim,Rico,Cinema,1,1,1,0
+306,Vento,Sim,Rico,Cinema,1,1,1,0
+307,Vento,Sim,Rico,Cinema,1,1,1,0
+308,Sol,Nao,Pobre,Cinema,0,0,0,0
+309,Vento,Sim,Rico,Cinema,1,1,1,0
+310,Chuva,Sim,Pobre,Cinema,2,1,0,0
+311,Vento,Sim,Rico,Tenis,1,1,1,1
+312,Chuva,Nao,Pobre,Cinema,2,0,0,0
+313,Vento,Sim,Pobre,Cinema,1,1,0,0
+314,Vento,Nao,Rico,Compras,1,0,1,0
+315,Vento,Nao,Rico,Ficar em casa,1,0,1,1
+316,Vento,Sim,Rico,Cinema,1,1,1,0
+317,Sol,Nao,Rico,Tenis,0,0,1,0
+318,Chuva,Sim,Rico,Cinema,2,1,1,0
+319,Vento,Nao,Rico,Compras,1,0,1,0
+320,Vento,Nao,Rico,Compras,1,0,1,0
+321,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+322,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+323,Vento,Sim,Rico,Cinema,1,1,1,0
+324,Sol,Nao,Rico,Tenis,0,0,1,0
+325,Sol,Sim,Pobre,Cinema,0,1,0,0
+326,Chuva,Nao,Pobre,Compras,2,0,0,1
+327,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+328,Sol,Nao,Rico,Tenis,0,0,1,0
+329,Chuva,Sim,Rico,Cinema,2,1,1,0
+330,Chuva,Nao,Pobre,Cinema,2,0,0,0
+331,Sol,Sim,Pobre,Cinema,0,1,0,0
+332,Chuva,Sim,Rico,Cinema,2,1,1,0
+333,Vento,Nao,Pobre,Cinema,1,0,0,0
+334,Vento,Sim,Rico,Cinema,1,1,1,0
+335,Chuva,Sim,Rico,Cinema,2,1,1,0
+336,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+337,Sol,Sim,Rico,Cinema,0,1,1,0
+338,Chuva,Sim,Pobre,Cinema,2,1,0,0
+339,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+340,Vento,Sim,Rico,Cinema,1,1,1,0
+341,Vento,Sim,Pobre,Cinema,1,1,0,0
+342,Sol,Sim,Pobre,Cinema,0,1,0,0
+343,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+344,Chuva,Sim,Rico,Cinema,2,1,1,0
+345,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+346,Sol,Sim,Rico,Cinema,0,1,1,0
+347,Vento,Sim,Pobre,Cinema,1,1,0,0
+348,Vento,Nao,Rico,Compras,1,0,1,0
+349,Sol,Sim,Rico,Cinema,0,1,1,0
+350,Sol,Nao,Rico,Tenis,0,0,1,0
+351,Chuva,Nao,Pobre,Cinema,2,0,0,0
+352,Sol,Nao,Rico,Tenis,0,0,1,0
+353,Vento,Nao,Rico,Cinema,1,0,1,1
+354,Chuva,Nao,Pobre,Cinema,2,0,0,0
+355,Vento,Sim,Rico,Cinema,1,1,1,0
+356,Sol,Nao,Rico,Tenis,0,0,1,0
+357,Vento,Nao,Rico,Compras,1,0,1,0
+358,Vento,Sim,Rico,Cinema,1,1,1,0
+359,Sol,Nao,Rico,Tenis,0,0,1,0
+360,Vento,Sim,Pobre,Cinema,1,1,0,0
+361,Vento,Nao,Pobre,Cinema,1,0,0,0
+362,Sol,Sim,Pobre,Cinema,0,1,0,0
+363,Chuva,Sim,Pobre,Cinema,2,1,0,0
+364,Vento,Nao,Rico,Compras,1,0,1,0
+365,Chuva,Sim,Rico,Cinema,2,1,1,0
+366,Vento,Sim,Rico,Cinema,1,1,1,0
+367,Vento,Nao,Rico,Compras,1,0,1,0
+368,Vento,Sim,Pobre,Cinema,1,1,0,0
+369,Chuva,Sim,Pobre,Cinema,2,1,0,0
+370,Sol,Nao,Rico,Tenis,0,0,1,0
+371,Vento,Nao,Rico,Compras,1,0,1,0
+372,Chuva,Sim,Rico,Cinema,2,1,1,0
+373,Vento,Sim,Rico,Cinema,1,1,1,0
+374,Vento,Nao,Rico,Compras,1,0,1,0
+375,Vento,Nao,Rico,Compras,1,0,1,0
+376,Sol,Sim,Pobre,Cinema,0,1,0,0
+377,Vento,Nao,Rico,Compras,1,0,1,0
+378,Vento,Nao,Rico,Compras,1,0,1,0
+379,Vento,Sim,Pobre,Cinema,1,1,0,0
+380,Chuva,Sim,Rico,Cinema,2,1,1,0
+381,Chuva,Sim,Rico,Ficar em casa,2,1,1,1
+382,Sol,Sim,Rico,Cinema,0,1,1,0
+383,Chuva,Sim,Rico,Cinema,2,1,1,0
+384,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+385,Vento,Nao,Rico,Compras,1,0,1,0
+386,Sol,Nao,Rico,Tenis,0,0,1,0
+387,Chuva,Sim,Rico,Cinema,2,1,1,0
+388,Vento,Sim,Rico,Compras,1,1,1,1
+389,Vento,Sim,Pobre,Cinema,1,1,0,0
+390,Vento,Sim,Pobre,Cinema,1,1,0,0
+391,Chuva,Sim,Rico,Cinema,2,1,1,0
+392,Sol,Sim,Pobre,Cinema,0,1,0,0
+393,Chuva,Nao,Pobre,Cinema,2,0,0,0
+394,Vento,Nao,Rico,Compras,1,0,1,0
+395,Vento,Nao,Rico,Compras,1,0,1,0
+396,Sol,Nao,Pobre,Cinema,0,0,0,0
+397,Chuva,Nao,Pobre,Tenis,2,0,0,1
+398,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+399,Vento,Nao,Rico,Compras,1,0,1,0
+400,Vento,Nao,Rico,Compras,1,0,1,0
+401,Chuva,Sim,Rico,Cinema,2,1,1,0
+402,Sol,Sim,Rico,Cinema,0,1,1,0
+403,Sol,Nao,Rico,Tenis,0,0,1,0
+404,Vento,Sim,Pobre,Cinema,1,1,0,0
+405,Sol,Sim,Rico,Cinema,0,1,1,0
+406,Sol,Sim,Pobre,Cinema,0,1,0,0
+407,Vento,Nao,Pobre,Cinema,1,0,0,0
+408,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+409,Chuva,Sim,Pobre,Cinema,2,1,0,0
+410,Sol,Sim,Rico,Cinema,0,1,1,0
+411,Vento,Sim,Rico,Cinema,1,1,1,0
+412,Chuva,Nao,Rico,Cinema,2,0,1,1
+413,Vento,Nao,Pobre,Cinema,1,0,0,0
+414,Vento,Sim,Rico,Cinema,1,1,1,0
+415,Vento,Sim,Rico,Cinema,1,1,1,0
+416,Sol,Nao,Rico,Tenis,0,0,1,0
+417,Chuva,Sim,Pobre,Cinema,2,1,0,0
+418,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+419,Vento,Sim,Rico,Cinema,1,1,1,0
+420,Vento,Sim,Rico,Cinema,1,1,1,0
+421,Vento,Nao,Rico,Compras,1,0,1,0
+422,Chuva,Sim,Rico,Cinema,2,1,1,0
+423,Vento,Nao,Rico,Compras,1,0,1,0
+424,Vento,Nao,Pobre,Cinema,1,0,0,0
+425,Chuva,Nao,Rico,Tenis,2,0,1,1
+426,Sol,Nao,Pobre,Cinema,0,0,0,0
+427,Sol,Sim,Rico,Cinema,0,1,1,0
+428,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+429,Sol,Nao,Pobre,Cinema,0,0,0,0
+430,Vento,Sim,Rico,Cinema,1,1,1,0
+431,Vento,Nao,Rico,Compras,1,0,1,0
+432,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+433,Chuva,Sim,Rico,Cinema,2,1,1,0
+434,Vento,Nao,Rico,Compras,1,0,1,0
+435,Chuva,Nao,Pobre,Cinema,2,0,0,0
+436,Vento,Nao,Rico,Compras,1,0,1,0
+437,Chuva,Nao,Pobre,Cinema,2,0,0,0
+438,Vento,Sim,Rico,Cinema,1,1,1,0
+439,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+440,Vento,Nao,Rico,Compras,1,0,1,0
+441,Chuva,Sim,Rico,Cinema,2,1,1,0
+442,Sol,Nao,Rico,Tenis,0,0,1,0
+443,Sol,Nao,Rico,Tenis,0,0,1,0
+444,Sol,Sim,Pobre,Cinema,0,1,0,0
+445,Sol,Nao,Rico,Tenis,0,0,1,0
+446,Sol,Sim,Rico,Cinema,0,1,1,0
+447,Sol,Nao,Pobre,Cinema,0,0,0,0
+448,Vento,Nao,Rico,Compras,1,0,1,0
+449,Chuva,Sim,Rico,Tenis,2,1,1,1
+450,Vento,Sim,Pobre,Cinema,1,1,0,0
+451,Sol,Nao,Rico,Tenis,0,0,1,0
+452,Chuva,Sim,Pobre,Cinema,2,1,0,0
+453,Sol,Nao,Pobre,Cinema,0,0,0,0
+454,Sol,Sim,Rico,Cinema,0,1,1,0
+455,Vento,Sim,Rico,Cinema,1,1,1,0
+456,Chuva,Sim,Rico,Cinema,2,1,1,0
+457,Chuva,Sim,Pobre,Cinema,2,1,0,0
+458,Chuva,Sim,Rico,Cinema,2,1,1,0
+459,Vento,Sim,Rico,Cinema,1,1,1,0
+460,Vento,Sim,Rico,Cinema,1,1,1,0
+461,Sol,Nao,Rico,Tenis,0,0,1,0
+462,Sol,Sim,Rico,Cinema,0,1,1,0
+463,Vento,Nao,Rico,Compras,1,0,1,0
+464,Vento,Sim,Rico,Cinema,1,1,1,0
+465,Sol,Nao,Pobre,Cinema,0,0,0,0
+466,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+467,Vento,Sim,Pobre,Cinema,1,1,0,0
+468,Vento,Nao,Rico,Compras,1,0,1,0
+469,Chuva,Nao,Pobre,Cinema,2,0,0,0
+470,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+471,Vento,Nao,Rico,Compras,1,0,1,0
+472,Sol,Nao,Pobre,Cinema,0,0,0,0
+473,Vento,Sim,Pobre,Cinema,1,1,0,0
+474,Vento,Nao,Rico,Compras,1,0,1,0
+475,Vento,Sim,Rico,Cinema,1,1,1,0
+476,Vento,Nao,Rico,Compras,1,0,1,0
+477,Sol,Sim,Rico,Cinema,0,1,1,0
+478,Sol,Sim,Pobre,Cinema,0,1,0,0
+479,Sol,Nao,Pobre,Cinema,0,0,0,0
+480,Sol,Sim,Rico,Cinema,0,1,1,0
+481,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+482,Vento,Nao,Rico,Compras,1,0,1,0
+483,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+484,Sol,Nao,Rico,Tenis,0,0,1,0
+485,Chuva,Nao,Pobre,Cinema,2,0,0,0
+486,Vento,Nao,Rico,Compras,1,0,1,0
+487,Sol,Sim,Rico,Cinema,0,1,1,0
+488,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+489,Vento,Nao,Pobre,Cinema,1,0,0,0
+490,Sol,Nao,Rico,Tenis,0,0,1,0
+491,Chuva,Sim,Rico,Cinema,2,1,1,0
+492,Vento,Nao,Pobre,Cinema,1,0,0,0
+493,Chuva,Sim,Pobre,Cinema,2,1,0,0
+494,Vento,Nao,Pobre,Cinema,1,0,0,0
+495,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+496,Sol,Nao,Rico,Tenis,0,0,1,0
+497,Sol,Nao,Rico,Compras,0,0,1,1
+498,Chuva,Nao,Pobre,Cinema,2,0,0,0
+499,Vento,Sim,Rico,Cinema,1,1,1,0
+500,Vento,Nao,Rico,Compras,1,0,1,0
+501,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+502,Vento,Sim,Rico,Cinema,1,1,1,0
+503,Vento,Nao,Pobre,Cinema,1,0,0,0
+504,Chuva,Sim,Rico,Cinema,2,1,1,0
+505,Vento,Nao,Rico,Compras,1,0,1,0
+506,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+507,Vento,Nao,Rico,Compras,1,0,1,0
+508,Chuva,Sim,Pobre,Cinema,2,1,0,0
+509,Sol,Nao,Rico,Tenis,0,0,1,0
+510,Vento,Nao,Rico,Compras,1,0,1,0
+511,Vento,Sim,Rico,Cinema,1,1,1,0
+512,Sol,Nao,Rico,Tenis,0,0,1,0
+513,Chuva,Sim,Rico,Cinema,2,1,1,0
+514,Sol,Sim,Rico,Cinema,0,1,1,0
+515,Vento,Sim,Rico,Cinema,1,1,1,0
+516,Vento,Nao,Rico,Compras,1,0,1,0
+517,Vento,Sim,Pobre,Cinema,1,1,0,0
+518,Vento,Sim,Rico,Cinema,1,1,1,0
+519,Sol,Nao,Rico,Tenis,0,0,1,0
+520,Vento,Nao,Rico,Cinema,1,0,1,1
+521,Chuva,Nao,Pobre,Cinema,2,0,0,0
+522,Chuva,Sim,Pobre,Ficar em casa,2,1,0,1
+523,Vento,Sim,Rico,Cinema,1,1,1,0
+524,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+525,Vento,Sim,Pobre,Cinema,1,1,0,0
+526,Sol,Nao,Rico,Tenis,0,0,1,0
+527,Chuva,Sim,Pobre,Cinema,2,1,0,0
+528,Sol,Nao,Rico,Tenis,0,0,1,0
+529,Chuva,Sim,Pobre,Cinema,2,1,0,0
+530,Sol,Nao,Rico,Tenis,0,0,1,0
+531,Sol,Nao,Rico,Compras,0,0,1,1
+532,Vento,Nao,Rico,Cinema,1,0,1,1
+533,Sol,Nao,Rico,Tenis,0,0,1,0
+534,Chuva,Nao,Pobre,Cinema,2,0,0,0
+535,Sol,Nao,Rico,Tenis,0,0,1,0
+536,Sol,Nao,Rico,Tenis,0,0,1,0
+537,Vento,Nao,Rico,Compras,1,0,1,0
+538,Sol,Sim,Rico,Cinema,0,1,1,0
+539,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+540,Vento,Nao,Rico,Compras,1,0,1,0
+541,Vento,Nao,Pobre,Cinema,1,0,0,0
+542,Sol,Nao,Rico,Tenis,0,0,1,0
+543,Sol,Sim,Rico,Cinema,0,1,1,0
+544,Vento,Nao,Rico,Compras,1,0,1,0
+545,Chuva,Sim,Rico,Cinema,2,1,1,0
+546,Vento,Sim,Rico,Cinema,1,1,1,0
+547,Chuva,Sim,Rico,Compras,2,1,1,1
+548,Sol,Nao,Rico,Tenis,0,0,1,0
+549,Vento,Sim,Rico,Cinema,1,1,1,0
+550,Vento,Sim,Rico,Cinema,1,1,1,0
+551,Vento,Nao,Rico,Tenis,1,0,1,1
+552,Vento,Nao,Pobre,Cinema,1,0,0,0
+553,Sol,Sim,Pobre,Cinema,0,1,0,0
+554,Vento,Nao,Rico,Compras,1,0,1,0
+555,Vento,Sim,Rico,Cinema,1,1,1,0
+556,Sol,Sim,Rico,Cinema,0,1,1,0
+557,Chuva,Sim,Pobre,Cinema,2,1,0,0
+558,Vento,Nao,Rico,Compras,1,0,1,0
+559,Sol,Sim,Pobre,Cinema,0,1,0,0
+560,Chuva,Sim,Rico,Cinema,2,1,1,0
+561,Vento,Nao,Rico,Compras,1,0,1,0
+562,Vento,Sim,Rico,Cinema,1,1,1,0
+563,Vento,Nao,Rico,Compras,1,0,1,0
+564,Chuva,Sim,Rico,Cinema,2,1,1,0
+565,Vento,Nao,Rico,Compras,1,0,1,0
+566,Sol,Nao,Rico,Tenis,0,0,1,0
+567,Chuva,Sim,Pobre,Cinema,2,1,0,0
+568,Sol,Nao,Pobre,Cinema,0,0,0,0
+569,Sol,Sim,Rico,Cinema,0,1,1,0
+570,Vento,Sim,Rico,Cinema,1,1,1,0
+571,Vento,Nao,Pobre,Cinema,1,0,0,0
+572,Vento,Sim,Pobre,Cinema,1,1,0,0
+573,Chuva,Nao,Pobre,Cinema,2,0,0,0
+574,Sol,Nao,Rico,Tenis,0,0,1,0
+575,Vento,Nao,Rico,Compras,1,0,1,0
+576,Vento,Nao,Rico,Compras,1,0,1,0
+577,Sol,Nao,Rico,Tenis,0,0,1,0
+578,Sol,Sim,Rico,Cinema,0,1,1,0
+579,Vento,Sim,Pobre,Cinema,1,1,0,0
+580,Sol,Nao,Rico,Tenis,0,0,1,0
+581,Chuva,Sim,Rico,Cinema,2,1,1,0
+582,Vento,Sim,Rico,Cinema,1,1,1,0
+583,Vento,Sim,Rico,Cinema,1,1,1,0
+584,Sol,Sim,Rico,Cinema,0,1,1,0
+585,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+586,Vento,Sim,Rico,Cinema,1,1,1,0
+587,Vento,Sim,Rico,Cinema,1,1,1,0
+588,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+589,Sol,Sim,Rico,Cinema,0,1,1,0
+590,Chuva,Nao,Pobre,Cinema,2,0,0,0
+591,Vento,Sim,Rico,Cinema,1,1,1,0
+592,Vento,Nao,Rico,Compras,1,0,1,0
+593,Vento,Sim,Rico,Cinema,1,1,1,0
+594,Sol,Nao,Pobre,Cinema,0,0,0,0
+595,Vento,Nao,Rico,Compras,1,0,1,0
+596,Sol,Sim,Rico,Cinema,0,1,1,0
+597,Vento,Nao,Rico,Compras,1,0,1,0
+598,Vento,Nao,Pobre,Cinema,1,0,0,0
+599,Sol,Sim,Rico,Cinema,0,1,1,0
+600,Vento,Nao,Pobre,Cinema,1,0,0,0
+601,Sol,Sim,Rico,Cinema,0,1,1,0
+602,Vento,Sim,Pobre,Cinema,1,1,0,0
+603,Sol,Nao,Pobre,Cinema,0,0,0,0
+604,Sol,Sim,Rico,Cinema,0,1,1,0
+605,Vento,Nao,Rico,Compras,1,0,1,0
+606,Vento,Sim,Rico,Cinema,1,1,1,0
+607,Vento,Nao,Pobre,Cinema,1,0,0,0
+608,Sol,Sim,Pobre,Cinema,0,1,0,0
+609,Sol,Nao,Rico,Tenis,0,0,1,0
+610,Chuva,Sim,Pobre,Cinema,2,1,0,0
+611,Chuva,Sim,Pobre,Cinema,2,1,0,0
+612,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+613,Chuva,Nao,Pobre,Cinema,2,0,0,0
+614,Vento,Nao,Rico,Compras,1,0,1,0
+615,Sol,Nao,Pobre,Cinema,0,0,0,0
+616,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+617,Vento,Sim,Rico,Cinema,1,1,1,0
+618,Chuva,Sim,Rico,Cinema,2,1,1,0
+619,Sol,Nao,Rico,Tenis,0,0,1,0
+620,Vento,Nao,Rico,Cinema,1,0,1,1
+621,Vento,Nao,Rico,Compras,1,0,1,0
+622,Vento,Sim,Rico,Cinema,1,1,1,0
+623,Chuva,Sim,Pobre,Cinema,2,1,0,0
+624,Vento,Nao,Pobre,Cinema,1,0,0,0
+625,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+626,Sol,Nao,Rico,Tenis,0,0,1,0
+627,Chuva,Nao,Pobre,Ficar em casa,2,0,0,1
+628,Chuva,Sim,Rico,Cinema,2,1,1,0
+629,Vento,Sim,Pobre,Cinema,1,1,0,0
+630,Vento,Sim,Rico,Cinema,1,1,1,0
+631,Chuva,Sim,Rico,Cinema,2,1,1,0
+632,Vento,Nao,Rico,Compras,1,0,1,0
+633,Vento,Nao,Rico,Compras,1,0,1,0
+634,Chuva,Sim,Rico,Cinema,2,1,1,0
+635,Sol,Nao,Rico,Tenis,0,0,1,0
+636,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+637,Sol,Sim,Pobre,Cinema,0,1,0,0
+638,Vento,Nao,Rico,Compras,1,0,1,0
+639,Chuva,Sim,Pobre,Cinema,2,1,0,0
+640,Vento,Sim,Rico,Cinema,1,1,1,0
+641,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+642,Vento,Nao,Rico,Compras,1,0,1,0
+643,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+644,Vento,Sim,Rico,Cinema,1,1,1,0
+645,Vento,Nao,Rico,Compras,1,0,1,0
+646,Vento,Nao,Rico,Compras,1,0,1,0
+647,Vento,Nao,Pobre,Cinema,1,0,0,0
+648,Sol,Nao,Pobre,Cinema,0,0,0,0
+649,Sol,Sim,Rico,Cinema,0,1,1,0
+650,Chuva,Nao,Pobre,Cinema,2,0,0,0
+651,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+652,Chuva,Nao,Pobre,Tenis,2,0,0,1
+653,Sol,Sim,Pobre,Cinema,0,1,0,0
+654,Vento,Sim,Pobre,Cinema,1,1,0,0
+655,Vento,Sim,Rico,Cinema,1,1,1,0
+656,Sol,Sim,Rico,Cinema,0,1,1,0
+657,Chuva,Sim,Rico,Cinema,2,1,1,0
+658,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+659,Vento,Nao,Rico,Compras,1,0,1,0
+660,Chuva,Sim,Rico,Ficar em casa,2,1,1,1
+661,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+662,Chuva,Sim,Pobre,Cinema,2,1,0,0
+663,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+664,Chuva,Sim,Pobre,Cinema,2,1,0,0
+665,Sol,Nao,Rico,Ficar em casa,0,0,1,1
+666,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+667,Sol,Nao,Rico,Tenis,0,0,1,0
+668,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+669,Chuva,Sim,Pobre,Tenis,2,1,0,1
+670,Vento,Sim,Rico,Cinema,1,1,1,0
+671,Chuva,Nao,Pobre,Cinema,2,0,0,0
+672,Vento,Sim,Rico,Cinema,1,1,1,0
+673,Sol,Sim,Rico,Cinema,0,1,1,0
+674,Chuva,Sim,Pobre,Cinema,2,1,0,0
+675,Chuva,Sim,Rico,Cinema,2,1,1,0
+676,Chuva,Sim,Rico,Tenis,2,1,1,1
+677,Sol,Nao,Pobre,Cinema,0,0,0,0
+678,Vento,Nao,Pobre,Cinema,1,0,0,0
+679,Chuva,Nao,Pobre,Cinema,2,0,0,0
+680,Chuva,Sim,Rico,Cinema,2,1,1,0
+681,Vento,Sim,Rico,Cinema,1,1,1,0
+682,Vento,Nao,Rico,Compras,1,0,1,0
+683,Chuva,Sim,Pobre,Cinema,2,1,0,0
+684,Sol,Sim,Rico,Cinema,0,1,1,0
+685,Chuva,Sim,Pobre,Cinema,2,1,0,0
+686,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+687,Vento,Nao,Rico,Compras,1,0,1,0
+688,Sol,Sim,Pobre,Cinema,0,1,0,0
+689,Vento,Nao,Rico,Compras,1,0,1,0
+690,Sol,Nao,Rico,Tenis,0,0,1,0
+691,Sol,Sim,Rico,Cinema,0,1,1,0
+692,Sol,Sim,Pobre,Cinema,0,1,0,0
+693,Vento,Nao,Rico,Compras,1,0,1,0
+694,Vento,Nao,Rico,Compras,1,0,1,0
+695,Chuva,Sim,Pobre,Cinema,2,1,0,0
+696,Vento,Sim,Rico,Cinema,1,1,1,0
+697,Sol,Nao,Pobre,Cinema,0,0,0,0
+698,Vento,Sim,Rico,Cinema,1,1,1,0
+699,Sol,Sim,Pobre,Cinema,0,1,0,0
+700,Sol,Sim,Rico,Cinema,0,1,1,0
+701,Sol,Nao,Pobre,Tenis,0,0,0,1
+702,Sol,Nao,Pobre,Cinema,0,0,0,0
+703,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+704,Sol,Nao,Rico,Tenis,0,0,1,0
+705,Vento,Sim,Rico,Cinema,1,1,1,0
+706,Chuva,Sim,Rico,Cinema,2,1,1,0
+707,Vento,Nao,Rico,Compras,1,0,1,0
+708,Chuva,Sim,Rico,Cinema,2,1,1,0
+709,Vento,Nao,Pobre,Cinema,1,0,0,0
+710,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+711,Chuva,Sim,Pobre,Cinema,2,1,0,0
+712,Vento,Sim,Rico,Ficar em casa,1,1,1,1
+713,Sol,Nao,Pobre,Compras,0,0,0,1
+714,Vento,Nao,Pobre,Cinema,1,0,0,0
+715,Sol,Nao,Rico,Tenis,0,0,1,0
+716,Chuva,Sim,Pobre,Cinema,2,1,0,0
+717,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+718,Chuva,Sim,Rico,Cinema,2,1,1,0
+719,Vento,Nao,Rico,Compras,1,0,1,0
+720,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+721,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+722,Vento,Sim,Rico,Cinema,1,1,1,0
+723,Vento,Sim,Pobre,Cinema,1,1,0,0
+724,Sol,Nao,Pobre,Cinema,0,0,0,0
+725,Vento,Sim,Rico,Cinema,1,1,1,0
+726,Chuva,Nao,Pobre,Cinema,2,0,0,0
+727,Vento,Nao,Rico,Compras,1,0,1,0
+728,Vento,Sim,Rico,Cinema,1,1,1,0
+729,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+730,Chuva,Nao,Pobre,Cinema,2,0,0,0
+731,Sol,Nao,Rico,Tenis,0,0,1,0
+732,Vento,Sim,Pobre,Cinema,1,1,0,0
+733,Chuva,Sim,Pobre,Cinema,2,1,0,0
+734,Sol,Nao,Pobre,Cinema,0,0,0,0
+735,Sol,Nao,Pobre,Cinema,0,0,0,0
+736,Chuva,Sim,Pobre,Cinema,2,1,0,0
+737,Chuva,Sim,Pobre,Cinema,2,1,0,0
+738,Chuva,Sim,Rico,Cinema,2,1,1,0
+739,Sol,Sim,Rico,Compras,0,1,1,1
+740,Vento,Sim,Rico,Cinema,1,1,1,0
+741,Chuva,Sim,Rico,Cinema,2,1,1,0
+742,Chuva,Nao,Pobre,Cinema,2,0,0,0
+743,Vento,Nao,Rico,Tenis,1,0,1,1
+744,Chuva,Sim,Rico,Cinema,2,1,1,0
+745,Chuva,Nao,Pobre,Cinema,2,0,0,0
+746,Vento,Nao,Rico,Ficar em casa,1,0,1,1
+747,Sol,Nao,Rico,Tenis,0,0,1,0
+748,Sol,Sim,Rico,Cinema,0,1,1,0
+749,Chuva,Sim,Rico,Cinema,2,1,1,0
+750,Sol,Nao,Pobre,Cinema,0,0,0,0
+751,Vento,Sim,Rico,Cinema,1,1,1,0
+752,Vento,Sim,Rico,Cinema,1,1,1,0
+753,Sol,Sim,Pobre,Cinema,0,1,0,0
+754,Vento,Sim,Rico,Cinema,1,1,1,0
+755,Vento,Sim,Pobre,Cinema,1,1,0,0
+756,Vento,Sim,Rico,Cinema,1,1,1,0
+757,Sol,Sim,Pobre,Cinema,0,1,0,0
+758,Sol,Sim,Rico,Cinema,0,1,1,0
+759,Vento,Nao,Pobre,Cinema,1,0,0,0
+760,Vento,Nao,Pobre,Cinema,1,0,0,0
+761,Chuva,Sim,Rico,Cinema,2,1,1,0
+762,Chuva,Nao,Pobre,Cinema,2,0,0,0
+763,Vento,Nao,Rico,Compras,1,0,1,0
+764,Sol,Nao,Pobre,Cinema,0,0,0,0
+765,Sol,Sim,Pobre,Cinema,0,1,0,0
+766,Chuva,Nao,Pobre,Cinema,2,0,0,0
+767,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+768,Vento,Sim,Rico,Cinema,1,1,1,0
+769,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+770,Vento,Sim,Rico,Cinema,1,1,1,0
+771,Chuva,Nao,Pobre,Cinema,2,0,0,0
+772,Sol,Sim,Rico,Cinema,0,1,1,0
+773,Vento,Sim,Rico,Cinema,1,1,1,0
+774,Sol,Sim,Rico,Cinema,0,1,1,0
+775,Vento,Sim,Pobre,Cinema,1,1,0,0
+776,Sol,Nao,Pobre,Cinema,0,0,0,0
+777,Sol,Nao,Rico,Tenis,0,0,1,0
+778,Vento,Nao,Rico,Compras,1,0,1,0
+779,Sol,Nao,Rico,Tenis,0,0,1,0
+780,Sol,Sim,Rico,Cinema,0,1,1,0
+781,Sol,Nao,Pobre,Cinema,0,0,0,0
+782,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+783,Vento,Nao,Rico,Compras,1,0,1,0
+784,Chuva,Sim,Rico,Cinema,2,1,1,0
+785,Chuva,Sim,Rico,Cinema,2,1,1,0
+786,Chuva,Sim,Pobre,Cinema,2,1,0,0
+787,Vento,Sim,Rico,Cinema,1,1,1,0
+788,Vento,Sim,Pobre,Cinema,1,1,0,0
+789,Vento,Sim,Pobre,Cinema,1,1,0,0
+790,Vento,Sim,Rico,Cinema,1,1,1,0
+791,Vento,Nao,Pobre,Cinema,1,0,0,0
+792,Vento,Sim,Rico,Ficar em casa,1,1,1,1
+793,Sol,Nao,Rico,Tenis,0,0,1,0
+794,Sol,Sim,Pobre,Cinema,0,1,0,0
+795,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+796,Vento,Sim,Rico,Cinema,1,1,1,0
+797,Chuva,Sim,Rico,Cinema,2,1,1,0
+798,Vento,Nao,Rico,Compras,1,0,1,0
+799,Vento,Sim,Rico,Compras,1,1,1,1
+800,Vento,Nao,Rico,Compras,1,0,1,0
+801,Chuva,Sim,Rico,Cinema,2,1,1,0
+802,Chuva,Nao,Pobre,Cinema,2,0,0,0
+803,Vento,Nao,Pobre,Cinema,1,0,0,0
+804,Chuva,Sim,Rico,Cinema,2,1,1,0
+805,Sol,Nao,Rico,Tenis,0,0,1,0
+806,Chuva,Sim,Rico,Cinema,2,1,1,0
+807,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+808,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+809,Sol,Sim,Pobre,Cinema,0,1,0,0
+810,Sol,Nao,Rico,Tenis,0,0,1,0
+811,Vento,Nao,Rico,Compras,1,0,1,0
+812,Vento,Sim,Rico,Cinema,1,1,1,0
+813,Vento,Nao,Rico,Compras,1,0,1,0
+814,Sol,Nao,Rico,Tenis,0,0,1,0
+815,Vento,Sim,Rico,Cinema,1,1,1,0
+816,Sol,Sim,Rico,Cinema,0,1,1,0
+817,Chuva,Sim,Rico,Cinema,2,1,1,0
+818,Chuva,Sim,Rico,Cinema,2,1,1,0
+819,Vento,Sim,Rico,Cinema,1,1,1,0
+820,Sol,Nao,Rico,Tenis,0,0,1,0
+821,Sol,Nao,Rico,Tenis,0,0,1,0
+822,Chuva,Sim,Rico,Cinema,2,1,1,0
+823,Vento,Sim,Rico,Cinema,1,1,1,0
+824,Sol,Nao,Rico,Tenis,0,0,1,0
+825,Vento,Sim,Rico,Cinema,1,1,1,0
+826,Vento,Sim,Pobre,Cinema,1,1,0,0
+827,Sol,Nao,Rico,Tenis,0,0,1,0
+828,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+829,Vento,Sim,Pobre,Cinema,1,1,0,0
+830,Vento,Sim,Pobre,Cinema,1,1,0,0
+831,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+832,Vento,Sim,Pobre,Cinema,1,1,0,0
+833,Vento,Sim,Pobre,Cinema,1,1,0,0
+834,Vento,Sim,Rico,Cinema,1,1,1,0
+835,Vento,Nao,Rico,Compras,1,0,1,0
+836,Vento,Nao,Rico,Compras,1,0,1,0
+837,Vento,Sim,Rico,Cinema,1,1,1,0
+838,Chuva,Sim,Pobre,Cinema,2,1,0,0
+839,Sol,Sim,Rico,Cinema,0,1,1,0
+840,Sol,Nao,Rico,Tenis,0,0,1,0
+841,Sol,Sim,Rico,Cinema,0,1,1,0
+842,Chuva,Sim,Rico,Cinema,2,1,1,0
+843,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+844,Sol,Nao,Pobre,Cinema,0,0,0,0
+845,Sol,Sim,Pobre,Cinema,0,1,0,0
+846,Vento,Sim,Rico,Compras,1,1,1,1
+847,Vento,Nao,Rico,Compras,1,0,1,0
+848,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+849,Vento,Sim,Pobre,Cinema,1,1,0,0
+850,Sol,Nao,Rico,Tenis,0,0,1,0
+851,Sol,Sim,Rico,Cinema,0,1,1,0
+852,Vento,Sim,Rico,Cinema,1,1,1,0
+853,Sol,Sim,Pobre,Cinema,0,1,0,0
+854,Chuva,Sim,Pobre,Cinema,2,1,0,0
+855,Vento,Sim,Rico,Cinema,1,1,1,0
+856,Vento,Nao,Pobre,Cinema,1,0,0,0
+857,Chuva,Sim,Rico,Cinema,2,1,1,0
+858,Vento,Sim,Rico,Ficar em casa,1,1,1,1
+859,Vento,Nao,Pobre,Cinema,1,0,0,0
+860,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+861,Vento,Sim,Pobre,Cinema,1,1,0,0
+862,Vento,Nao,Rico,Compras,1,0,1,0
+863,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+864,Vento,Sim,Rico,Cinema,1,1,1,0
+865,Chuva,Sim,Rico,Cinema,2,1,1,0
+866,Vento,Nao,Rico,Compras,1,0,1,0
+867,Sol,Sim,Rico,Cinema,0,1,1,0
+868,Vento,Sim,Pobre,Cinema,1,1,0,0
+869,Sol,Sim,Rico,Cinema,0,1,1,0
+870,Chuva,Nao,Pobre,Cinema,2,0,0,0
+871,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+872,Vento,Nao,Pobre,Cinema,1,0,0,0
+873,Vento,Nao,Rico,Compras,1,0,1,0
+874,Vento,Sim,Rico,Cinema,1,1,1,0
+875,Sol,Sim,Rico,Cinema,0,1,1,0
+876,Vento,Sim,Rico,Cinema,1,1,1,0
+877,Vento,Nao,Pobre,Cinema,1,0,0,0
+878,Sol,Sim,Rico,Cinema,0,1,1,0
+879,Sol,Nao,Rico,Tenis,0,0,1,0
+880,Chuva,Sim,Rico,Cinema,2,1,1,0
+881,Sol,Nao,Rico,Tenis,0,0,1,0
+882,Vento,Nao,Rico,Compras,1,0,1,0
+883,Vento,Sim,Rico,Cinema,1,1,1,0
+884,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+885,Chuva,Sim,Rico,Cinema,2,1,1,0
+886,Vento,Nao,Rico,Compras,1,0,1,0
+887,Vento,Sim,Rico,Cinema,1,1,1,0
+888,Sol,Nao,Rico,Tenis,0,0,1,0
+889,Chuva,Nao,Pobre,Cinema,2,0,0,0
+890,Vento,Nao,Rico,Compras,1,0,1,0
+891,Sol,Nao,Rico,Tenis,0,0,1,0
+892,Sol,Nao,Pobre,Cinema,0,0,0,0
+893,Vento,Nao,Pobre,Cinema,1,0,0,0
+894,Vento,Nao,Pobre,Cinema,1,0,0,0
+895,Vento,Nao,Rico,Compras,1,0,1,0
+896,Vento,Sim,Rico,Cinema,1,1,1,0
+897,Sol,Sim,Rico,Cinema,0,1,1,0
+898,Chuva,Nao,Rico,Tenis,2,0,1,1
+899,Sol,Nao,Rico,Tenis,0,0,1,0
+900,Vento,Nao,Rico,Compras,1,0,1,0
+901,Vento,Sim,Rico,Cinema,1,1,1,0
+902,Vento,Nao,Rico,Compras,1,0,1,0
+903,Vento,Nao,Rico,Compras,1,0,1,0
+904,Sol,Nao,Rico,Tenis,0,0,1,0
+905,Chuva,Sim,Rico,Cinema,2,1,1,0
+906,Chuva,Sim,Rico,Cinema,2,1,1,0
+907,Sol,Nao,Rico,Tenis,0,0,1,0
+908,Chuva,Sim,Pobre,Cinema,2,1,0,0
+909,Sol,Sim,Rico,Cinema,0,1,1,0
+910,Sol,Nao,Rico,Tenis,0,0,1,0
+911,Chuva,Sim,Pobre,Cinema,2,1,0,0
+912,Chuva,Nao,Pobre,Cinema,2,0,0,0
+913,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+914,Vento,Nao,Rico,Compras,1,0,1,0
+915,Sol,Nao,Rico,Tenis,0,0,1,0
+916,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+917,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+918,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+919,Sol,Nao,Pobre,Cinema,0,0,0,0
+920,Sol,Nao,Rico,Tenis,0,0,1,0
+921,Sol,Sim,Pobre,Ficar em casa,0,1,0,1
+922,Chuva,Sim,Pobre,Cinema,2,1,0,0
+923,Sol,Nao,Rico,Tenis,0,0,1,0
+924,Chuva,Sim,Pobre,Cinema,2,1,0,0
+925,Sol,Sim,Rico,Cinema,0,1,1,0
+926,Chuva,Sim,Rico,Cinema,2,1,1,0
+927,Chuva,Nao,Pobre,Cinema,2,0,0,0
+928,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+929,Vento,Sim,Rico,Cinema,1,1,1,0
+930,Vento,Nao,Rico,Compras,1,0,1,0
+931,Vento,Nao,Rico,Ficar em casa,1,0,1,1
+932,Sol,Sim,Pobre,Ficar em casa,0,1,0,1
+933,Vento,Nao,Rico,Compras,1,0,1,0
+934,Sol,Nao,Rico,Tenis,0,0,1,0
+935,Chuva,Sim,Rico,Cinema,2,1,1,0
+936,Vento,Nao,Rico,Compras,1,0,1,0
+937,Chuva,Nao,Pobre,Cinema,2,0,0,0
+938,Vento,Nao,Pobre,Cinema,1,0,0,0
+939,Vento,Nao,Rico,Compras,1,0,1,0
+940,Sol,Sim,Rico,Cinema,0,1,1,0
+941,Chuva,Sim,Pobre,Cinema,2,1,0,0
+942,Vento,Sim,Rico,Cinema,1,1,1,0
+943,Sol,Sim,Pobre,Cinema,0,1,0,0
+944,Sol,Nao,Pobre,Cinema,0,0,0,0
+945,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+946,Sol,Sim,Rico,Cinema,0,1,1,0
+947,Vento,Sim,Rico,Cinema,1,1,1,0
+948,Sol,Nao,Pobre,Cinema,0,0,0,0
+949,Vento,Nao,Rico,Compras,1,0,1,0
+950,Vento,Sim,Rico,Cinema,1,1,1,0
+951,Sol,Sim,Rico,Cinema,0,1,1,0
+952,Vento,Nao,Rico,Compras,1,0,1,0
+953,Chuva,Sim,Rico,Cinema,2,1,1,0
+954,Vento,Sim,Rico,Cinema,1,1,1,0
+955,Chuva,Sim,Rico,Cinema,2,1,1,0
+956,Chuva,Sim,Rico,Ficar em casa,2,1,1,1
+957,Vento,Nao,Rico,Compras,1,0,1,0
+958,Sol,Sim,Rico,Cinema,0,1,1,0
+959,Vento,Nao,Rico,Compras,1,0,1,0
+960,Chuva,Nao,Pobre,Cinema,2,0,0,0
+961,Vento,Sim,Rico,Tenis,1,1,1,1
+962,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+963,Vento,Sim,Rico,Cinema,1,1,1,0
+964,Vento,Nao,Pobre,Cinema,1,0,0,0
+965,Vento,Sim,Rico,Compras,1,1,1,1
+966,Sol,Nao,Rico,Tenis,0,0,1,0
+967,Vento,Nao,Pobre,Ficar em casa,1,0,0,1
+968,Vento,Nao,Rico,Compras,1,0,1,0
+969,Chuva,Sim,Rico,Cinema,2,1,1,0
+970,Vento,Sim,Rico,Cinema,1,1,1,0
+971,Vento,Sim,Pobre,Cinema,1,1,0,0
+972,Vento,Nao,Rico,Compras,1,0,1,0
+973,Vento,Nao,Rico,Compras,1,0,1,0
+974,Sol,Nao,Rico,Tenis,0,0,1,0
+975,Vento,Nao,Rico,Compras,1,0,1,0
+976,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+977,Sol,Sim,Pobre,Tenis,0,1,0,1
+978,Sol,Nao,Rico,Tenis,0,0,1,0
+979,Chuva,Sim,Rico,Cinema,2,1,1,0
+980,Vento,Sim,Pobre,Cinema,1,1,0,0
+981,Chuva,Nao,Pobre,Cinema,2,0,0,0
+982,Sol,Nao,Rico,Tenis,0,0,1,0
+983,Sol,Sim,Rico,Cinema,0,1,1,0
+984,Chuva,Nao,Rico,Ficar em casa,2,0,1,0
+985,Vento,Nao,Rico,Tenis,1,0,1,1
+986,Vento,Sim,Rico,Cinema,1,1,1,0
+987,Vento,Sim,Rico,Cinema,1,1,1,0
+988,Vento,Nao,Rico,Compras,1,0,1,0
+989,Vento,Sim,Rico,Cinema,1,1,1,0
+990,Vento,Nao,Pobre,Cinema,1,0,0,0
+991,Vento,Nao,Rico,Ficar em casa,1,0,1,1
+992,Vento,Nao,Rico,Compras,1,0,1,0
+993,Vento,Nao,Pobre,Cinema,1,0,0,0
+994,Vento,Sim,Rico,Cinema,1,1,1,0
+995,Chuva,Sim,Rico,Cinema,2,1,1,0
+996,Sol,Sim,Pobre,Ficar em casa,0,1,0,1
+997,Sol,Sim,Rico,Cinema,0,1,1,0
+998,Vento,Sim,Rico,Cinema,1,1,1,0
+999,Sol,Nao,Rico,Tenis,0,0,1,0
+1000,Sol,Nao,Pobre,Cinema,0,0,0,0

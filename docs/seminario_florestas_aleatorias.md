@@ -259,3 +259,24 @@ Funções centrais de `random_forest.py`:
 ---
 
 *Tópicos Especiais em Inteligência Artificial · UEPB 2026*
+
+---
+
+## Dataset em escala: as 10 instâncias viram 1000
+
+O exemplo do fim de semana usado em toda a apresentação tem 10 padrões — o
+suficiente para as contas à mão, mas não para avaliar um classificador (o erro
+OOB do slide 25 deu 44,4% justamente por isso).
+
+[`seminario_dataset_fim_de_semana.md`](seminario_dataset_fim_de_semana.md)
+descreve a versão com **1000 instâncias** do mesmo problema: como o conceito foi
+extraído das 10 linhas originais, como o ruído de rótulo cria um teto teórico de
+acerto, e os resultados da floresta ID3 multi-way (erro OOB de 7,59% contra 7,00%
+de ruído injetado).
+
+Esse documento também registra **duas divergências de contagem encontradas nos
+slides 20 e 21** (Árvores 2 e 3), com o efeito de cada uma sobre as conclusões.
+
+```bash
+python seminario_fim_de_semana.py
+```

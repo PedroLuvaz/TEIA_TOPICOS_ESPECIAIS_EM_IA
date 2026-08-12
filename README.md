@@ -35,7 +35,10 @@ O projeto é equipado com uma interface gráfica rica e interativa desenvolvida 
 │   ├── metricas_avancadas.py       # Cálculo de Kappa, Tau, variâncias, Z-test, Fb, MCC
 │   ├── models/mlp_backprop.py      # Rede feedforward + backprop do zero (Lab 5, item i — Python puro)
 │   ├── models/mlp_sklearn.py       # Wrapper do MLPClassifier para o Iris (Lab 5, item ii — sklearn permitido)
-│   ├── models/random_forest.py     # Florestas Aleatorias do zero (Seminario — Python puro)
+│   ├── models/random_forest.py     # Florestas Aleatorias do zero (Seminario — Python puro, CART binaria)
+│   ├── models/floresta_categorica.py # Floresta ID3 multi-way para atributos categoricos (Seminario)
+│   ├── data/gerar_fim_de_semana.py # Gera o dataset do seminario em escala (1000 instancias)
+│   ├── seminario_fim_de_semana.py  # Experimento completo do dataset de fim de semana (blocos A/B/C)
 │   ├── evaluation/validacao_cruzada.py # k-fold estratificado em Python puro
 │   ├── evaluation/testes_significancia.py # McNemar, bootstrap pareado, permutacao e MCC multiclasse
 │   ├── lab05_galinha_homem.py      # Script demonstrativo do Lab 5, item i (reproduz os valores do slide)
