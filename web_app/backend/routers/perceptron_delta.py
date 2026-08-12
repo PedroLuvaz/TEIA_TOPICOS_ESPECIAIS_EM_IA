@@ -17,10 +17,26 @@ from models.perceptron import (acuracia_binaria_perceptron,
                                predizer_perceptron, treinar_perceptron)
 
 from .. import traco as T
-from ..core import (CLASSES, CONFIG_ATRIBUTOS, indices_de, indices_plot,
-                    limites_com_margem, obter_split, serializar_amostras)
+from ..core import (classes_de, config_de, indices_de, indices_plot,
+                    jitter_de, limites_com_margem, obter_split,
+                    serializar_amostras)
 
 router = APIRouter(prefix='/api/perceptron-delta', tags=['perceptron-delta'])
+
+
+def _par_valido(dataset, classe_pos, classe_neg):
+    """
+    Ajusta o par de classes ao dataset escolhido.
+
+    Ao trocar de dataset na interface, o seletor de classes pode chegar aqui
+    ainda com o par do dataset anterior. Em vez de devolver 400 e piscar um
+    erro na tela, caimos no primeiro par valido do dataset — a resposta ecoa
+    `classe_pos`/`classe_neg`, entao a interface mostra o que foi usado.
+    """
+    classes = classes_de(dataset)
+    if classe_pos in classes and classe_neg in classes and classe_pos != classe_neg:
+        return classe_pos, classe_neg
+    return classes[0], classes[1]
 
 
 @router.get('/binario')
@@ -31,15 +47,14 @@ def binario(algoritmo: str = Query('perceptron', pattern='^(perceptron|delta)$')
             max_epocas: int = Query(100, ge=1, le=2000),
             proporcao: float = Query(0.7, ge=0.1, le=0.9)):
     """Treina Perceptron ou Regra Delta para um par de classes."""
-    if classe_pos == classe_neg:
-        raise HTTPException(status_code=400,
-                            detail='As duas classes devem ser diferentes.')
     try:
         dados, treino, teste = obter_split(dataset, proporcao)
+        idx = indices_de(atributos, dataset)
+        classe_pos, classe_neg = _par_valido(dataset, classe_pos, classe_neg)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
-
-    idx = indices_de(atributos)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     if algoritmo == 'perceptron':
         w, historico, epocas = treinar_perceptron(
@@ -70,8 +85,8 @@ def binario(algoritmo: str = Query('perceptron', pattern='^(perceptron|delta)$')
     relatorio = relatorio_completo(preds, gabarito, [classe_pos, classe_neg],
                                   'Perceptron' if algoritmo == 'perceptron' else 'Regra Delta')
 
-    idx_plot = indices_plot(atributos)
-    cfg = CONFIG_ATRIBUTOS[atributos]
+    idx_plot = indices_plot(atributos, dataset)
+    cfg = config_de(atributos, dataset)
     dados_par = [d for d in dados if d['classe'] in (classe_pos, classe_neg)]
 
     return {
@@ -84,7 +99,8 @@ def binario(algoritmo: str = Query('perceptron', pattern='^(perceptron|delta)$')
         'acuracia_treino': acc_treino,
         'acuracia_teste': acc_teste,
         'relatorio': relatorio,
-        'amostras': serializar_amostras(dados_par, idx_plot, treino),
+        'amostras': serializar_amostras(dados_par, idx_plot, treino,
+                                        jitter=jitter_de(dataset)),
         'limites': limites_com_margem(dados_par, idx_plot),
         'classe_pos': classe_pos,
         'classe_neg': classe_neg,
@@ -105,7 +121,7 @@ def ova(dataset: str = 'v1', atributos: str = 'petalas',
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(atributos)
+    idx = indices_de(atributos, dataset)
     pesos, historico, epocas = treinar_delta_ova(treino, idx, taxa, max_epocas)
 
     preds, gabarito = [], []
@@ -113,16 +129,18 @@ def ova(dataset: str = 'v1', atributos: str = 'petalas',
         x_sel = [d['atributos'][i] for i in idx]
         preds.append(predizer_delta_ova(x_sel, pesos)[0])
         gabarito.append(d['classe'])
-    relatorio = relatorio_completo(preds, gabarito, CLASSES, 'Regra Delta OvA')
+    relatorio = relatorio_completo(preds, gabarito, classes_de(dataset),
+                                   'Regra Delta OvA')
 
-    idx_plot = indices_plot(atributos)
-    cfg = CONFIG_ATRIBUTOS[atributos]
+    idx_plot = indices_plot(atributos, dataset)
+    cfg = config_de(atributos, dataset)
     return {
         'pesos': pesos,
         'historico': historico,
         'epocas': epocas,
         'relatorio': relatorio,
-        'amostras': serializar_amostras(dados, idx_plot, treino),
+        'amostras': serializar_amostras(dados, idx_plot, treino,
+                                        jitter=jitter_de(dataset)),
         'limites': limites_com_margem(dados, idx_plot),
         'eixo_x': cfg['eixo_x'],
         'eixo_y': cfg['eixo_y'],
@@ -170,16 +188,15 @@ def memoria(algoritmo: str = Query('perceptron', pattern='^(perceptron|delta)$')
     Memoria de calculo do Lab 2 — equivalente web da janela LaTeX da GUI.
     Cobre o bias trick, a regra de atualizacao e a classificacao numerica.
     """
-    if classe_pos == classe_neg:
-        raise HTTPException(status_code=400,
-                            detail='As duas classes devem ser diferentes.')
     try:
         _, treino, teste = obter_split(dataset, proporcao)
+        idx = indices_de(atributos, dataset)
+        cfg = config_de(atributos, dataset)
+        classe_pos, classe_neg = _par_valido(dataset, classe_pos, classe_neg)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
-
-    idx = indices_de(atributos)
-    cfg = CONFIG_ATRIBUTOS[atributos]
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     ehp = algoritmo == 'perceptron'
 
     if ehp:

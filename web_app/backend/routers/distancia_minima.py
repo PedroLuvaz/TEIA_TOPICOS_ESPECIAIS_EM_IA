@@ -15,9 +15,9 @@ from evaluation.metricas_avancadas import relatorio_completo
 from models.classifier import predizer_todas_classes, treinar
 
 from .. import traco as T
-from ..core import (CLASSES, CONFIG_ATRIBUTOS, PARES_CLASSES, indices_de,
-                    indices_plot, limites_com_margem, malha, obter_split,
-                    serializar_amostras)
+from ..core import (classes_de, config_de, indices_de, indices_plot,
+                    jitter_de, limites_com_margem, malha, obter_split,
+                    pares_de, serializar_amostras)
 
 router = APIRouter(prefix='/api/distancia-minima', tags=['distancia-minima'])
 
@@ -32,9 +32,11 @@ class PredicaoRequest(BaseModel):
 def _contexto(dataset, atributos, proporcao):
     try:
         dados, treino, teste = obter_split(dataset, proporcao)
+        idx = indices_de(atributos, dataset)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    idx = indices_de(atributos)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     prototipos = treinar(treino, idx)
     return dados, treino, teste, idx, prototipos
 
@@ -47,6 +49,7 @@ def treinar_modelo(dataset: str = 'v1', atributos: str = 'petalas',
     equacoes das fronteiras e as amostras para plotagem.
     """
     dados, treino, teste, idx, prototipos = _contexto(dataset, atributos, proporcao)
+    CLASSES = classes_de(dataset)
 
     preds = [predizer_todas_classes(d['atributos'], prototipos, idx)[1] for d in teste]
     gabarito = [d['classe'] for d in teste]
@@ -54,7 +57,7 @@ def treinar_modelo(dataset: str = 'v1', atributos: str = 'petalas',
 
     # Equacoes das fronteiras para cada par de classes
     fronteiras = []
-    for ci, cj in PARES_CLASSES:
+    for ci, cj in pares_de(dataset):
         w, b = coeficientes_superficie_decisao(prototipos[ci], prototipos[cj])
         fronteiras.append({
             'classe_i': ci, 'classe_j': cj,
@@ -62,8 +65,8 @@ def treinar_modelo(dataset: str = 'v1', atributos: str = 'petalas',
             'equacao': _formatar_equacao(w, b, atributos),
         })
 
-    idx_plot = indices_plot(atributos)
-    cfg = CONFIG_ATRIBUTOS[atributos]
+    idx_plot = indices_plot(atributos, dataset)
+    cfg = config_de(atributos, dataset)
     return {
         'prototipos': {c: prototipos[c] for c in CLASSES},
         'prototipos_plot': {
@@ -73,7 +76,8 @@ def treinar_modelo(dataset: str = 'v1', atributos: str = 'petalas',
         },
         'relatorio': relatorio,
         'fronteiras': fronteiras,
-        'amostras': serializar_amostras(dados, idx_plot, treino),
+        'amostras': serializar_amostras(dados, idx_plot, treino,
+                                        jitter=jitter_de(dataset)),
         'n_treino': len(treino),
         'n_teste': len(teste),
         'eixo_x': cfg['eixo_x'],
@@ -91,7 +95,8 @@ def regioes(dataset: str = 'v1', atributos: str = 'petalas',
     vencedora. O frontend renderiza isso como um heatmap suave.
     """
     dados, treino, _, idx, prototipos = _contexto(dataset, atributos, proporcao)
-    idx_plot = indices_plot(atributos)
+    CLASSES = classes_de(dataset)
+    idx_plot = indices_plot(atributos, dataset)
     lim = limites_com_margem(dados, idx_plot)
     eixo_x, eixo_y = malha(lim, resolucao)
 
@@ -115,6 +120,7 @@ def regioes(dataset: str = 'v1', atributos: str = 'petalas',
 def predizer(req: PredicaoRequest):
     """Classifica um vetor arbitrario, devolvendo scores e distancias."""
     _, treino, _, idx, prototipos = _contexto(req.dataset, req.atributos, req.proporcao)
+    CLASSES = classes_de(req.dataset)
 
     if len(req.valores) != len(idx):
         raise HTTPException(
@@ -144,8 +150,9 @@ def memoria(dataset: str = 'v1', atributos: str = 'petalas',
     Se x1/x2 nao forem informados, usa uma amostra de teste como exemplo.
     """
     dados, treino, teste, idx, prototipos = _contexto(dataset, atributos, proporcao)
-    cfg = CONFIG_ATRIBUTOS[atributos]
-    idx_plot = indices_plot(atributos)
+    CLASSES = classes_de(dataset)
+    cfg = config_de(atributos, dataset)
+    idx_plot = indices_plot(atributos, dataset)
 
     # Amostra de exemplo: a informada pelo usuario ou a primeira do teste
     if x1 is not None and x2 is not None:
@@ -201,7 +208,7 @@ def memoria(dataset: str = 'v1', atributos: str = 'petalas',
 
     # --- Secao 4: fronteiras ---
     linhas_front = []
-    for ci, cj in PARES_CLASSES:
+    for ci, cj in pares_de(dataset):
         w, b = coeficientes_superficie_decisao(prototipos[ci], prototipos[cj])
         linhas_front += [
             f'{ci} × {cj}',

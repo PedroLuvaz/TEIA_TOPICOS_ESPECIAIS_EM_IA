@@ -1,9 +1,10 @@
 /** Painel de controles comum aos experimentos (dataset, atributos, split). */
-import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useState } from 'react'
 import { api } from '@/lib/api'
-import type { ChaveAtributos } from '@/lib/types'
-import { Card, Select, Slider } from './ui'
+import type { ChaveAtributos, DatasetInfo, Metadata } from '@/lib/types'
+import { registrarCoresClasses } from '@/lib/utils'
+import { Card, Nota, Select, Slider } from './ui'
 
 export interface ConfigExperimento {
   // A assinatura de indice permite passar a config direto como query params.
@@ -20,19 +21,88 @@ export function usarConfig(inicial?: Partial<ConfigExperimento>) {
     proporcao: 0.7,
     ...inicial,
   })
-  const set = <K extends keyof ConfigExperimento>(
-    chave: K,
-    valor: ConfigExperimento[K],
-  ) => setConfig((c) => ({ ...c, [chave]: valor }))
+  const qc = useQueryClient()
+
+  /**
+   * Troca uma chave da config.
+   *
+   * Ao trocar de `dataset`, o conjunto de atributos tambem e ajustado NA MESMA
+   * atualizacao de estado: os datasets tem chaves proprias ('petalas' no Iris,
+   * 'clima_pais' no seminario), e corrigir depois, num efeito, faria a pagina
+   * disparar uma requisicao invalida antes de se acertar.
+   */
+  const set = useCallback(
+    <K extends keyof ConfigExperimento>(
+      chave: K,
+      valor: ConfigExperimento[K],
+    ) => {
+      setConfig((c) => {
+        if (chave !== 'dataset' || valor === c.dataset) {
+          return { ...c, [chave]: valor }
+        }
+        const meta = qc.getQueryData<Metadata>(['metadata'])
+        const alvo = meta?.datasets.find((d) => d.id === valor)
+        const atributosValidos =
+          !alvo || alvo.atributos.some((atr) => atr.id === c.atributos)
+        return {
+          ...c,
+          dataset: String(valor),
+          atributos: atributosValidos
+            ? c.atributos
+            : (alvo?.atributos_padrao ?? c.atributos),
+        }
+      })
+    },
+    [qc],
+  )
+
   return { config, set }
 }
 
 export function usarMetadata() {
-  return useQuery({
+  const q = useQuery({
     queryKey: ['metadata'],
     queryFn: api.dataset.metadata,
     staleTime: Infinity,
   })
+
+  // Registra as cores de todas as classes de todos os datasets assim que o
+  // metadata chega — idempotente, entao rodar a cada render nao custa nada.
+  if (q.data) {
+    for (const d of q.data.datasets) registrarCoresClasses(d.classes)
+  }
+  return q
+}
+
+/**
+ * Informacoes do dataset selecionado.
+ *
+ * E o que substitui as listas fixas de classes espalhadas pelas paginas: cada
+ * tela pergunta ao dataset quais sao as classes, features e pares validos.
+ */
+export function usarDataset(dataset: string) {
+  const { data: meta, isPending } = usarMetadata()
+  const info: DatasetInfo | undefined = meta?.datasets.find(
+    (d) => d.id === dataset,
+  )
+  return {
+    meta,
+    info,
+    carregando: isPending,
+    classes: info?.classes ?? [],
+    features: info?.features ?? [],
+    atributos: info?.atributos ?? [],
+    pares: info?.pares ?? [],
+    categorico: info?.tipo === 'categorico',
+    /** Rotulo de um valor categorico, ex.: (0, 1) -> 'Vento'. */
+    rotuloValor: (indiceAtributo: number, valor: number) => {
+      const tabela = info?.valores?.[String(indiceAtributo)]
+      const i = Math.round(valor)
+      return tabela && i >= 0 && i < tabela.length
+        ? tabela[i]
+        : valor.toFixed(2)
+    },
+  }
 }
 
 export function PainelConfig({
@@ -49,7 +119,7 @@ export function PainelConfig({
   children?: React.ReactNode
   mostrarProporcao?: boolean
 }) {
-  const { data: meta } = usarMetadata()
+  const { meta, atributos, categorico } = usarDataset(config.dataset)
 
   return (
     <Card titulo="configuração do experimento">
@@ -72,10 +142,9 @@ export function PainelConfig({
           valor={config.atributos}
           onChange={(v) => set('atributos', v)}
           opcoes={
-            meta?.atributos.map((a) => ({
-              valor: a.id,
-              rotulo: a.nome,
-            })) ?? [{ valor: 'petalas' as ChaveAtributos, rotulo: 'Pétalas' }]
+            atributos.length
+              ? atributos.map((a) => ({ valor: a.id, rotulo: a.nome }))
+              : [{ valor: config.atributos, rotulo: 'carregando…' }]
           }
         />
 
@@ -92,6 +161,14 @@ export function PainelConfig({
         )}
 
         {children}
+
+        {categorico && (
+          <Nota tom="atencao" titulo="Dataset categórico">
+            Os atributos são categorias codificadas em inteiros. No gráfico os
+            pontos levam um pequeno deslocamento aleatório — sem ele todas as
+            amostras cairiam umas sobre as outras em poucas posições da grade.
+          </Nota>
+        )}
       </div>
     </Card>
   )

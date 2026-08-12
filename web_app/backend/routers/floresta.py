@@ -23,7 +23,8 @@ from models.random_forest import (FlorestaAleatoria, caminho_decisao,
                                   treinar_floresta)
 
 from .. import traco as T
-from ..core import (CLASSES, CONFIG_ATRIBUTOS, NOMES_FEATURES, indices_de,
+from ..core import (classes_de, config_de, features_de, indices_de,
+                    jitter_de,
                     indices_plot, limites_com_margem, malha, obter_split,
                     serializar_amostras)
 
@@ -81,7 +82,9 @@ def treinar_endpoint(dataset: str = 'v1', atributos: str = 'petalas',
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(atributos)
+    idx = indices_de(atributos, dataset)
+    CLASSES = classes_de(dataset)
+    NOMES_FEATURES = features_de(dataset)
     cfg = _config(n_arvores, criterio, profundidade_max, max_atributos,
                   min_amostras_folha)
     floresta = treinar_floresta(treino, idx, **cfg)
@@ -99,8 +102,8 @@ def treinar_endpoint(dataset: str = 'v1', atributos: str = 'petalas',
     relatorio_arvore = relatorio_completo(preds_arvore, gabarito, CLASSES,
                                           'Arvore unica')
 
-    idx_plot = indices_plot(atributos)
-    cfg_attr = CONFIG_ATRIBUTOS[atributos]
+    idx_plot = indices_plot(atributos, dataset)
+    cfg_attr = config_de(atributos, dataset)
 
     return {
         'relatorio': relatorio,
@@ -118,7 +121,8 @@ def treinar_endpoint(dataset: str = 'v1', atributos: str = 'petalas',
         'arvores': floresta.resumo_arvores(),
         'config': {**cfg, 'atributos': atributos,
                    'n_atributos_por_no': floresta._n_atributos_sorteados(len(idx))},
-        'amostras': serializar_amostras(dados, idx_plot, treino),
+        'amostras': serializar_amostras(dados, idx_plot, treino,
+                                        jitter=jitter_de(dataset)),
         'n_treino': len(treino),
         'n_teste': len(teste),
         'eixo_x': cfg_attr['eixo_x'],
@@ -141,7 +145,8 @@ def arvore(indice: int, dataset: str = 'v1', atributos: str = 'petalas',
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(atributos)
+    idx = indices_de(atributos, dataset)
+    NOMES_FEATURES = features_de(dataset)
     cfg = _config(n_arvores, criterio, profundidade_max, max_atributos,
                   min_amostras_folha)
     floresta = treinar_floresta(treino, idx, **cfg)
@@ -186,8 +191,10 @@ def regioes(dataset: str = 'v1', atributos: str = 'petalas',
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(atributos)
-    idx_plot = indices_plot(atributos)
+    idx = indices_de(atributos, dataset)
+    idx_plot = indices_plot(atributos, dataset)
+    CLASSES = classes_de(dataset)
+    NOMES_FEATURES = features_de(dataset)
     cfg = _config(n_arvores, criterio, profundidade_max, max_atributos,
                   min_amostras_folha)
     floresta = treinar_floresta(treino, idx, **cfg)
@@ -233,7 +240,9 @@ def predizer(req: PredicaoRequest):
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(req.atributos)
+    idx = indices_de(req.atributos, req.dataset)
+    CLASSES = classes_de(req.dataset)
+    NOMES_FEATURES = features_de(req.dataset)
     if len(req.valores) != len(idx):
         raise HTTPException(
             status_code=400,
@@ -278,7 +287,8 @@ def validacao(dataset: str = 'v1', atributos: str = 'petalas',
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(atributos)
+    idx = indices_de(atributos, dataset)
+    CLASSES = classes_de(dataset)
     cfg = _config(n_arvores, criterio, profundidade_max, max_atributos)
 
     def _floresta_treinar(treino):
@@ -324,8 +334,8 @@ def validacao(dataset: str = 'v1', atributos: str = 'petalas',
     comparacoes = []
     for i in range(len(chaves)):
         for j in range(i + 1, len(chaves)):
-            ra = _relatorio_da_matriz(resultados[chaves[i]])
-            rb = _relatorio_da_matriz(resultados[chaves[j]])
+            ra = _relatorio_da_matriz(resultados[chaves[i]], CLASSES)
+            rb = _relatorio_da_matriz(resultados[chaves[j]], CLASSES)
             z = z_kappa(ra['kappa'], ra['variancia_kappa'],
                         rb['kappa'], rb['variancia_kappa'])
             p = p_valor_z(z)
@@ -336,7 +346,7 @@ def validacao(dataset: str = 'v1', atributos: str = 'petalas',
             })
 
     for chave in resultados:
-        resultados[chave]['relatorio'] = _relatorio_da_matriz(resultados[chave])
+        resultados[chave]['relatorio'] = _relatorio_da_matriz(resultados[chave], CLASSES)
 
     return {'resultados': resultados, 'comparacoes': comparacoes,
             'config': {'k': k, 'repeticoes': repeticoes,
@@ -346,7 +356,7 @@ def validacao(dataset: str = 'v1', atributos: str = 'petalas',
             'classes': CLASSES}
 
 
-def _relatorio_da_matriz(resultado):
+def _relatorio_da_matriz(resultado, CLASSES):
     """Reconstroi o relatorio de metricas a partir da matriz acumulada."""
     matriz = resultado['matriz']
     predicoes, gabarito = [], []
@@ -374,8 +384,10 @@ def memoria(dataset: str = 'v1', atributos: str = 'petalas',
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(atributos)
-    cfg_attr = CONFIG_ATRIBUTOS[atributos]
+    idx = indices_de(atributos, dataset)
+    cfg_attr = config_de(atributos, dataset)
+    CLASSES = classes_de(dataset)
+    NOMES_FEATURES = features_de(dataset)
     cfg = _config(n_arvores, criterio, profundidade_max, max_atributos)
     floresta = treinar_floresta(treino, idx, **cfg)
     fn_imp = gini if criterio == 'gini' else entropia

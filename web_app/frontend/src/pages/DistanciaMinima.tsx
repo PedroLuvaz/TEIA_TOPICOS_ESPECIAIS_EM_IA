@@ -21,7 +21,7 @@ import {
   Nota,
 } from '@/components/ui'
 import { api } from '@/lib/api'
-import { cap, corDaClasse, num, pct } from '@/lib/utils'
+import { cap, classesDoRelatorio, corDaClasse, num, pct } from '@/lib/utils'
 
 export function PaginaDistanciaMinima() {
   const { config, set } = usarConfig()
@@ -302,7 +302,7 @@ export function PaginaDistanciaMinima() {
               <Card titulo="matriz de confusão">
                 <MatrizConfusao
                   relatorio={d.relatorio}
-                  classes={['setosa', 'versicolor', 'virginica']}
+                  classes={classesDoRelatorio(d.relatorio)}
                 />
               </Card>
               <Card titulo="métricas globais">
@@ -313,7 +313,7 @@ export function PaginaDistanciaMinima() {
             <Card titulo="métricas por classe">
               <TabelaPorClasse
                 relatorio={d.relatorio}
-                classes={['setosa', 'versicolor', 'virginica']}
+                classes={classesDoRelatorio(d.relatorio)}
               />
             </Card>
           </>

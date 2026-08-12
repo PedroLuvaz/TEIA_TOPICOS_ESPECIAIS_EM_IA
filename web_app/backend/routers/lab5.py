@@ -19,7 +19,7 @@ from models.bayes_classifier import (predizer_todas_classes_bayes,
 from models.mlp_backprop import RedeFeedforward
 from models.padroes_pixels import GALINHA_PIXELS, HOMEM_PIXELS, achatar
 
-from ..core import CLASSES, indices_de, obter_split
+from ..core import classes_de, indices_de, obter_split
 from ..lab5_config import EXERCICIOS, PASSO_UNICO
 
 router = APIRouter(prefix='/api/lab5', tags=['lab5'])
@@ -719,7 +719,8 @@ def comparar_iris(dataset: str = 'v1', atributos: str = 'todas',
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(atributos)
+    idx = indices_de(atributos, dataset)
+    CLASSES = classes_de(dataset)
     gabarito = [d['classe'] for d in teste]
 
     modelo_mlp = treinar_mlp_iris(treino, idx, semente=42,

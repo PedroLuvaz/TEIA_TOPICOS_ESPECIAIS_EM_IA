@@ -2,7 +2,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { FileText, Target } from 'lucide-react'
 import { useState } from 'react'
-import { PainelConfig, usarConfig } from '@/components/Controles'
+import {
+  PainelConfig,
+  usarConfig,
+  usarDataset,
+} from '@/components/Controles'
 import { BlocoFormula } from '@/components/Formula'
 import { GraficoDecisao } from '@/components/GraficoDecisao'
 import { MemoriaGenerica } from '@/components/MemoriaGenerica'
@@ -23,9 +27,14 @@ import {
   Segmentos,
 } from '@/components/ui'
 import { api } from '@/lib/api'
-import { cap, corDaClasse, num, pct, sci } from '@/lib/utils'
-
-const CLASSES = ['setosa', 'versicolor', 'virginica']
+import {
+  cap,
+  classesDoRelatorio,
+  corDaClasse,
+  num,
+  pct,
+  sci,
+} from '@/lib/utils'
 
 export function PaginaBayes() {
   const { config, set } = usarConfig()
@@ -76,6 +85,7 @@ export function PaginaBayes() {
 
   const d = treino.data
   const atual = d?.[classificador]
+  const { classes } = usarDataset(config.dataset)
 
   return (
     <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
@@ -249,7 +259,7 @@ export function PaginaBayes() {
 
             <Card titulo="parâmetros estimados por classe">
               <div className="grid gap-4 lg:grid-cols-3">
-                {CLASSES.map((c) => {
+                {classes.map((c) => {
                   const p = atual.parametros[c]
                   if (!p) return null
                   return (
@@ -298,7 +308,10 @@ export function PaginaBayes() {
 
             <div className="grid gap-6 lg:grid-cols-2">
               <Card titulo="matriz de confusão">
-                <MatrizConfusao relatorio={atual.relatorio} classes={CLASSES} />
+                <MatrizConfusao
+                  relatorio={atual.relatorio}
+                  classes={classesDoRelatorio(atual.relatorio)}
+                />
               </Card>
               <Card titulo="métricas globais">
                 <ResumoGlobal relatorio={atual.relatorio} />
@@ -306,7 +319,10 @@ export function PaginaBayes() {
             </div>
 
             <Card titulo="métricas por classe">
-              <TabelaPorClasse relatorio={atual.relatorio} classes={CLASSES} />
+              <TabelaPorClasse
+                relatorio={atual.relatorio}
+                classes={classesDoRelatorio(atual.relatorio)}
+              />
             </Card>
 
             <Card titulo="Bayes Ótimo × Naive Bayes">

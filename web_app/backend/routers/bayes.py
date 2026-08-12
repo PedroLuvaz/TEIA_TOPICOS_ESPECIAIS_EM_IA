@@ -17,7 +17,8 @@ from models.bayes_classifier import (predizer_todas_classes_bayes,
                                      treinar_bayes)
 
 from .. import traco as T
-from ..core import (CLASSES, CONFIG_ATRIBUTOS, indices_de, indices_plot,
+from ..core import (classes_de, config_de, indices_de, indices_plot,
+                    jitter_de, pares_de,
                     limites_com_margem, malha, obter_split,
                     serializar_amostras)
 
@@ -43,10 +44,13 @@ def treinar(dataset: str = 'v1', atributos: str = 'petalas',
     """Treina Bayes Otimo e Naive Bayes lado a lado, com teste Z entre eles."""
     try:
         dados, treino, teste = obter_split(dataset, proporcao)
+        idx = indices_de(atributos, dataset)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-    idx = indices_de(atributos)
+    CLASSES = classes_de(dataset)
     gabarito = [d['classe'] for d in teste]
 
     resultados = {}
@@ -72,12 +76,13 @@ def treinar(dataset: str = 'v1', atributos: str = 'petalas',
     z = z_kappa(ra['kappa'], ra['variancia_kappa'], rb['kappa'], rb['variancia_kappa'])
     p = p_valor_z(z)
 
-    idx_plot = indices_plot(atributos)
-    cfg = CONFIG_ATRIBUTOS[atributos]
+    idx_plot = indices_plot(atributos, dataset)
+    cfg = config_de(atributos, dataset)
     return {
         **resultados,
         'teste_z': {'z': z, 'p': p, 'significativo': p < 0.05},
-        'amostras': serializar_amostras(dados, idx_plot, treino),
+        'amostras': serializar_amostras(dados, idx_plot, treino,
+                                        jitter=jitter_de(dataset)),
         'n_treino': len(treino),
         'n_teste': len(teste),
         'eixo_x': cfg['eixo_x'],
@@ -101,8 +106,9 @@ def regioes(dataset: str = 'v1', atributos: str = 'petalas',
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(atributos)
-    idx_plot = indices_plot(atributos)
+    idx = indices_de(atributos, dataset)
+    idx_plot = indices_plot(atributos, dataset)
+    CLASSES = classes_de(dataset)
     modelo = treinar_bayes(treino, idx, naive=(classificador == 'naive'))
 
     lim = limites_com_margem(dados, idx_plot)
@@ -115,9 +121,8 @@ def regioes(dataset: str = 'v1', atributos: str = 'petalas',
             fixos[j] = sum(valores) / len(valores)
 
     grade = []
-    superficies = {f'{a}|{b}': [] for a, b in
-                   [('setosa', 'versicolor'), ('setosa', 'virginica'),
-                    ('versicolor', 'virginica')]}
+    # Uma superficie de decisao por par de classes do dataset
+    superficies = {f'{a}|{b}': [] for a, b in pares_de(dataset)}
 
     for y in eixo_y:
         linha_classe = []
@@ -158,7 +163,7 @@ def normalidade(dataset: str = 'v1', atributos: str = 'petalas'):
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(atributos)
+    idx = indices_de(atributos, dataset)
     try:
         resultado = calcular_mvn_python(dados, idx)
     except Exception as e:  # pragma: no cover — protege a UI de erro numerico
@@ -182,8 +187,9 @@ def memoria(dataset: str = 'v1', atributos: str = 'petalas',
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(atributos)
-    cfg = CONFIG_ATRIBUTOS[atributos]
+    idx = indices_de(atributos, dataset)
+    cfg = config_de(atributos, dataset)
+    CLASSES = classes_de(dataset)
     naive = classificador == 'naive'
     modelo = treinar_bayes(treino, idx, naive=naive)
 
@@ -333,7 +339,8 @@ def predizer(req: PredicaoRequest):
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(req.atributos)
+    idx = indices_de(req.atributos, req.dataset)
+    CLASSES = classes_de(req.dataset)
     if len(req.valores) != len(idx):
         raise HTTPException(
             status_code=400,

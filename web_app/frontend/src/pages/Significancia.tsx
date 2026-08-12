@@ -24,7 +24,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { PainelConfig, usarConfig } from '@/components/Controles'
+import {
+  PainelConfig,
+  usarConfig,
+  usarDataset,
+} from '@/components/Controles'
 import { BlocoFormula } from '@/components/Formula'
 import { MemoriaGenerica } from '@/components/MemoriaGenerica'
 import {
@@ -61,16 +65,16 @@ const ABREV_METRICA: Record<string, string> = {
   especificidade: 'Especif.',
 }
 
-const ROTULO_ATRIBUTOS: Record<string, string> = {
-  petalas: 'pétalas',
-  sepalas: 'sépalas',
-  todas: 'as 4 features',
-}
-
 /** p-valores muito pequenos viram "< 0,000001" em vez de "0,000000". */
 function pval(p: number, casas = 6): string {
   const piso = 10 ** -casas
   return p < piso ? `< ${num(piso, casas)}` : num(p, casas)
+}
+
+/** "p = 0,0123" ou "p < 0,00001" — evita o "p = < ..." do formato ingenuo. */
+function rotuloP(p: number, casas = 6): string {
+  const texto = pval(p, casas)
+  return texto.startsWith('<') ? `p ${texto}` : `p = ${texto}`
 }
 
 export function PaginaSignificancia() {
@@ -104,6 +108,7 @@ export function PaginaSignificancia() {
 /* ==================================================== teste de um par ===== */
 function PainelPar() {
   const { config, set } = usarConfig()
+  const { atributos: atributosDoDataset } = usarDataset(config.dataset)
   const [modeloA, setModeloA] = useState('bayes')
   const [modeloB, setModeloB] = useState('delta_ova')
   const [metrica, setMetrica] = useState('mcc')
@@ -139,6 +144,9 @@ function PainelPar() {
   })
 
   const d = q.data
+  const nomeAtributos =
+    atributosDoDataset.find((a) => a.id === config.atributos)?.nome ??
+    String(config.atributos)
   const opcoesModelo =
     lista.data?.classificadores.map((c) => ({
       valor: c.id,
@@ -296,7 +304,7 @@ function PainelPar() {
                   </p>
                   <p className="mt-1 text-xs text-muted">
                     {d.nome_metrica} · {d.n_amostras} amostras de teste ·{' '}
-                    {ROTULO_ATRIBUTOS[d.config.atributos] ?? d.config.atributos}
+                    {nomeAtributos}
                   </p>
                 </div>
                 <Diferenca
@@ -616,6 +624,7 @@ function PainelPar() {
 /* ==================================================== todos os pares ====== */
 function PainelMatriz() {
   const { config, set } = usarConfig()
+  const { atributos: atributosDoDataset } = usarDataset(config.dataset)
   const [metrica, setMetrica] = useState('mcc')
   const [reamostragens, setReamostragens] = useState(600)
 
@@ -719,7 +728,8 @@ function PainelMatriz() {
               </div>
               <p className="mt-3 text-xs text-muted">
                 Mesmo split de {d.config.n_teste} amostras de teste ·{' '}
-                {ROTULO_ATRIBUTOS[d.config.atributos] ?? d.config.atributos}.
+                {atributosDoDataset.find((a) => a.id === config.atributos)
+                  ?.nome ?? String(config.atributos)}.
               </p>
             </Card>
 
@@ -887,7 +897,7 @@ function CartaoTeste({
       {p !== undefined ? (
         <>
           <p className="mt-1 tabular text-lg font-semibold text-primary">
-            p = {pval(p, 5)}
+            {rotuloP(p, 5)}
           </p>
           <p className="mt-0.5 text-[11px] text-muted">{detalhe}</p>
         </>

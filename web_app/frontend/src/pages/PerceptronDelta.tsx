@@ -2,7 +2,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2, FileText, XCircle } from 'lucide-react'
 import { useState } from 'react'
-import { PainelConfig, usarConfig, usarMetadata } from '@/components/Controles'
+import {
+  PainelConfig,
+  usarConfig,
+  usarDataset,
+} from '@/components/Controles'
 import { BlocoFormula } from '@/components/Formula'
 import { GraficoDecisao } from '@/components/GraficoDecisao'
 import { GraficoLinha } from '@/components/GraficoLinha'
@@ -22,7 +26,7 @@ import {
   Vazio,
 } from '@/components/ui'
 import { api } from '@/lib/api'
-import { cap, cn, corDaClasse, num, pct } from '@/lib/utils'
+import { cap, classesDoRelatorio, cn, corDaClasse, num, pct } from '@/lib/utils'
 
 type Modo = 'perceptron' | 'delta' | 'ova' | 'xor'
 
@@ -56,14 +60,17 @@ export function PaginaPerceptronDelta() {
 /* --------------------------------------------------- binario (perceptron/delta) */
 function PainelBinario({ algoritmo }: { algoritmo: 'perceptron' | 'delta' }) {
   const { config, set } = usarConfig()
-  const { data: meta } = usarMetadata()
+  // Os pares vem do dataset selecionado — o do seminario tem 4 classes,
+  // logo 6 pares, contra os 3 do Iris.
+  const { pares } = usarDataset(config.dataset)
   const [par, setPar] = useState(0)
   const [taxa, setTaxa] = useState(algoritmo === 'perceptron' ? 0.03 : 0.02)
   const [epocas, setEpocas] = useState(100)
   const [memoriaAberta, setMemoriaAberta] = useState(false)
 
-  const pares = meta?.pares ?? [{ pos: 'setosa', neg: 'versicolor' } as const]
-  const parAtual = pares[Math.min(par, pares.length - 1)]
+  const parAtual = pares.length
+    ? pares[Math.min(par, pares.length - 1)]
+    : { pos: 'setosa', neg: 'versicolor' }
 
   const q = useQuery({
     queryKey: ['pd', algoritmo, config, parAtual, taxa, epocas],
@@ -319,7 +326,8 @@ function PainelOva() {
   })
 
   const d = q.data
-  const classes = ['setosa', 'versicolor', 'virginica']
+  // As classes saem do proprio relatorio — a pagina serve a qualquer dataset
+  const classes = classesDoRelatorio(d?.relatorio)
 
   const dadosCurva =
     d &&

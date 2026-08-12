@@ -141,7 +141,12 @@ def variancia_kappa(matriz, classes):
     t2 = 2 * (1 - phi1) * (2 * phi1 * phi2 - phi3) / den2
     t3 = ((1 - phi1) ** 2) * (phi4 - 4 * phi2 ** 2) / den3
 
-    return (t1 + t2 + t3) / m
+    # A formula e um estimador ASSINTOTICO: em casos degenerados (classificador
+    # que responde sempre a mesma classe, Kappa = 0) o termo t2 pode dominar e
+    # levar a soma a um valor negativo, que nao e uma variancia valida. Nesses
+    # casos devolvemos 0.0 — o mesmo que ja acontece com um classificador
+    # perfeito — em vez de propagar o negativo para dentro de uma raiz quadrada.
+    return max(0.0, (t1 + t2 + t3) / m)
 
 
 # ===========================================================================
@@ -173,7 +178,7 @@ def variancia_tau(matriz, classes):
     denom = (1.0 - 1.0 / c) ** 2
     if abs(denom) < 1e-12:
         return 0.0
-    return (ag * (1 - ag)) / (denom * m)
+    return max(0.0, (ag * (1 - ag)) / (denom * m))
 
 
 # ===========================================================================
@@ -184,8 +189,11 @@ def z_kappa(k1, var1, k2, var2):
     """
     Z_k = (k1 - k2) / sqrt(var1 + var2)
     Teste Z para diferenca entre dois Kappas.
+
+    Variancias negativas (estimador assintotico fora da faixa de validade)
+    sao tratadas como zero — ver `variancia_kappa`.
     """
-    den = math.sqrt(var1 + var2)
+    den = math.sqrt(max(0.0, var1 + var2))
     if den < 1e-12:
         return 0.0
     return (k1 - k2) / den
@@ -196,7 +204,7 @@ def z_tau(t1, var1, t2, var2):
     Z_tau = (tau1 - tau2) / sqrt(var1 + var2)
     Teste Z para diferenca entre dois Taus.
     """
-    den = math.sqrt(var1 + var2)
+    den = math.sqrt(max(0.0, var1 + var2))
     if den < 1e-12:
         return 0.0
     return (t1 - t2) / den

@@ -345,16 +345,59 @@ sem alterar nenhum deles.
 
 ---
 
-## 7. O que ainda não está integrado
+## 7. Na interface web
 
-Este trabalho é de **biblioteca**: o dataset carrega, e todos os classificadores
-do projeto rodam sobre ele via `carregar_fim_de_semana()`.
+O dataset aparece no seletor **Base de dados** de todas as abas, ao lado das duas
+variantes do Iris. Trocar para *Fim de Semana (seminário)* muda tudo o que
+depende do dataset:
 
-A **interface web ainda não lista** o dataset no seletor. Fazer isso exige tornar
-`CLASSES` dependente do dataset (86 usos em 8 routers), além de trocar as cores
-fixas das 3 classes do Iris no frontend e resolver como desenhar regiões de
-decisão para atributos categóricos — que não formam um plano contínuo. É um
-trabalho separado, e deixá-lo para depois evita quebrar as abas que já funcionam.
+| O que muda | Antes (fixo no Iris) | Agora |
+|---|---|---|
+| Classes | 3 | vêm do dataset (4 aqui) |
+| Conjuntos de atributos | pétalas / sépalas / todas | Clima×Pais, Clima×Dinheiro, Pais×Dinheiro, todos |
+| Pares para o Perceptron | 3 | 6 |
+| Cores das classes | 3 fixas | paleta atribuída na ordem do dataset |
+| Rótulos dos eixos | cm | `Clima (0=Sol · 1=Vento · 2=Chuva)` |
+
+### 7.1 Como isso foi feito
+
+- **`web_app/backend/core.py`** ganhou um registro `DATASETS` em que cada base
+  declara classes, features, combinações de atributos e o tipo (contínuo ou
+  categórico). `classes_de(dataset)`, `features_de(dataset)`,
+  `config_atributos_de(dataset)` e `pares_de(dataset)` substituíram as
+  constantes globais.
+- **Os 7 routers** passaram a resolver as classes por dataset. `indices_de` e
+  `indices_plot` receberam o parâmetro `dataset`.
+- **O frontend** deixou de ter listas fixas de classes: `classesDoRelatorio()`
+  lê as classes da própria matriz de confusão devolvida pela API, e o hook
+  `usarDataset()` entrega classes, features, atributos e pares do dataset
+  selecionado.
+- **Trocar de dataset é atômico**: `usarConfig` ajusta o conjunto de atributos
+  na mesma atualização de estado, porque as chaves são diferentes por dataset
+  ('petalas' × 'clima_pais') e corrigir depois dispararia uma requisição
+  inválida.
+
+### 7.2 Jitter no gráfico
+
+Com 3 atributos discretos, as 1000 amostras cairiam sobre 12 posições exatas e o
+gráfico viraria 12 pontos. Para os datasets categóricos o backend aplica um
+deslocamento aleatório de ±0,22 nas coordenadas de plotagem — determinístico
+(semente fixa), para não tremer a cada renderização, e aplicado **apenas** a
+`x`/`y`; o vetor `atributos` de cada amostra continua com os valores originais.
+
+### 7.3 Um bug pré-existente que apareceu no caminho
+
+A variância do Kappa (fórmula de Congalton & Green) é um estimador
+**assintótico** e pode devolver um valor negativo para classificadores
+degenerados — o caso da Regra Delta OvA, que aqui prediz uma classe só. O
+`z_kappa` fazia `sqrt(var1 + var2)` direto e quebrava com `math domain error`.
+
+O bug **já existia no Iris**: `comparar-modelos` com sépalas devolvia 500. A
+correção foi limitar a variância a zero na origem (`variancia_kappa` e
+`variancia_tau`), que é o mesmo tratamento já dado ao classificador perfeito.
+
+Confirmado que a correção **não altera** o exercício do slide 15: o Z continua
+1,6416, exatamente como no material da disciplina.
 
 ---
 

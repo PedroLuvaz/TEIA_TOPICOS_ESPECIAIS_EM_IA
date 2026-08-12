@@ -24,7 +24,7 @@ from models.classifier import predizer_todas_classes, treinar
 from models.delta_rule import predizer_delta_ova, treinar_delta_ova
 
 from .. import traco as T
-from ..core import CLASSES, indices_de, obter_split
+from ..core import classes_de, indices_de, obter_split
 
 router = APIRouter(prefix='/api/metricas', tags=['metricas'])
 
@@ -67,7 +67,7 @@ def _metricas_da_matriz(matriz, classes, nome):
 @router.post('/avaliar')
 def avaliar(req: MatrizRequest):
     """Calcula todas as metricas de uma matriz de confusao informada."""
-    classes = req.classes or CLASSES
+    classes = req.classes or classes_de()
     relatorio = _metricas_da_matriz(req.matriz, classes, req.nome)
     total = sum(sum(linha.values()) for linha in relatorio['matriz'].values())
     return {'relatorio': relatorio, 'total_amostras': total, 'classes': classes}
@@ -76,7 +76,7 @@ def avaliar(req: MatrizRequest):
 @router.post('/comparar-matrizes')
 def comparar_matrizes(req: ComparacaoMatrizesRequest):
     """Teste Z de Kappa e de Tau entre duas matrizes de confusao."""
-    classes = req.classes or CLASSES
+    classes = req.classes or classes_de()
     ra = _metricas_da_matriz(req.matriz_a, classes, req.nome_a)
     rb = _metricas_da_matriz(req.matriz_b, classes, req.nome_b)
 
@@ -102,7 +102,8 @@ def comparar_modelos(dataset: str = 'v1', atributos: str = 'petalas',
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(atributos)
+    idx = indices_de(atributos, dataset)
+    CLASSES = classes_de(dataset)
     gabarito = [d['classe'] for d in teste]
     relatorios = {}
 
@@ -149,6 +150,7 @@ def simular(acerto: float = Query(0.9, ge=0.0, le=1.0),
     distribuindo os erros uniformemente — util para explorar como Kappa e
     Tau reagem a diferentes niveis de acerto.
     """
+    CLASSES = classes_de()
     n_classes = len(CLASSES)
     acertos_por_classe = round(n_por_classe * acerto)
     erros = n_por_classe - acertos_por_classe
@@ -173,7 +175,7 @@ def memoria(req: MatrizRequest):
     Memoria de calculo do Lab 3 — equivalente web da janela LaTeX da GUI.
     Recebe a matriz de confusao e detalha cada metrica passo a passo.
     """
-    classes = req.classes or CLASSES
+    classes = req.classes or classes_de()
     rel = _metricas_da_matriz(req.matriz, classes, req.nome)
     m = rel['matriz']
     n_total = sum(sum(linha.values()) for linha in m.values())
@@ -345,7 +347,7 @@ def memoria(req: MatrizRequest):
     )
 
 
-def _predicoes_dos_classificadores(treino, teste, idx):
+def _predicoes_dos_classificadores(treino, teste, idx, CLASSES=None):
     """
     Predicoes de cada classificador no MESMO conjunto de teste.
 
@@ -422,8 +424,9 @@ def significancia(dataset: str = 'v1', atributos: str = 'petalas',
             status_code=400,
             detail=f'Métrica inválida. Use uma de: {", ".join(sorted(METRICAS))}.')
 
-    idx = indices_de(atributos)
-    preds = _predicoes_dos_classificadores(treino, teste, idx)
+    idx = indices_de(atributos, dataset)
+    CLASSES = classes_de(dataset)
+    preds = _predicoes_dos_classificadores(treino, teste, idx, CLASSES)
 
     if modelo_a not in preds or modelo_b not in preds:
         raise HTTPException(
@@ -487,8 +490,9 @@ def significancia_matriz(dataset: str = 'v1', atributos: str = 'petalas',
     if metrica not in METRICAS:
         raise HTTPException(status_code=400, detail='Métrica inválida.')
 
-    idx = indices_de(atributos)
-    preds = _predicoes_dos_classificadores(treino, teste, idx)
+    idx = indices_de(atributos, dataset)
+    CLASSES = classes_de(dataset)
+    preds = _predicoes_dos_classificadores(treino, teste, idx, CLASSES)
     gabarito = [d['classe'] for d in teste]
     fn = METRICAS[metrica][1]
 
@@ -774,7 +778,8 @@ def validacao_cruzada(dataset: str = 'v1', atributos: str = 'petalas',
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(atributos)
+    idx = indices_de(atributos, dataset)
+    CLASSES = classes_de(dataset)
 
     def _dist_min(treino):
         return treinar(treino, idx)
@@ -860,6 +865,7 @@ def curva_kappa(n_por_classe: int = Query(15, ge=1, le=500),
     Curva de Acerto Global x Kappa x Tau, varrendo o acerto de 0% a 100%.
     Mostra visualmente por que Kappa e mais rigoroso que o acerto bruto.
     """
+    CLASSES = classes_de()
     pontos = []
     for k in range(passos):
         alvo = k / (passos - 1)

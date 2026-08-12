@@ -2,7 +2,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { FileText } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { PainelConfig, usarConfig } from '@/components/Controles'
+import {
+  PainelConfig,
+  usarConfig,
+  usarDataset,
+} from '@/components/Controles'
 import { BlocoFormula } from '@/components/Formula'
 import { GraficoLinha } from '@/components/GraficoLinha'
 import { MemoriaGenerica } from '@/components/MemoriaGenerica'
@@ -24,10 +28,9 @@ import {
   Slider,
 } from '@/components/ui'
 import { api } from '@/lib/api'
-import { CORES_MODELO, num, pct } from '@/lib/utils'
+import { CORES_MODELO, classesDoRelatorio, num, pct } from '@/lib/utils'
 import { PaginaSignificancia } from './Significancia'
 
-const CLASSES = ['setosa', 'versicolor', 'virginica']
 type Modo = 'validacao' | 'modelos' | 'significancia' | 'editor' | 'curva'
 
 export function PaginaMetricas() {
@@ -58,12 +61,24 @@ export function PaginaMetricas() {
 /* -------------------------------------------------------- validacao cruzada */
 function PainelValidacao() {
   const { config, set } = usarConfig()
+  const { info, categorico } = usarDataset(config.dataset)
   const [k, setK] = useState(5)
-  const [repeticoes, setRepeticoes] = useState(5)
+  const [repeticoes, setRepeticoes] = useState<number | null>(null)
+
+  // Cada avaliacao treina 4 classificadores; com 1000 amostras, 25 avaliacoes
+  // levam mais de 30 s. Bases grandes comecam com 1 repeticao, e o slider
+  // continua disponivel para quem quiser mais estabilidade.
+  const n = info?.n_amostras ?? 0
+  const repeticoesEfetivas = repeticoes ?? (n > 400 ? 1 : 5)
 
   const q = useQuery({
-    queryKey: ['metricas', 'validacao', config, k, repeticoes],
-    queryFn: () => api.metricas.validacaoCruzada({ ...config, k, repeticoes }),
+    queryKey: ['metricas', 'validacao', config, k, repeticoesEfetivas],
+    queryFn: () =>
+      api.metricas.validacaoCruzada({
+        ...config,
+        k,
+        repeticoes: repeticoesEfetivas,
+      }),
   })
 
   const d = q.data
@@ -89,7 +104,7 @@ function PainelValidacao() {
             />
             <Slider
               rotulo="Repetições"
-              valor={repeticoes}
+              valor={repeticoesEfetivas}
               onChange={setRepeticoes}
               min={1}
               max={20}
@@ -97,16 +112,20 @@ function PainelValidacao() {
             />
           </div>
           <p className="mt-3 text-xs leading-relaxed text-muted">
-            {k} dobras × {repeticoes} repetições ={' '}
-            <strong>{k * repeticoes} avaliações</strong> por classificador.
+            {k} dobras × {repeticoesEfetivas}{' '}
+            {repeticoesEfetivas === 1 ? 'repetição' : 'repetições'} ={' '}
+            <strong>{k * repeticoesEfetivas} avaliações</strong> por
+            classificador, sobre {n || '…'} amostras.
           </p>
         </Card>
 
         <Card titulo="por que validação cruzada?">
           <p className="text-sm leading-relaxed text-secondary">
-            Um único split de 70/30 deixa apenas 45 amostras de teste. Um erro
-            a mais muda a acurácia em 2,2 pontos, e o resultado oscila muito
-            conforme a semente sorteada.
+            Um único split de 70/30 deixa só{' '}
+            <strong>{n ? Math.round(n * 0.3) : '…'} amostras</strong> de teste.
+            Um erro a mais muda a acurácia em{' '}
+            {n ? num(100 / Math.round(n * 0.3), 1) : '…'} pontos, e o resultado
+            oscila conforme a semente sorteada.
           </p>
           <p className="mt-3 text-sm leading-relaxed text-secondary">
             Na validação cruzada <strong>toda</strong> amostra é testada
@@ -197,8 +216,9 @@ function PainelValidacao() {
 
               <p className="mt-3 text-xs text-muted">
                 {d.config.n_amostras} amostras · {d.config.k} dobras ×{' '}
-                {d.config.repeticoes} repetições = {d.config.n_avaliacoes}{' '}
-                avaliações por classificador.
+                {d.config.repeticoes}{' '}
+                {d.config.repeticoes === 1 ? 'repetição' : 'repetições'} ={' '}
+                {d.config.n_avaliacoes} avaliações por classificador.
               </p>
             </Card>
 
@@ -264,6 +284,7 @@ function PainelValidacao() {
               <TabelaTestesZ comparacoes={d.comparacoes} />
             </Card>
 
+            {!categorico && (
             <Card titulo="como ler estes números">
               <Nota tom="atencao" titulo="Por que as pétalas dão quase 100%">
                 As pétalas do Iris são quase perfeitamente separáveis — é uma
@@ -296,6 +317,25 @@ function PainelValidacao() {
                 o que motiva os classificadores não lineares.
               </Nota>
             </Card>
+            )}
+
+            {categorico && (
+              <Card titulo="como ler estes números">
+                <Nota tom="atencao" titulo="Existe um teto teórico aqui">
+                  O dataset do seminário tem 8% de ruído de rótulo injetado de
+                  propósito, então nenhum classificador pode passar de ~92% —
+                  esse é o erro irredutível. Um resultado próximo disso não é
+                  overfitting: é o melhor possível.
+                </Nota>
+                <Nota tom="info" className="mt-3" titulo="Codificação ordinal">
+                  Os atributos categóricos viraram inteiros (Sol=0, Vento=1,
+                  Chuva=2). Isso inventa uma ordem que não existe e prejudica
+                  quem corta por limiar — a floresta ID3 multi-way do script
+                  <code> seminario_fim_de_semana.py</code> chega a 94% nos
+                  mesmos dados.
+                </Nota>
+              </Card>
+            )}
           </>
         )}
       </div>
@@ -415,10 +455,10 @@ function PainelModelos() {
 
                 <div className="grid gap-6 lg:grid-cols-2">
                   <Card titulo="matriz de confusão">
-                    <MatrizConfusao relatorio={rel} classes={CLASSES} />
+                    <MatrizConfusao relatorio={rel} classes={classesDoRelatorio(rel)} />
                   </Card>
                   <Card titulo="métricas por classe">
-                    <TabelaPorClasse relatorio={rel} classes={CLASSES} />
+                    <TabelaPorClasse relatorio={rel} classes={classesDoRelatorio(rel)} />
                   </Card>
                 </div>
               </>
@@ -507,7 +547,7 @@ function PainelEditor() {
         {q.data && (
           <MatrizConfusao
             relatorio={q.data.relatorio}
-            classes={CLASSES}
+            classes={classesDoRelatorio(q.data.relatorio)}
             editavel
             onEditar={editar}
           />
@@ -535,7 +575,10 @@ function PainelEditor() {
               </p>
             </Card>
             <Card titulo="métricas por classe">
-              <TabelaPorClasse relatorio={q.data.relatorio} classes={CLASSES} />
+              <TabelaPorClasse
+                relatorio={q.data.relatorio}
+                classes={classesDoRelatorio(q.data.relatorio)}
+              />
             </Card>
           </>
         )}

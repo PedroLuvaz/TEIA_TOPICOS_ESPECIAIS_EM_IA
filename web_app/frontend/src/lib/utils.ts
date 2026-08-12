@@ -34,10 +34,35 @@ export function sci(valor: number | null | undefined, casas = 4): string {
 
 /* --------------------------------------------------------------- cores ----- */
 
+/**
+ * Cores por classe.
+ *
+ * As 3 do Iris tem cor fixa (a interface inteira ja e reconhecida por elas).
+ * Classes de outros datasets recebem cores da paleta abaixo na ordem em que
+ * o dataset as declara — ver `registrarCoresClasses`.
+ */
 export const CORES_CLASSE: Record<string, string> = {
   setosa: '#0ea5e9',
   versicolor: '#10b981',
   virginica: '#f43f5e',
+}
+
+const PALETA_CLASSES = [
+  '#0ea5e9', '#f59e0b', '#8b5cf6', '#10b981',
+  '#f43f5e', '#14b8a6', '#ec4899', '#84cc16',
+]
+
+/**
+ * Garante uma cor para cada classe de um dataset. Idempotente: chamada a cada
+ * render pelo hook de metadata, nunca reatribui uma classe ja registrada —
+ * assim a cor de uma classe nao muda ao trocar de aba.
+ */
+export function registrarCoresClasses(classes: string[]): void {
+  classes.forEach((c, i) => {
+    if (!(c in CORES_CLASSE)) {
+      CORES_CLASSE[c] = PALETA_CLASSES[i % PALETA_CLASSES.length]
+    }
+  })
 }
 
 export const CORES_MODELO: Record<string, string> = {
@@ -53,6 +78,18 @@ export const CORES_MODELO: Record<string, string> = {
 
 export function corDaClasse(classe: string): string {
   return CORES_CLASSE[classe] ?? '#94a3b8'
+}
+
+/**
+ * Classes de um relatorio, na ordem da matriz de confusao.
+ *
+ * Evita depender de uma lista fixa de classes no frontend: o proprio
+ * relatorio ja carrega as classes com que foi calculado.
+ */
+export function classesDoRelatorio(
+  relatorio: { matriz: Record<string, Record<string, number>> } | undefined,
+): string[] {
+  return relatorio ? Object.keys(relatorio.matriz) : []
 }
 
 /** Capitaliza a primeira letra (nomes de classe vem em minusculas). */

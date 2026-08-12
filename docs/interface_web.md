@@ -148,6 +148,21 @@ Quatro experimentos em sub-abas:
 - **Delta OvA** — multiclasse por Um-Contra-Todos, uma curva por classificador
 - **XOR** — demonstra o limite teórico: o MSE estaciona em 0,25 e nunca zera
 
+### Bases de dados
+
+O seletor **Base de dados**, presente em todas as abas, oferece três opções:
+
+| id | Base | Classes | Atributos |
+|---|---|---|---|
+| `v1` | Iris Original | 3 | pétalas · sépalas · todas |
+| `v2` | Iris Separável | 3 | pétalas · sépalas · todas |
+| `fds` | Fim de Semana (seminário) | 4 | Clima×Pais · Clima×Dinheiro · Pais×Dinheiro · todos |
+
+Nada na interface assume as 3 classes do Iris: classes, features, pares de
+classes e cores vêm do dataset selecionado (`/api/dataset/metadata`). A base do
+seminário é categórica — ver
+[`seminario_dataset_fim_de_semana.md`](seminario_dataset_fim_de_semana.md).
+
 ### Métricas Avançadas (Lab 3)
 - **Validação cruzada** — k-fold estratificado com repetições, média ± desvio e
   IC 95%; é a resposta ao "por que tudo dá quase 100%" do split único

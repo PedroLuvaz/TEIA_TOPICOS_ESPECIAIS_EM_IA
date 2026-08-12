@@ -8,7 +8,11 @@ import { useQuery } from '@tanstack/react-query'
 import { FileText, Target } from 'lucide-react'
 import { useState } from 'react'
 import { ArvoreDecisao } from '@/components/ArvoreDecisao'
-import { PainelConfig, usarConfig } from '@/components/Controles'
+import {
+  PainelConfig,
+  usarConfig,
+  usarDataset,
+} from '@/components/Controles'
 import { BlocoFormula } from '@/components/Formula'
 import { GraficoDecisao } from '@/components/GraficoDecisao'
 import { MemoriaGenerica } from '@/components/MemoriaGenerica'
@@ -31,9 +35,15 @@ import {
   Slider,
 } from '@/components/ui'
 import { api, type ParamsFloresta } from '@/lib/api'
-import { CORES_MODELO, cap, corDaClasse, num, pct } from '@/lib/utils'
+import {
+  CORES_MODELO,
+  cap,
+  classesDoRelatorio,
+  corDaClasse,
+  num,
+  pct,
+} from '@/lib/utils'
 
-const CLASSES = ['setosa', 'versicolor', 'virginica']
 type Modo = 'floresta' | 'arvores' | 'comparativo'
 
 export function PaginaFloresta() {
@@ -188,6 +198,7 @@ function PainelFloresta({
   })
 
   const d = q.data
+  const { classes } = usarDataset(String(params.dataset ?? 'v1'))
 
   return (
     <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
@@ -219,7 +230,7 @@ function PainelFloresta({
                 >
                   {cap(predicao.data.classe)}
                 </div>
-                {CLASSES.map((c) => {
+                {classes.map((c) => {
                   const p = predicao.data!.probabilidades[c] ?? 0
                   return (
                     <div key={c}>
@@ -415,7 +426,10 @@ function PainelFloresta({
 
             <div className="grid gap-6 lg:grid-cols-2">
               <Card titulo="matriz de confusão">
-                <MatrizConfusao relatorio={d.relatorio} classes={CLASSES} />
+                <MatrizConfusao
+                  relatorio={d.relatorio}
+                  classes={classesDoRelatorio(d.relatorio)}
+                />
               </Card>
               <Card titulo="métricas globais">
                 <ResumoGlobal relatorio={d.relatorio} />
@@ -423,7 +437,10 @@ function PainelFloresta({
             </div>
 
             <Card titulo="métricas por classe">
-              <TabelaPorClasse relatorio={d.relatorio} classes={CLASSES} />
+              <TabelaPorClasse
+                relatorio={d.relatorio}
+                classes={classesDoRelatorio(d.relatorio)}
+              />
             </Card>
           </>
         )}

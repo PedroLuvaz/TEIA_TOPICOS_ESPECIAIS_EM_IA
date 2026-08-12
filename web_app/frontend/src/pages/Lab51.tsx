@@ -31,9 +31,15 @@ import {
 } from '@/components/ui'
 import { api } from '@/lib/api'
 import type { PredicaoImagem } from '@/lib/types'
-import { CORES_MODELO, cn, num, pct, tomCinza } from '@/lib/utils'
+import {
+  CORES_MODELO,
+  classesDoRelatorio,
+  cn,
+  num,
+  pct,
+  tomCinza,
+} from '@/lib/utils'
 
-const CLASSES = ['setosa', 'versicolor', 'virginica']
 type Modo = 'item-i' | 'item-ii'
 
 export function PaginaLab51() {
@@ -615,10 +621,10 @@ function PainelItemII() {
 
                 <div className="grid gap-6 lg:grid-cols-2">
                   <Card titulo="matriz de confusão">
-                    <MatrizConfusao relatorio={rel} classes={CLASSES} />
+                    <MatrizConfusao relatorio={rel} classes={classesDoRelatorio(rel)} />
                   </Card>
                   <Card titulo="métricas por classe">
-                    <TabelaPorClasse relatorio={rel} classes={CLASSES} />
+                    <TabelaPorClasse relatorio={rel} classes={classesDoRelatorio(rel)} />
                   </Card>
                 </div>
               </>

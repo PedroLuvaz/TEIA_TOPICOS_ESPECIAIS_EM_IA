@@ -1,21 +1,53 @@
 /** Tipos espelhando os payloads da API FastAPI (`web_app/backend`). */
 
-export type ClasseIris = 'setosa' | 'versicolor' | 'virginica'
-export type ChaveAtributos = 'petalas' | 'sepalas' | 'todas'
+/**
+ * Nome de uma classe. Era uma uniao literal das 3 do Iris; agora e livre,
+ * porque cada dataset declara as suas (o do seminario tem 4, em portugues).
+ * O alias foi mantido para nao renomear o tipo em dezenas de arquivos.
+ */
+export type ClasseIris = string
+
+/** Chave de um conjunto de atributos — tambem definida por dataset. */
+export type ChaveAtributos = string
 
 /* ------------------------------------------------------------------ dataset */
-export interface Metadata {
-  datasets: { id: string; nome: string; descricao: string; disponivel: boolean }[]
-  atributos: {
-    id: ChaveAtributos
-    nome: string
-    indices: number[]
-    eixo_x: string
-    eixo_y: string
-  }[]
+export interface ConfigAtributo {
+  id: ChaveAtributos
+  nome: string
+  indices: number[]
+  eixo_x: string
+  eixo_y: string
+}
+
+export interface ParClasses {
+  pos: ClasseIris
+  neg: ClasseIris
+}
+
+export interface DatasetInfo {
+  id: string
+  nome: string
+  descricao: string
+  tipo: 'continuo' | 'categorico'
+  disponivel: boolean
+  n_amostras: number
   classes: ClasseIris[]
   features: string[]
-  pares: { pos: ClasseIris; neg: ClasseIris }[]
+  atributos: ConfigAtributo[]
+  atributos_padrao: ChaveAtributos
+  pares: ParClasses[]
+  /** Rotulos dos valores categoricos por indice de atributo (null se continuo). */
+  valores: Record<string, string[]> | null
+}
+
+export interface Metadata {
+  datasets: DatasetInfo[]
+  dataset_padrao: string
+  /** Atalhos do dataset padrao — usados onde nao ha selecao (Lab 5). */
+  atributos: ConfigAtributo[]
+  classes: ClasseIris[]
+  features: string[]
+  pares: ParClasses[]
 }
 
 export interface Amostra {
