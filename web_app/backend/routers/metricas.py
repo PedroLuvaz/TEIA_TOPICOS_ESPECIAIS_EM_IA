@@ -16,13 +16,8 @@ from evaluation.metricas_avancadas import (_acerto_casual, _extrair_binario,
                                            variancia_tau, z_kappa, z_tau)
 from evaluation.testes_significancia import METRICAS, comparar, mcc_multiclasse
 from evaluation.validacao_cruzada import intervalo_confianca, validar_cruzado
-from models.mlp_backprop import RedeFeedforward
-from models.random_forest import treinar_floresta
-from models.bayes_classifier import (predizer_todas_classes_bayes,
-                                     treinar_bayes)
-from models.classifier import predizer_todas_classes, treinar
-from models.delta_rule import predizer_delta_ova, treinar_delta_ova
 
+from .. import modelos as M
 from .. import traco as T
 from ..core import classes_de, indices_de, obter_split
 
@@ -94,35 +89,21 @@ def comparar_matrizes(req: ComparacaoMatrizesRequest):
 def comparar_modelos(dataset: str = 'v1', atributos: str = 'petalas',
                      proporcao: float = Query(0.7, ge=0.1, le=0.9)):
     """
-    Avalia todos os classificadores multiclasse do projeto no mesmo split
-    e aplica o teste Z de Kappa em cada par — a comparacao central do Lab 3.
+    Avalia TODOS os classificadores do catalogo no mesmo split e aplica o
+    teste Z de Kappa em cada par — a comparacao central do Lab 3, agora
+    incluindo o Perceptron OvA, a rede feedforward e a floresta do seminario.
     """
     try:
-        _, treino, teste = obter_split(dataset, proporcao)
+        _, _, teste = obter_split(dataset, proporcao)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(atributos, dataset)
     CLASSES = classes_de(dataset)
     gabarito = [d['classe'] for d in teste]
-    relatorios = {}
+    preds = _predicoes_dos_classificadores(dataset, atributos, proporcao)
 
-    prototipos = treinar(treino, idx)
-    relatorios['distancia_minima'] = relatorio_completo(
-        [predizer_todas_classes(d['atributos'], prototipos, idx)[1] for d in teste],
-        gabarito, CLASSES, 'Distancia Minima')
-
-    pesos_ova, _, _ = treinar_delta_ova(treino, idx)
-    relatorios['delta_ova'] = relatorio_completo(
-        [predizer_delta_ova([d['atributos'][i] for i in idx], pesos_ova)[0] for d in teste],
-        gabarito, CLASSES, 'Regra Delta OvA')
-
-    for chave, naive, nome in (('bayes', False, 'Bayes Otimo (QDA)'),
-                               ('naive', True, 'Naive Bayes')):
-        modelo = treinar_bayes(treino, idx, naive=naive)
-        relatorios[chave] = relatorio_completo(
-            [predizer_todas_classes_bayes(d['atributos'], modelo, idx)[1] for d in teste],
-            gabarito, CLASSES, nome)
+    relatorios = {chave: relatorio_completo(predicoes, gabarito, CLASSES, nome)
+                  for chave, (nome, predicoes) in preds.items()}
 
     chaves = list(relatorios.keys())
     comparacoes = []
@@ -347,53 +328,34 @@ def memoria(req: MatrizRequest):
     )
 
 
-def _predicoes_dos_classificadores(treino, teste, idx, CLASSES=None):
+def _predicoes_dos_classificadores(dataset, atributos, proporcao):
     """
-    Predicoes de cada classificador no MESMO conjunto de teste.
+    Predicoes de TODOS os modelos do catalogo no MESMO conjunto de teste.
 
-    O pareamento e o que permite aplicar McNemar e o bootstrap pareado —
-    os classificadores acertam e erram as mesmas amostras dificeis.
+    O pareamento e o que permite aplicar McNemar e o bootstrap pareado — os
+    modelos acertam e erram as mesmas amostras dificeis. O resultado vem
+    cacheado de `modelos.predicoes_de_todos`, senao a matriz de significancia
+    retreinaria os sete classificadores para cada par testado.
     """
-    preds = {}
-
-    prototipos = treinar(treino, idx)
-    preds['distancia_minima'] = (
-        'Distância Mínima',
-        [predizer_todas_classes(d['atributos'], prototipos, idx)[1] for d in teste])
-
-    pesos_ova, _, _ = treinar_delta_ova(treino, idx)
-    preds['delta_ova'] = (
-        'Regra Delta OvA',
-        [predizer_delta_ova([d['atributos'][i] for i in idx], pesos_ova)[0]
-         for d in teste])
-
-    for chave, naive, nome in (('bayes', False, 'Bayes Ótimo (QDA)'),
-                               ('naive', True, 'Naive Bayes')):
-        modelo = treinar_bayes(treino, idx, naive=naive)
-        preds[chave] = (
-            nome,
-            [predizer_todas_classes_bayes(d['atributos'], modelo, idx)[1]
-             for d in teste])
-
-    floresta = treinar_floresta(treino, idx, n_arvores=50, semente=42)
-    preds['floresta'] = (
-        'Floresta Aleatória',
-        [floresta.predizer(d['atributos']) for d in teste])
-
-    return preds
+    try:
+        return M.predicoes_de_todos(dataset, atributos, proporcao)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get('/classificadores')
 def listar_classificadores():
-    """Classificadores e metricas disponiveis para os testes de significancia."""
+    """
+    Classificadores e metricas disponiveis para os testes de significancia.
+
+    A lista vem do mesmo catalogo da tela de classificacao — incluir um
+    modelo la o torna comparavel aqui automaticamente.
+    """
     return {
-        'classificadores': [
-            {'id': 'distancia_minima', 'nome': 'Distância Mínima'},
-            {'id': 'delta_ova', 'nome': 'Regra Delta OvA'},
-            {'id': 'bayes', 'nome': 'Bayes Ótimo (QDA)'},
-            {'id': 'naive', 'nome': 'Naive Bayes'},
-            {'id': 'floresta', 'nome': 'Floresta Aleatória'},
-        ],
+        'classificadores': [{'id': m['id'], 'nome': m['nome'],
+                             'grupo': m['grupo']} for m in M.catalogo()],
         'metricas': [{'id': k, 'nome': v[0]} for k, v in METRICAS.items()],
     }
 
@@ -424,9 +386,8 @@ def significancia(dataset: str = 'v1', atributos: str = 'petalas',
             status_code=400,
             detail=f'Métrica inválida. Use uma de: {", ".join(sorted(METRICAS))}.')
 
-    idx = indices_de(atributos, dataset)
     CLASSES = classes_de(dataset)
-    preds = _predicoes_dos_classificadores(treino, teste, idx, CLASSES)
+    preds = _predicoes_dos_classificadores(dataset, atributos, proporcao)
 
     if modelo_a not in preds or modelo_b not in preds:
         raise HTTPException(
@@ -490,9 +451,8 @@ def significancia_matriz(dataset: str = 'v1', atributos: str = 'petalas',
     if metrica not in METRICAS:
         raise HTTPException(status_code=400, detail='Métrica inválida.')
 
-    idx = indices_de(atributos, dataset)
     CLASSES = classes_de(dataset)
-    preds = _predicoes_dos_classificadores(treino, teste, idx, CLASSES)
+    preds = _predicoes_dos_classificadores(dataset, atributos, proporcao)
     gabarito = [d['classe'] for d in teste]
     fn = METRICAS[metrica][1]
 
@@ -761,54 +721,64 @@ def significancia_memoria(dataset: str = 'v1', atributos: str = 'petalas',
     )
 
 
+# Modelos incluidos por padrao na validacao cruzada. A rede fica de fora
+# porque treina k x repeticoes vezes: com 5 dobras e 5 repeticoes seriam 25
+# treinamentos de backpropagation, dezenas de segundos numa tela interativa.
+# Quem quiser inclui-la passa `modelos=...,mlp`.
+CV_PADRAO = [m for m in M.ORDEM if m != 'mlp']
+
+
 @router.get('/validacao-cruzada')
 def validacao_cruzada(dataset: str = 'v1', atributos: str = 'petalas',
                       k: int = Query(5, ge=2, le=10),
-                      repeticoes: int = Query(5, ge=1, le=20)):
+                      repeticoes: int = Query(5, ge=1, le=20),
+                      modelos: str | None = None):
     """
-    Avalia todos os classificadores por validacao cruzada k-fold estratificada,
+    Avalia os classificadores por validacao cruzada k-fold estratificada,
     reportando media, desvio e intervalo de confianca.
 
     Um unico split de 70/30 deixa so 45 amostras de teste — o resultado varia
     muito com a semente sorteada. Aqui toda amostra e testada, e o desvio
     entre as dobras mostra o quanto o numero e confiavel.
+
+    `modelos`: lista separada por virgula (ex.: `bayes,floresta,mlp`). Sem o
+    parametro, roda todos os do catalogo menos a rede feedforward.
     """
     try:
         dados, _, _ = obter_split(dataset)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    idx = indices_de(atributos, dataset)
+    try:
+        idx = indices_de(atributos, dataset)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     CLASSES = classes_de(dataset)
 
-    def _dist_min(treino):
-        return treinar(treino, idx)
+    escolhidos = ([m.strip() for m in modelos.split(',') if m.strip()]
+                  if modelos else list(CV_PADRAO))
+    invalidos = [m for m in escolhidos if m not in M.MODELOS]
+    if invalidos:
+        raise HTTPException(
+            status_code=400,
+            detail=f'Modelo(s) inválido(s): {", ".join(invalidos)}. '
+                   f'Use: {", ".join(M.ORDEM)}.')
 
-    def _dist_min_pred(modelo, amostra):
-        return predizer_todas_classes(amostra['atributos'], modelo, idx)[1]
+    def _funcoes(mid):
+        """Adapta o modelo do catalogo a assinatura de `validar_cruzado`."""
+        cfg = M.info(mid)
+        params = M.normalizar_parametros(mid, None)
+        return (lambda treino: cfg['treinar'](treino, idx, **params),
+                lambda modelo, amostra: cfg['predizer'](modelo,
+                                                        amostra['atributos']))
 
-    def _ova(treino):
-        return treinar_delta_ova(treino, idx)[0]
-
-    def _ova_pred(modelo, amostra):
-        return predizer_delta_ova(
-            [amostra['atributos'][i] for i in idx], modelo)[0]
-
-    def _bayes(naive):
-        return lambda treino: treinar_bayes(treino, idx, naive=naive)
-
-    def _bayes_pred(modelo, amostra):
-        return predizer_todas_classes_bayes(amostra['atributos'], modelo, idx)[1]
-
-    modelos = {
-        'distancia_minima': ('Distancia Minima', _dist_min, _dist_min_pred),
-        'delta_ova': ('Regra Delta OvA', _ova, _ova_pred),
-        'bayes': ('Bayes Otimo (QDA)', _bayes(False), _bayes_pred),
-        'naive': ('Naive Bayes', _bayes(True), _bayes_pred),
-    }
+    modelos_cv = {}
+    for mid in escolhidos:
+        treinar_fn, predizer_fn = _funcoes(mid)
+        modelos_cv[mid] = (M.info(mid)['nome'], treinar_fn, predizer_fn)
 
     resultados = {}
-    for chave, (nome, treinar_fn, predizer_fn) in modelos.items():
+    for chave, (nome, treinar_fn, predizer_fn) in modelos_cv.items():
         r = validar_cruzado(dados, treinar_fn, predizer_fn, CLASSES,
                             k=k, repeticoes=repeticoes)
         baixo, alto = intervalo_confianca(r['media'], r['desvio'],

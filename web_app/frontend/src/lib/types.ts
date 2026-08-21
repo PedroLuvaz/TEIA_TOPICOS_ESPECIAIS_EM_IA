@@ -802,6 +802,7 @@ export interface MatrizSignificancia {
 }
 
 export interface ListaClassificadores {
-  classificadores: { id: string; nome: string }[]
+  /** Vem do mesmo catalogo da tela de classificacao. */
+  classificadores: { id: string; nome: string; grupo?: string }[]
   metricas: { id: string; nome: string }[]
 }

@@ -73,7 +73,13 @@ export const CORES_MODELO: Record<string, string> = {
   floresta: '#14b8a6',
   mlp: '#f43f5e',
   perceptron: '#8b5cf6',
+  perceptron_ova: '#ec4899',
   delta: '#f59e0b',
+}
+
+/** Cor de um modelo do catalogo, com reserva para ids ainda sem cor fixa. */
+export function corDoModelo(modelo: string): string {
+  return CORES_MODELO[modelo] ?? '#94a3b8'
 }
 
 export function corDaClasse(classe: string): string {

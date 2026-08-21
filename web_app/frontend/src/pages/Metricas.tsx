@@ -65,7 +65,7 @@ function PainelValidacao() {
   const [k, setK] = useState(5)
   const [repeticoes, setRepeticoes] = useState<number | null>(null)
 
-  // Cada avaliacao treina 4 classificadores; com 1000 amostras, 25 avaliacoes
+  // Cada avaliacao treina seis classificadores; com 1000 amostras, 25 avaliacoes
   // levam mais de 30 s. Bases grandes comecam com 1 repeticao, e o slider
   // continua disponivel para quem quiser mais estabilidade.
   const n = info?.n_amostras ?? 0
