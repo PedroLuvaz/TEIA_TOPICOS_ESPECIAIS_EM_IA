@@ -1,0 +1,301 @@
+clima;pais_visitam;dinheiro;decisao
+Vento;Sim;Rico;Cinema
+Chuva;Nao;Pobre;Cinema
+Vento;Sim;Rico;Cinema
+Sol;Sim;Rico;Cinema
+Sol;Nao;Pobre;Tenis
+Vento;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Vento;Nao;Pobre;Cinema
+Chuva;Sim;Rico;Cinema
+Vento;Nao;Rico;Compras
+Sol;Sim;Rico;Tenis
+Chuva;Sim;Rico;Cinema
+Sol;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Sol;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Sol;Nao;Pobre;Cinema
+Sol;Nao;Rico;Tenis
+Sol;Sim;Pobre;Cinema
+Sol;Sim;Pobre;Cinema
+Chuva;Sim;Rico;Cinema
+Chuva;Sim;Rico;Cinema
+Chuva;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Sol;Nao;Pobre;Cinema
+Sol;Nao;Pobre;Cinema
+Vento;Sim;Rico;Ficar em casa
+Chuva;Sim;Rico;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Vento;Sim;Pobre;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Sol;Nao;Pobre;Cinema
+Vento;Sim;Pobre;Cinema
+Sol;Sim;Rico;Cinema
+Chuva;Sim;Rico;Cinema
+Sol;Nao;Rico;Tenis
+Vento;Nao;Rico;Compras
+Chuva;Nao;Rico;Ficar em casa
+Sol;Sim;Rico;Cinema
+Sol;Sim;Rico;Cinema
+Sol;Nao;Pobre;Tenis
+Sol;Sim;Rico;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Vento;Sim;Rico;Cinema
+Vento;Nao;Rico;Compras
+Vento;Sim;Pobre;Cinema
+Sol;Sim;Rico;Cinema
+Sol;Sim;Pobre;Ficar em casa
+Sol;Nao;Rico;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Sol;Sim;Rico;Cinema
+Chuva;Sim;Pobre;Cinema
+Vento;Nao;Pobre;Cinema
+Chuva;Sim;Rico;Cinema
+Vento;Nao;Pobre;Ficar em casa
+Vento;Nao;Rico;Ficar em casa
+Sol;Sim;Rico;Cinema
+Sol;Sim;Pobre;Cinema
+Vento;Nao;Rico;Compras
+Vento;Nao;Rico;Compras
+Sol;Sim;Rico;Cinema
+Vento;Nao;Rico;Compras
+Chuva;Nao;Rico;Ficar em casa
+Sol;Nao;Pobre;Cinema
+Vento;Sim;Pobre;Cinema
+Vento;Nao;Rico;Ficar em casa
+Sol;Nao;Pobre;Cinema
+Sol;Sim;Rico;Cinema
+Vento;Nao;Rico;Compras
+Sol;Sim;Pobre;Cinema
+Sol;Sim;Rico;Tenis
+Vento;Sim;Pobre;Cinema
+Vento;Sim;Rico;Cinema
+Chuva;Nao;Pobre;Cinema
+Sol;Sim;Rico;Cinema
+Chuva;Nao;Pobre;Cinema
+Sol;Sim;Pobre;Cinema
+Vento;Nao;Rico;Compras
+Chuva;Nao;Pobre;Cinema
+Sol;Nao;Rico;Tenis
+Chuva;Nao;Pobre;Cinema
+Chuva;Sim;Pobre;Cinema
+Sol;Nao;Rico;Tenis
+Chuva;Sim;Rico;Cinema
+Vento;Nao;Pobre;Cinema
+Vento;Sim;Pobre;Cinema
+Chuva;Sim;Pobre;Cinema
+Chuva;Sim;Rico;Cinema
+Chuva;Sim;Rico;Cinema
+Vento;Nao;Rico;Compras
+Sol;Nao;Rico;Tenis
+Chuva;Nao;Rico;Compras
+Chuva;Nao;Rico;Ficar em casa
+Chuva;Nao;Rico;Ficar em casa
+Vento;Nao;Rico;Compras
+Vento;Nao;Rico;Compras
+Vento;Nao;Rico;Compras
+Chuva;Nao;Rico;Ficar em casa
+Vento;Nao;Pobre;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Vento;Sim;Pobre;Cinema
+Vento;Nao;Rico;Tenis
+Vento;Nao;Rico;Compras
+Vento;Nao;Rico;Compras
+Sol;Nao;Pobre;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Vento;Sim;Rico;Cinema
+Sol;Sim;Rico;Cinema
+Vento;Sim;Pobre;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Vento;Sim;Pobre;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Vento;Sim;Rico;Cinema
+Sol;Sim;Pobre;Cinema
+Sol;Sim;Rico;Cinema
+Vento;Sim;Rico;Compras
+Vento;Nao;Pobre;Ficar em casa
+Vento;Sim;Rico;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Vento;Nao;Rico;Compras
+Vento;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Sol;Nao;Rico;Tenis
+Sol;Sim;Rico;Cinema
+Chuva;Sim;Pobre;Cinema
+Sol;Sim;Rico;Cinema
+Chuva;Sim;Rico;Cinema
+Vento;Nao;Pobre;Cinema
+Sol;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Sol;Nao;Pobre;Cinema
+Chuva;Nao;Rico;Tenis
+Vento;Nao;Rico;Compras
+Sol;Nao;Pobre;Cinema
+Vento;Sim;Rico;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Vento;Sim;Rico;Compras
+Chuva;Sim;Pobre;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Chuva;Sim;Pobre;Cinema
+Vento;Sim;Pobre;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Sol;Sim;Rico;Cinema
+Sol;Nao;Rico;Tenis
+Chuva;Sim;Pobre;Cinema
+Sol;Sim;Pobre;Cinema
+Chuva;Sim;Pobre;Cinema
+Vento;Sim;Pobre;Cinema
+Sol;Nao;Rico;Tenis
+Vento;Nao;Rico;Compras
+Vento;Nao;Rico;Compras
+Sol;Sim;Rico;Cinema
+Chuva;Sim;Rico;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Sol;Sim;Rico;Cinema
+Sol;Nao;Rico;Tenis
+Vento;Nao;Rico;Compras
+Vento;Nao;Rico;Compras
+Vento;Sim;Rico;Cinema
+Vento;Nao;Rico;Ficar em casa
+Vento;Sim;Pobre;Cinema
+Sol;Sim;Rico;Cinema
+Vento;Nao;Pobre;Cinema
+Chuva;Sim;Rico;Cinema
+Vento;Sim;Pobre;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Sol;Nao;Rico;Tenis
+Vento;Sim;Rico;Cinema
+Sol;Nao;Rico;Tenis
+Sol;Nao;Rico;Tenis
+Sol;Sim;Rico;Cinema
+Sol;Sim;Rico;Cinema
+Vento;Nao;Pobre;Cinema
+Vento;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Vento;Nao;Rico;Ficar em casa
+Chuva;Nao;Pobre;Cinema
+Vento;Sim;Rico;Cinema
+Vento;Nao;Pobre;Cinema
+Vento;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Chuva;Sim;Rico;Cinema
+Sol;Nao;Pobre;Cinema
+Sol;Nao;Rico;Ficar em casa
+Vento;Nao;Rico;Compras
+Sol;Nao;Pobre;Cinema
+Vento;Sim;Pobre;Cinema
+Sol;Sim;Rico;Cinema
+Sol;Nao;Pobre;Cinema
+Sol;Nao;Rico;Tenis
+Vento;Sim;Pobre;Cinema
+Sol;Nao;Rico;Tenis
+Vento;Nao;Pobre;Cinema
+Chuva;Sim;Pobre;Cinema
+Chuva;Sim;Rico;Cinema
+Chuva;Sim;Rico;Cinema
+Vento;Nao;Rico;Compras
+Vento;Sim;Rico;Cinema
+Sol;Nao;Rico;Tenis
+Chuva;Nao;Rico;Ficar em casa
+Chuva;Nao;Rico;Compras
+Chuva;Sim;Rico;Cinema
+Sol;Nao;Rico;Tenis
+Chuva;Nao;Rico;Ficar em casa
+Sol;Nao;Rico;Tenis
+Vento;Nao;Rico;Compras
+Vento;Nao;Rico;Compras
+Vento;Sim;Rico;Cinema
+Sol;Sim;Pobre;Cinema
+Chuva;Sim;Rico;Cinema
+Sol;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Sol;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Vento;Sim;Rico;Compras
+Chuva;Sim;Pobre;Cinema
+Vento;Sim;Pobre;Cinema
+Sol;Sim;Rico;Cinema
+Vento;Sim;Pobre;Cinema
+Sol;Nao;Pobre;Cinema
+Chuva;Nao;Pobre;Cinema
+Chuva;Sim;Pobre;Cinema
+Sol;Sim;Pobre;Cinema
+Vento;Sim;Rico;Cinema
+Sol;Nao;Rico;Tenis
+Sol;Nao;Rico;Tenis
+Sol;Nao;Pobre;Cinema
+Vento;Sim;Rico;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Chuva;Sim;Rico;Cinema
+Sol;Nao;Rico;Tenis
+Chuva;Nao;Rico;Ficar em casa
+Sol;Sim;Rico;Cinema
+Sol;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Vento;Nao;Rico;Compras
+Vento;Nao;Rico;Compras
+Sol;Sim;Pobre;Cinema
+Sol;Nao;Rico;Tenis
+Chuva;Nao;Rico;Ficar em casa
+Chuva;Nao;Rico;Ficar em casa
+Vento;Nao;Rico;Compras
+Sol;Sim;Rico;Cinema
+Chuva;Sim;Pobre;Cinema
+Sol;Sim;Pobre;Cinema
+Chuva;Sim;Rico;Cinema
+Chuva;Sim;Rico;Cinema
+Chuva;Sim;Pobre;Cinema
+Vento;Nao;Rico;Compras
+Chuva;Nao;Rico;Ficar em casa
+Chuva;Nao;Pobre;Cinema
+Chuva;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Vento;Nao;Rico;Compras
+Vento;Nao;Pobre;Cinema
+Vento;Nao;Rico;Compras
+Chuva;Sim;Rico;Cinema
+Vento;Nao;Rico;Compras
+Sol;Nao;Rico;Tenis
+Vento;Nao;Rico;Compras
+Vento;Nao;Rico;Compras
+Chuva;Nao;Pobre;Cinema
+Chuva;Sim;Pobre;Cinema
+Chuva;Sim;Rico;Cinema
+Chuva;Nao;Rico;Ficar em casa
+Sol;Sim;Pobre;Cinema
+Sol;Sim;Pobre;Cinema
+Vento;Sim;Pobre;Cinema
+Vento;Nao;Rico;Compras
+Vento;Sim;Rico;Cinema
+Vento;Nao;Rico;Compras
+Sol;Sim;Rico;Cinema
+Vento;Nao;Rico;Compras
+Vento;Nao;Rico;Compras
+Sol;Sim;Pobre;Cinema
+Vento;Sim;Rico;Cinema
+Sol;Nao;Pobre;Cinema
+Vento;Sim;Rico;Cinema
+Vento;Sim;Pobre;Cinema
+Chuva;Sim;Pobre;Tenis
+Sol;Nao;Rico;Tenis
+Sol;Nao;Rico;Tenis
+Sol;Nao;Rico;Tenis
+Sol;Sim;Rico;Compras
+Chuva;Nao;Pobre;Cinema
+Sol;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Vento;Sim;Pobre;Cinema
+Vento;Sim;Rico;Cinema
+Vento;Nao;Rico;Compras
+Chuva;Sim;Pobre;Cinema
+Vento;Sim;Rico;Cinema
+Vento;Sim;Rico;Cinema
+Chuva;Sim;Pobre;Ficar em casa
+Sol;Nao;Pobre;Cinema
+Chuva;Nao;Pobre;Cinema

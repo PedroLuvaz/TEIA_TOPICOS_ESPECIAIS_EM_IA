@@ -15,6 +15,13 @@ atributos no registro `DATASETS`. Os routers nunca assumem "as 3 classes do
 Iris": pedem `classes_de(dataset)`, `config_atributos_de(dataset)` e assim
 por diante. E o que permite o dataset categorico do seminario (fim de semana,
 4 classes, 3 atributos) rodar nas mesmas telas do Iris.
+
+Bases do usuario
+----------------
+`DATASETS` guarda apenas as bases que acompanham o projeto. As bases enviadas
+pelo usuario em .txt vivem em `datasets_usuario` e entram no mesmo registro
+atraves de `todos()` — do ponto de vista dos routers, um dataset importado e
+indistinguivel do Iris.
 """
 import os
 import random
@@ -30,6 +37,8 @@ for _p in (IRIS_DIR, BASE_DIR):
 
 from data.data_loader import (carregar_dados_iris,  # noqa: E402
                               carregar_fim_de_semana, split_estratificado)
+
+from . import datasets_usuario  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Configuracao de atributos do Iris (espelha a da GUI Tkinter)
@@ -172,13 +181,25 @@ CAMINHOS_DADOS = {k: v['caminho'] for k, v in DATASETS.items()}
 # ---------------------------------------------------------------------------
 # Acesso ao registro
 # ---------------------------------------------------------------------------
+def todos():
+    """
+    Registro completo: as bases que acompanham o projeto MAIS as enviadas
+    pelo usuario. As nativas vem primeiro, para encabecar o seletor.
+    """
+    return {**DATASETS, **datasets_usuario.registrados()}
+
+
+def eh_do_usuario(dataset: str):
+    return info(dataset).get('origem') == 'usuario'
+
+
 def info(dataset: str = DATASET_PADRAO):
     """Metadados do dataset. Levanta ValueError se o id nao existir."""
-    cfg = DATASETS.get(dataset)
+    cfg = todos().get(dataset)
     if cfg is None:
         raise ValueError(
             f"Dataset invalido: '{dataset}'. Use um de: "
-            f"{', '.join(sorted(DATASETS))}.")
+            f"{', '.join(sorted(todos()))}.")
     return cfg
 
 
@@ -223,7 +244,7 @@ def rotulo_valor(dataset: str, atributo: int, valor):
 # ---------------------------------------------------------------------------
 # Carregamento e split (cacheados — o arquivo so e lido uma vez por dataset)
 # ---------------------------------------------------------------------------
-@lru_cache(maxsize=8)
+@lru_cache(maxsize=32)
 def carregar(dataset: str):
     """Carrega e devolve a lista completa de amostras do dataset informado."""
     cfg = info(dataset)
@@ -231,6 +252,11 @@ def carregar(dataset: str):
     if not os.path.exists(caminho):
         raise FileNotFoundError(
             f"Dataset '{dataset}' nao encontrado. Esperado em: {caminho}")
+
+    if cfg.get('origem') == 'usuario':
+        # Base enviada em .txt: o proprio leitor generico ja devolve os
+        # atributos numericos (categorias viram codigos 0..k-1).
+        return datasets_usuario.carregar_dados(cfg)
 
     if cfg['tipo'] == 'categorico':
         # numerico=True: os codigos ordinais das colunas `_cod`, para que os
@@ -255,6 +281,20 @@ def obter_split(dataset: str = DATASET_PADRAO, proporcao: float = 0.7,
     """
     treino, teste = _split_cache(dataset, proporcao, semente)
     return carregar(dataset), treino, teste
+
+
+def invalidar_cache():
+    """
+    Descarta os caches de leitura e de split.
+
+    Chamado quando o conjunto de bases muda (importacao ou remocao de um .txt
+    do usuario): os ids sao unicos, mas manter em memoria uma base ja apagada
+    seria desperdicio — e o cache de `todos()` precisa ser refeito de qualquer
+    forma.
+    """
+    carregar.cache_clear()
+    _split_cache.cache_clear()
+    datasets_usuario.esquecer_cache()
 
 
 def indices_de(atributos: str, dataset: str = DATASET_PADRAO):

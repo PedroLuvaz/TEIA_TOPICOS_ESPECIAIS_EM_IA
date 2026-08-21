@@ -51,3 +51,8 @@ npm-debug.log*
 
 # Arquivos gerados localmente
 data/iris_data_02.xlsx
+# Bases .txt enviadas pelo usuario na interface web (dados locais)
+data/enviados/
+
+# Scripts descartaveis usados para exercitar a API durante o desenvolvimento
+.teste_tmp/
