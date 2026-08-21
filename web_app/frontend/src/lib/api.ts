@@ -1,8 +1,12 @@
 /** Cliente HTTP tipado da API do projeto. */
 import type { TracoGenerico } from '@/components/MemoriaGenerica'
 import type {
+  AnaliseArquivo,
   ComparacaoModelos,
+  DatasetEnviado,
   Estatisticas,
+  OpcoesLeitura,
+  ResultadoImportacao,
   EstadoXor,
   ListaExercicios,
   Metadata,
@@ -76,14 +80,30 @@ async function get<T>(caminho: string, params?: Params): Promise<T> {
   return tratar<T>(await fetch(`/api${caminho}${querystring(params)}`))
 }
 
-async function post<T>(caminho: string, corpo: unknown): Promise<T> {
+async function corpoJson<T>(
+  metodo: 'POST' | 'PATCH',
+  caminho: string,
+  corpo: unknown,
+): Promise<T> {
   return tratar<T>(
     await fetch(`/api${caminho}`, {
-      method: 'POST',
+      method: metodo,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(corpo),
     }),
   )
+}
+
+async function post<T>(caminho: string, corpo: unknown): Promise<T> {
+  return corpoJson<T>('POST', caminho, corpo)
+}
+
+async function patch<T>(caminho: string, corpo: unknown): Promise<T> {
+  return corpoJson<T>('PATCH', caminho, corpo)
+}
+
+async function del<T>(caminho: string): Promise<T> {
+  return tratar<T>(await fetch(`/api${caminho}`, { method: 'DELETE' }))
 }
 
 /** Parametros comuns a quase todos os experimentos. */
@@ -125,6 +145,29 @@ export const api = {
     amostras: (p: ParamsBase) => get<RespostaAmostras>('/dataset/amostras', p),
     estatisticas: (p: { dataset?: string }) =>
       get<Estatisticas>('/dataset/estatisticas', p),
+
+    // --- importacao da base do usuario (.txt) ---
+    opcoesLeitura: () => get<OpcoesLeitura>('/dataset/opcoes-leitura'),
+    /** Pre-visualiza o arquivo sem importa-lo. */
+    analisar: (corpo: {
+      conteudo: string
+      delimitador?: string
+      cabecalho?: string
+    }) => post<AnaliseArquivo>('/dataset/analisar', corpo),
+    importar: (corpo: {
+      conteudo: string
+      nome: string
+      arquivo_original?: string
+      delimitador?: string
+      cabecalho?: string
+      coluna_classe?: number
+      colunas_ignoradas?: number[]
+    }) => post<ResultadoImportacao>('/dataset/importar', corpo),
+    enviados: () => get<{ datasets: DatasetEnviado[] }>('/dataset/enviados'),
+    renomear: (id: string, nome: string) =>
+      patch<{ id: string; nome: string }>(`/dataset/enviados/${id}`, { nome }),
+    remover: (id: string) =>
+      del<{ removido: string }>(`/dataset/enviados/${id}`),
   },
 
   distanciaMinima: {

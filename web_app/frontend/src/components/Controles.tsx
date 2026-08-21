@@ -1,10 +1,12 @@
 /** Painel de controles comum aos experimentos (dataset, atributos, split). */
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Upload } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { api } from '@/lib/api'
 import type { ChaveAtributos, DatasetInfo, Metadata } from '@/lib/types'
 import { registrarCoresClasses } from '@/lib/utils'
-import { Card, Nota, Select, Slider } from './ui'
+import { ImportarDados } from './ImportarDados'
+import { Botao, Card, Nota, Select, Slider } from './ui'
 
 export interface ConfigExperimento {
   // A assinatura de indice permite passar a config direto como query params.
@@ -119,11 +121,40 @@ export function PainelConfig({
   children?: React.ReactNode
   mostrarProporcao?: boolean
 }) {
-  const { meta, atributos, categorico } = usarDataset(config.dataset)
+  const { meta, info, atributos, categorico } = usarDataset(config.dataset)
+  const [importando, setImportando] = useState(false)
 
   return (
-    <Card titulo="configuração do experimento">
+    <Card
+      titulo="configuração do experimento"
+      acao={
+        <Botao
+          tamanho="sm"
+          variante={importando ? 'secundario' : 'fantasma'}
+          onClick={() => setImportando((v) => !v)}
+        >
+          <Upload size={14} />
+          {importando ? 'Fechar' : 'Importar .txt'}
+        </Botao>
+      }
+    >
       <div className="space-y-4">
+        {/*
+          A importacao fica DENTRO do painel de configuracao, e nao numa tela
+          propria: assim a base do usuario pode ser trocada de dentro de
+          qualquer laboratorio, sem perder o contexto do experimento.
+        */}
+        {importando && (
+          <div className="rounded-lg border border-subtle bg-zinc-500/5 p-4">
+            <ImportarDados
+              aoImportar={(id) => {
+                set('dataset', id)
+                setImportando(false)
+              }}
+            />
+          </div>
+        )}
+
         <Select
           rotulo="Base de dados"
           valor={config.dataset}
@@ -131,11 +162,19 @@ export function PainelConfig({
           opcoes={
             meta?.datasets.map((d) => ({
               valor: d.id,
-              rotulo: d.nome,
+              rotulo: d.origem === 'usuario' ? `${d.nome}  ·  .txt` : d.nome,
               desabilitado: !d.disponivel,
             })) ?? [{ valor: 'v1', rotulo: 'Iris Original' }]
           }
         />
+
+        {info?.origem === 'usuario' && (
+          <Nota tom="ok" titulo="Base importada do usuário">
+            {info.n_amostras} amostras · {info.features.length} atributos ·{' '}
+            {info.classes.length} classes (coluna “{info.coluna_classe}”).
+            {!!info.avisos?.length && ' ' + info.avisos.join(' ')}
+          </Nota>
+        )}
 
         <Select
           rotulo="Atributos"

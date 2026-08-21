@@ -38,6 +38,78 @@ export interface DatasetInfo {
   pares: ParClasses[]
   /** Rotulos dos valores categoricos por indice de atributo (null se continuo). */
   valores: Record<string, string[]> | null
+  /** 'projeto' para as bases que acompanham o app, 'usuario' para .txt importados. */
+  origem?: 'projeto' | 'usuario'
+  arquivo_original?: string
+  criado_em?: string
+  avisos?: string[]
+  /** Nome da coluna usada como classe (so nas bases importadas). */
+  coluna_classe?: string
+}
+
+/* --------------------------------------------------- importacao de .txt --- */
+export interface ColunaAnalisada {
+  indice: number
+  nome: string
+  tipo: 'numerico' | 'categorico'
+  n_distintos: number
+  n_ausentes: number
+  exemplos: string[]
+  valores: string[] | null
+}
+
+export interface AnaliseArquivo {
+  delimitador: string
+  delimitador_rotulo: string
+  cabecalho: boolean
+  n_colunas: number
+  n_linhas: number
+  colunas: ColunaAnalisada[]
+  coluna_classe_sugerida: number
+  previa: string[][]
+  nomes: string[]
+}
+
+export interface OpcoesLeitura {
+  delimitadores: { id: string; nome: string }[]
+  max_linhas: number
+  max_caracteres: number
+}
+
+export interface ConfigLeitura {
+  delimitador: string
+  cabecalho: string
+  coluna_classe: number
+  colunas_ignoradas: number[]
+}
+
+export interface DatasetEnviado {
+  id: string
+  nome: string
+  descricao: string
+  tipo: 'continuo' | 'categorico'
+  n_amostras: number
+  classes: string[]
+  features: string[]
+  coluna_classe: string
+  arquivo_original: string
+  criado_em: string
+  leitura: ConfigLeitura
+  avisos: string[]
+}
+
+export interface ResultadoImportacao {
+  id: string
+  nome: string
+  descricao: string
+  tipo: 'continuo' | 'categorico'
+  classes: string[]
+  features: string[]
+  n_amostras: number
+  coluna_classe: string
+  atributos_padrao: string
+  avisos: string[]
+  leitura: ConfigLeitura
 }
 
 export interface Metadata {
