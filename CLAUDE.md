@@ -7,19 +7,26 @@ Este arquivo instrui o agente Claude ao atuar neste projeto. Sempre obedeça às
 ## 1. Objetivo do Projeto
 
 - Projeto acadêmico: **Tópicos Especiais em IA** (TEIA)
-- Implementação de um **Classificador de Distância Mínima** (Minimum Distance Classifier) para a base de dados **Iris** (150 amostras, 4 features, 3 classes).
-- Três experimentos obrigatórios:
+- Começou como um **Classificador de Distância Mínima** para a base **Iris** e cresceu para uma aplicação com sete classificadores, todos escritos do zero.
+- Três experimentos originais (Lab 1):
   1. Cálculo de protótipos (vetores médios) e classificação multiclasse (3 classes).
   2. Função discriminante linear e regra de decisão por máximo.
   3. Superfícies de decisão (fronteiras lineares) para todos os pares de classes.
+- Requisitos da **entrega final** (definidos pelo professor):
+  1. O usuário escolhe o **modelo** e **parametriza** o modelo — aba *Classificar*.
+  2. O aplicativo é alimentado pela **base do usuário em .txt** — botão *Importar .txt*.
+  3. **Métricas de qualidade** e **comparação de modelos com testes de significância**.
+  4. O **modelo do seminário** (Florestas Aleatórias) disponível no aplicativo.
 
 ---
 
 ## 2. Restrições Técnicas Estritas
 
-- **PROIBIDO:** `numpy`, `scipy`, `scikit-learn`, `pandas` — qualquer biblioteca de ML ou álgebra avançada.
-- **OBRIGATÓRIO:** Toda a matemática (produto escalar, subtração de vetores, distâncias, médias) DEVE ser feita em **Python puro** com laços `for`, listas nativas e `zip`, no arquivo `iris_classifier/math_utils.py`.
-- **Bibliotecas externas permitidas:** apenas `xlrd` (leitura do `.xls`) e `matplotlib` (gráficos).
+- **PROIBIDO:** `numpy`, `scipy`, `pandas` — qualquer biblioteca de ML ou álgebra avançada. Isso vale também para a leitura de dados: o leitor de `.txt` do usuário (`iris_classifier/data/leitor_texto.py`) é Python puro, sem `pandas` e sem o módulo `csv`.
+- **OBRIGATÓRIO:** Toda a matemática (produto escalar, subtração de vetores, distâncias, médias, covariâncias, gradientes, impureza) DEVE ser feita em **Python puro** com laços `for`, listas nativas e `zip`, em `iris_classifier/core/math_utils.py` e nos módulos de `iris_classifier/models/`.
+- **Única exceção:** `scikit-learn` no Lab 5, item (ii) — permitido explicitamente pelo enunciado daquele item, e isolado em `models/mlp_sklearn.py`.
+- **Bibliotecas externas permitidas:** `xlrd`/`openpyxl` (planilhas), `matplotlib` (gráficos), `fastapi`/`uvicorn` (interface web).
+- O backend web **não reimplementa matemática**: os routers apenas orquestram chamadas aos módulos de `iris_classifier/`.
 
 ---
 
@@ -28,24 +35,33 @@ Este arquivo instrui o agente Claude ao atuar neste projeto. Sempre obedeça às
 ```
 TEIA_TOPICOS_ESPECIAIS_EM_IA/
 ├── iris_classifier/
-│   ├── main.py          # Orquestrador — executa os 3 experimentos
-│   ├── data_loader.py   # Leitura do XLS e split estratificado
-│   ├── math_utils.py    # Álgebra linear em Python puro (produto escalar, distância, média, discriminante)
-│   ├── classifier.py    # Lógica de classificação (treinar, predizer)
-│   ├── evaluator.py     # Métricas: acurácia, matriz de confusão, precisão, revocação, F1
-│   └── visualizer.py    # Gráficos: dispersão, superfícies de decisão, heatmap da confusão
+│   ├── main.py              # Orquestrador CLI de todos os laboratorios
+│   ├── run_gui.py           # Interface desktop (Tkinter)
+│   ├── core/math_utils.py   # Algebra linear em Python puro
+│   ├── data/
+│   │   ├── data_loader.py   # Leitura das planilhas e split estratificado
+│   │   ├── leitor_texto.py  # Leitor generico do .txt do usuario (Python puro)
+│   │   └── gerar_fim_de_semana.py
+│   ├── models/              # classifier, perceptron, delta_rule, bayes_classifier,
+│   │                        # mlp_backprop, mlp_multiclasse, random_forest,
+│   │                        # floresta_categorica, mlp_sklearn
+│   ├── evaluation/          # evaluator, metricas_avancadas, testes_significancia,
+│   │                        # validacao_cruzada, mvn_tester
+│   ├── visualization/       # visualizer.py (matplotlib)
+│   └── gui/                 # Abas da interface desktop
+├── web_app/
+│   ├── backend/             # FastAPI: main, core, modelos (catalogo),
+│   │   └── routers/         # datasets_usuario, traco, lab5_config
+│   └── frontend/            # React 18 + Vite + TypeScript + Tailwind v4
 ├── data/
-│   └── Iris data.xls    # Base original — NÃO ALTERAR
-├── docs/
-│   ├── guia_professor.md      # Guia de apresentação ao professor
-│   ├── teoria_completa.md     # Teoria completa para estudo
-│   ├── formulario.md          # Folha de fórmulas rápidas
-│   └── perguntas_prova.md     # Perguntas e respostas para a prova
-├── outputs/             # Gráficos gerados (criado automaticamente)
-├── CLAUDE.md            # Este arquivo
-├── GEMINI.md            # Regras para o agente Gemini
-├── README.md            # Visão geral do projeto
-└── requirements.txt     # xlrd==2.0.2, matplotlib==3.10.8
+│   ├── Iris data.xls        # Base original — NÃO ALTERAR
+│   ├── fim_de_semana_1000.csv
+│   ├── exemplos/            # .txt de exemplo para a importacao
+│   └── enviados/            # Bases do usuario (nao versionado)
+├── docs/                    # defesa_projeto, classificar_modelos,
+│                            # importar_dados_txt, interface_web, teoria, labs
+├── outputs/                 # Graficos gerados (criado automaticamente)
+├── CLAUDE.md · GEMINI.md · README.md · requirements.txt
 ```
 
 ---
@@ -54,8 +70,10 @@ TEIA_TOPICOS_ESPECIAIS_EM_IA/
 
 - **Idioma:** Todo código, comentários, docstrings, `print`s e documentação em **Português do Brasil**.
 - **Split estratificado:** 70% treino / 30% teste *por classe*, com `random.seed(42)`.
-- **Atributos padrão:** índices `[2, 3]` (Comprimento e Largura da Pétala).
-- **Nomes das classes:** `'setosa'`, `'versicolor'`, `'virginica'` (minúsculas).
+- **Atributos padrão:** índices `[2, 3]` (Comprimento e Largura da Pétala) — no Iris.
+- **Nomes das classes:** `'setosa'`, `'versicolor'`, `'virginica'` (minúsculas) — no Iris.
+- **Nada no código pode assumir "as 3 classes do Iris".** Cada base declara suas classes, features e combinações de atributos (`web_app/backend/core.py`), e as telas perguntam à base. É o que permite o dataset categórico do seminário e as bases `.txt` do usuário rodarem nas mesmas telas.
+- **Modelo novo** entra no catálogo `web_app/backend/modelos.py` declarando nome, descrição, esquema de parâmetros e as funções de treino/predição — a interface, os testes de significância e a validação cruzada passam a incluí-lo sozinhos.
 - **Saída de gráficos:** sempre em `outputs/`. Nunca exibir com `plt.show()` — sempre `plt.savefig()`.
 - **Não alterar** o arquivo `data/Iris data.xls`.
 
@@ -64,7 +82,15 @@ TEIA_TOPICOS_ESPECIAIS_EM_IA/
 ## 5. Como Executar
 
 ```bash
-python iris_classifier/main.py
+python iris_classifier/main.py        # CLI: todos os experimentos
+python iris_classifier/run_gui.py     # Interface desktop (Tkinter)
+```
+
+Interface web (a que atende aos requisitos da entrega):
+
+```bash
+python -m uvicorn web_app.backend.main:app --reload --port 8000
+npm --prefix web_app/frontend run dev
 ```
 
 Saída esperada no terminal:

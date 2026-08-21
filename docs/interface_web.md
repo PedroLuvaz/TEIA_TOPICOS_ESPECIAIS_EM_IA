@@ -134,6 +134,14 @@ Com o backend no ar, o FastAPI publica a documentação automática em:
 
 ## 3. O que cada página faz
 
+### Classificar (aplicação)
+A tela principal da entrega: escolha do **modelo** entre os sete do catálogo e
+**parametrização** de cada um por controles gerados a partir do esquema que o
+backend publica. Traz métricas completas, matriz de confusão, regiões de
+decisão, predição de amostra digitada e painéis próprios de cada modelo (OOB e
+importâncias na floresta, curva de erro na rede, convergência por classe nos
+lineares). Detalhes em [`classificar_modelos.md`](classificar_modelos.md).
+
 ### Distância Mínima (Lab 1)
 Protótipos (vetores médios), função discriminante linear e as três fronteiras
 de decisão. Regiões de decisão renderizadas como mapa de calor suavizado.
@@ -157,6 +165,12 @@ O seletor **Base de dados**, presente em todas as abas, oferece três opções:
 | `v1` | Iris Original | 3 | pétalas · sépalas · todas |
 | `v2` | Iris Separável | 3 | pétalas · sépalas · todas |
 | `fds` | Fim de Semana (seminário) | 4 | Clima×Pais · Clima×Dinheiro · Pais×Dinheiro · todos |
+| `usr_*` | Bases importadas pelo usuário (.txt) | livre | pares gerados a partir das colunas |
+
+O botão **Importar .txt**, no mesmo painel, carrega a base do usuário: o
+delimitador, o cabeçalho e a coluna de classe são detectados e podem ser
+ajustados, e a base importada passa a valer em todas as telas. Guia completo em
+[`importar_dados_txt.md`](importar_dados_txt.md).
 
 Nada na interface assume as 3 classes do Iris: classes, features, pares de
 classes e cores vêm do dataset selecionado (`/api/dataset/metadata`). A base do
@@ -236,8 +250,9 @@ por quadro. O treino em si continua exclusivamente no Python puro do backend.
 
 ## 4. Rotas da API
 
-Todas as rotas ficam sob `/api`. Os parâmetros comuns são `dataset` (`v1`/`v2`),
-`atributos` (`petalas`/`sepalas`/`todas`) e `proporcao` (fração de treino).
+Todas as rotas ficam sob `/api`. Os parâmetros comuns são `dataset`
+(`v1`/`v2`/`fds` ou o id de uma base importada), `atributos` (as chaves que o
+dataset declara em `/api/dataset/metadata`) e `proporcao` (fração de treino).
 
 | Método | Rota | Descrição |
 |---|---|---|
@@ -245,6 +260,16 @@ Todas as rotas ficam sob `/api`. Os parâmetros comuns são `dataset` (`v1`/`v2`
 | GET | `/api/dataset/metadata` | Opções disponíveis na interface |
 | GET | `/api/dataset/amostras` | Amostras projetadas em 2D, marcadas treino/teste |
 | GET | `/api/dataset/estatisticas` | Média, desvio, mínimo e máximo por classe |
+| GET | `/api/dataset/opcoes-leitura` | Delimitadores aceitos e limites da importação |
+| POST | `/api/dataset/analisar` | Pré-visualiza um .txt sem importá-lo |
+| POST | `/api/dataset/importar` | Importa a base do usuário |
+| GET | `/api/dataset/enviados` | Lista as bases importadas |
+| PATCH | `/api/dataset/enviados/{id}` | Renomeia uma base importada |
+| DELETE | `/api/dataset/enviados/{id}` | Remove uma base importada |
+| GET | `/api/classificar/modelos` | Catálogo de modelos + esquema dos parâmetros |
+| POST | `/api/classificar/treinar` | Treina o modelo escolhido e avalia |
+| POST | `/api/classificar/regioes` | Regiões de decisão de qualquer modelo |
+| POST | `/api/classificar/predizer` | Classifica uma amostra informada |
 | GET | `/api/distancia-minima/treinar` | Protótipos, métricas e fronteiras |
 | GET | `/api/distancia-minima/regioes` | Grade de regiões de decisão |
 | POST | `/api/distancia-minima/predizer` | Classifica um vetor arbitrário |
@@ -259,10 +284,10 @@ Todas as rotas ficam sob `/api`. Os parâmetros comuns são `dataset` (`v1`/`v2`
 | GET | `/api/bayes/regioes` | Regiões + superfícies para as fronteiras exatas |
 | GET | `/api/bayes/normalidade` | Henze-Zirkler e Mardia por classe |
 | POST | `/api/bayes/predizer` | Classifica um vetor arbitrário |
-| GET | `/api/metricas/validacao-cruzada` | k-fold de todos os classificadores |
+| GET | `/api/metricas/validacao-cruzada` | k-fold dos classificadores (parâmetro `modelos`) |
 | GET | `/api/metricas/classificadores` | Classificadores e métricas testáveis |
 | GET | `/api/metricas/significancia` | McNemar + bootstrap + permutação de um par |
-| GET | `/api/metricas/significancia/matriz` | Os 10 pares de uma vez |
+| GET | `/api/metricas/significancia/matriz` | Todos os pares de uma vez |
 | GET | `/api/metricas/significancia/memoria` | Memória de cálculo dos 3 testes |
 | GET | `/api/floresta/treinar` | Treina a floresta: métricas, OOB, importâncias |
 | GET | `/api/floresta/arvore/{i}` | Estrutura completa de uma árvore |

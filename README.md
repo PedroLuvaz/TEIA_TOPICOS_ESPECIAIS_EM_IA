@@ -1,8 +1,23 @@
 # Reconhecimento de Padrões - Iris Dataset (Laboratório de Inteligência Artificial)
 
-Este projeto é uma aplicação científica completa para modelagem, visualização e classificação de padrões sobre o famoso conjunto de dados **Iris**. Ele implementa diversos classificadores clássicos a partir do zero (usando apenas **Python puro e Álgebra Linear**, sem bibliotecas de Machine Learning como Scikit-Learn ou NumPy). A única exceção é o Lab 5, item (ii), onde o próprio enunciado permite explicitamente o uso do `scikit-learn` para treinar a rede feedforward comparada com os classificadores de Bayes.
+Este projeto é uma aplicação científica completa para modelagem, visualização e classificação de padrões. Ele nasceu sobre o conjunto de dados **Iris**, mas **não está preso a ele**: qualquer base do usuário em `.txt` pode ser importada pela interface e roda em todas as telas. Ele implementa diversos classificadores clássicos a partir do zero (usando apenas **Python puro e Álgebra Linear**, sem bibliotecas de Machine Learning como Scikit-Learn ou NumPy). A única exceção é o Lab 5, item (ii), onde o próprio enunciado permite explicitamente o uso do `scikit-learn` para treinar a rede feedforward comparada com os classificadores de Bayes.
 
-O projeto é equipado com uma interface gráfica rica e interativa desenvolvida em Tkinter e integrada ao ambiente R para testes de hipóteses avançados.
+O projeto é equipado com uma interface web (React + FastAPI), uma interface gráfica desktop (Tkinter) e integração com o ambiente R para testes de hipóteses avançados.
+
+---
+
+## ✅ Requisitos da entrega e onde cada um está
+
+| Requisito | Onde está | Documentação |
+|---|---|---|
+| Opções de **definição do modelo** e **parametrização** | Aba *Classificar* — sete modelos, com os hiperparâmetros de cada um | [`docs/classificar_modelos.md`](docs/classificar_modelos.md) |
+| Ser alimentado pela **base do usuário em .txt** | Botão *Importar .txt* no painel de configuração, presente em todas as telas | [`docs/importar_dados_txt.md`](docs/importar_dados_txt.md) |
+| **Métricas de qualidade** | Acerto global, Kappa, Tau, precisão, revocação, especificidade, F1, F2, MCC, matriz de confusão, validação cruzada com IC | [`docs/lab_03/teoria_lab03.md`](docs/lab_03/teoria_lab03.md) |
+| **Comparação de modelos com testes de significância** | Teste Z de Kappa e de Tau, McNemar, bootstrap pareado e permutação — para qualquer par dos sete modelos | [`docs/lab_03/testes_significancia.md`](docs/lab_03/testes_significancia.md) |
+| **Modelo do seminário disponível no aplicativo** | Floresta Aleatória: aba própria e entrada no catálogo de classificação | [`docs/seminario_florestas_aleatorias.md`](docs/seminario_florestas_aleatorias.md) |
+
+O guia único para a defesa — teoria de todos os modelos, métricas, testes e
+arquitetura — está em [`docs/defesa_projeto.md`](docs/defesa_projeto.md).
 
 ---
 
@@ -11,8 +26,14 @@ O projeto é equipado com uma interface gráfica rica e interativa desenvolvida 
 ```text
 .
 ├── data/
-│   └── Iris data.xls               # Base de dados original
+│   ├── Iris data.xls               # Base de dados original
+│   ├── fim_de_semana_1000.csv      # Dataset do seminario (categorico)
+│   ├── exemplos/                   # Arquivos .txt prontos para testar a importacao
+│   └── enviados/                   # Bases .txt importadas pelo usuario (nao versionado)
 ├── docs/
+│   ├── defesa_projeto.md           # Guia unico da defesa: teoria + projeto, do inicio ao fim
+│   ├── classificar_modelos.md      # Tela de escolha e parametrizacao do modelo
+│   ├── importar_dados_txt.md       # Como alimentar o app com a base do usuario (.txt)
 │   ├── formulario.md               # Formulário resumo de todas as equações do projeto
 │   ├── guia_professor.md           # Roteiro didático e guia de defesa do projeto
 │   ├── teoria_completa.md          # Manual teórico completo sobre os classificadores lineares
@@ -38,6 +59,9 @@ O projeto é equipado com uma interface gráfica rica e interativa desenvolvida 
 │   ├── models/random_forest.py     # Florestas Aleatorias do zero (Seminario — Python puro, CART binaria)
 │   ├── models/floresta_categorica.py # Floresta ID3 multi-way para atributos categoricos (Seminario)
 │   ├── data/gerar_fim_de_semana.py # Gera o dataset do seminario em escala (1000 instancias)
+│   ├── data/leitor_texto.py        # Leitor generico de .txt/.csv do usuario (Python puro)
+│   ├── models/perceptron.py        # Perceptron binario e Um-Contra-Todos (multiclasse)
+│   ├── models/mlp_multiclasse.py   # Rede feedforward multiclasse (min-max + 1-de-C)
 │   ├── seminario_fim_de_semana.py  # Experimento completo do dataset de fim de semana (blocos A/B/C)
 │   ├── evaluation/validacao_cruzada.py # k-fold estratificado em Python puro
 │   ├── evaluation/testes_significancia.py # McNemar, bootstrap pareado, permutacao e MCC multiclasse
@@ -65,6 +89,8 @@ O projeto é equipado com uma interface gráfica rica e interativa desenvolvida 
 │   ├── backend/                    # API FastAPI — expõe os modelos via JSON
 │   │   ├── main.py                 # App, CORS e entrega do build em produção
 │   │   ├── core.py                 # Carregamento de dados, split e cache
+│   │   ├── modelos.py              # Catalogo de modelos + esquema de hiperparametros
+│   │   ├── datasets_usuario.py     # Registro das bases .txt importadas
 │   │   ├── lab5_config.py          # Configurações dos exercícios do Lab 5
 │   │   └── routers/                # Um router por laboratório
 │   └── frontend/                   # React 18 + Vite + TypeScript + Tailwind v4
@@ -136,6 +162,25 @@ python -m uvicorn web_app.backend.main:app --port 8000
 > `npm --prefix web_app/frontend install`.
 > O guia completo — arquitetura, rotas da API e solução de problemas — está em
 > [`docs/interface_web.md`](docs/interface_web.md).
+
+---
+
+## 🧭 Aba Classificar (interface web)
+
+A primeira aba da interface web é a aplicação propriamente dita: escolha da
+base (inclusive um `.txt` importado), escolha do **modelo** entre os sete do
+catálogo e ajuste dos **hiperparâmetros**, com métricas completas, matriz de
+confusão, regiões de decisão e classificação de amostras digitadas.
+
+| Modelo | Hiperparâmetros |
+|---|---|
+| Distância Mínima | — |
+| Perceptron OvA | taxa, épocas |
+| Regra Delta OvA | taxa, épocas |
+| Bayes Ótimo (QDA) | — |
+| Naive Bayes | — |
+| Rede Feedforward (MLP) | neurônios ocultos, taxa, épocas, semente |
+| Floresta Aleatória (seminário) | árvores, critério, profundidade, atributos por nó, mínimo por folha, semente |
 
 ---
 
