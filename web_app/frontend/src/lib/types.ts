@@ -130,6 +130,81 @@ export interface Amostra {
   atributos: number[]
 }
 
+/* ------------------------------------------------- catalogo de modelos ---- */
+export interface OpcaoParametro {
+  valor: string
+  rotulo: string
+}
+
+export interface ParametroModelo {
+  id: string
+  rotulo: string
+  /** 'inteiro' e 'numero' viram slider; 'opcoes' vira select. */
+  tipo: 'inteiro' | 'numero' | 'opcoes'
+  padrao: number | string
+  min?: number
+  max?: number
+  passo?: number
+  opcoes?: OpcaoParametro[]
+  ajuda?: string
+}
+
+export interface ModeloCatalogo {
+  id: string
+  nome: string
+  grupo: string
+  descricao: string
+  /** Como se chama a pontuacao que o modelo atribui a cada classe. */
+  rotulo_score: string
+  parametros: ParametroModelo[]
+}
+
+export type ValorParametro = number | string
+
+export interface ExtrasModelo {
+  oob?: { acuracia: number | null; erro: number | null }
+  importancias?: { indice: number; importancia: number }[]
+  arvores?: number
+  curva_erro?: { epoca: number; erro: number }[]
+  erro_final?: number | null
+  epocas_por_classe?: Record<string, number>
+  convergiu?: Record<string, boolean>
+  curvas?: Record<string, number[]>
+}
+
+export interface RespostaClassificacao {
+  relatorio: Relatorio
+  acerto_treino: number
+  extras: ExtrasModelo
+  modelo: {
+    id: string
+    nome: string
+    descricao: string
+    rotulo_score: string
+  }
+  parametros: Record<string, ValorParametro>
+  amostras: Amostra[]
+  classes: ClasseIris[]
+  features: string[]
+  indices: number[]
+  indices_plot: number[]
+  medias: number[]
+  n_treino: number
+  n_teste: number
+  dimensoes: number
+  eixo_x: string
+  eixo_y: string
+  ms_predicao: number
+}
+
+export interface RespostaPredicaoModelo {
+  classe: ClasseIris
+  scores: Record<string, number>
+  rotulo_score: string
+  valores: number[]
+  parametros: Record<string, ValorParametro>
+}
+
 export interface RespostaAmostras {
   amostras: Amostra[]
   total: number

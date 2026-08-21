@@ -4,7 +4,7 @@ import os
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from .. import datasets_usuario
+from .. import datasets_usuario, modelos
 from ..core import (DATASET_PADRAO, carregar, classes_de,
                     config_atributos_de, config_de, features_de, indices_plot,
                     invalidar_cache, jitter_de, obter_split, pares_de,
@@ -215,6 +215,7 @@ def importar_arquivo(req: ImportarRequest):
                             detail=f'Falha ao gravar o arquivo: {e}')
 
     invalidar_cache()
+    modelos.esquecer_predicoes()
     return {
         'id': cfg['id'],
         'nome': cfg['nome'],
@@ -264,4 +265,5 @@ def remover_enviado(id_dataset: str):
         raise HTTPException(status_code=404, detail='Base não encontrada.')
     datasets_usuario.remover(id_dataset)
     invalidar_cache()
+    modelos.esquecer_predicoes()
     return {'removido': id_dataset}

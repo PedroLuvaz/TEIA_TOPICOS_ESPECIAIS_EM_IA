@@ -5,8 +5,12 @@ import type {
   ComparacaoModelos,
   DatasetEnviado,
   Estatisticas,
+  ModeloCatalogo,
   OpcoesLeitura,
+  RespostaClassificacao,
+  RespostaPredicaoModelo,
   ResultadoImportacao,
+  ValorParametro,
   EstadoXor,
   ListaExercicios,
   Metadata,
@@ -122,6 +126,15 @@ export interface ParamsFloresta extends ParamsBase {
   min_amostras_folha?: number
 }
 
+/** Corpo comum das rotas de classificacao (modelo + hiperparametros). */
+export interface CorpoClassificar {
+  dataset: string
+  atributos: string
+  proporcao: number
+  modelo: string
+  parametros: Record<string, ValorParametro>
+}
+
 /** Rede montada na interface do construtor. */
 export interface RedeCustom {
   pesos_oculta: number[][]
@@ -168,6 +181,23 @@ export const api = {
       patch<{ id: string; nome: string }>(`/dataset/enviados/${id}`, { nome }),
     remover: (id: string) =>
       del<{ removido: string }>(`/dataset/enviados/${id}`),
+  },
+
+  /**
+   * Tela de classificacao: escolha do modelo + parametrizacao.
+   * O corpo e sempre JSON porque `parametros` muda de forma conforme o modelo.
+   */
+  classificar: {
+    modelos: () =>
+      get<{ modelos: ModeloCatalogo[]; ordem: string[] }>(
+        '/classificar/modelos',
+      ),
+    treinar: (corpo: CorpoClassificar) =>
+      post<RespostaClassificacao>('/classificar/treinar', corpo),
+    regioes: (corpo: CorpoClassificar & { resolucao?: number }) =>
+      post<RespostaRegioes>('/classificar/regioes', corpo),
+    predizer: (corpo: CorpoClassificar & { valores: number[] }) =>
+      post<RespostaPredicaoModelo>('/classificar/predizer', corpo),
   },
 
   distanciaMinima: {

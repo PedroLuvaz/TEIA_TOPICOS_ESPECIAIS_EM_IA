@@ -4,6 +4,9 @@ import { Carregando } from './components/ui'
 
 // Cada laboratorio vira um chunk proprio — o carregamento inicial nao paga
 // pelas bibliotecas de grafico e LaTeX antes de a pagina precisar delas.
+const PaginaClassificar = lazy(() =>
+  import('./pages/Classificar').then((m) => ({ default: m.PaginaClassificar })),
+)
 const PaginaDistanciaMinima = lazy(() =>
   import('./pages/DistanciaMinima').then((m) => ({
     default: m.PaginaDistanciaMinima,
@@ -39,6 +42,7 @@ export function App() {
   return (
     <Layout rota={rota} navegar={navegar}>
       <Suspense fallback={<Carregando texto="Carregando laboratório…" />}>
+        {rota === 'classificar' && <PaginaClassificar />}
         {rota === 'distancia-minima' && <PaginaDistanciaMinima />}
         {rota === 'perceptron-delta' && <PaginaPerceptronDelta />}
         {rota === 'metricas' && <PaginaMetricas />}

@@ -11,6 +11,7 @@ import {
   Ruler,
   Sigma,
   Sun,
+  Target,
   Trees,
   X,
 } from 'lucide-react'
@@ -26,6 +27,13 @@ export interface Aba {
 }
 
 export const ABAS: Aba[] = [
+  {
+    id: 'classificar',
+    rotulo: 'Classificar',
+    descricao: 'Escolha o modelo e os parâmetros',
+    icone: <Target size={17} />,
+    grupo: 'Aplicação',
+  },
   {
     id: 'distancia-minima',
     rotulo: 'Distância Mínima',

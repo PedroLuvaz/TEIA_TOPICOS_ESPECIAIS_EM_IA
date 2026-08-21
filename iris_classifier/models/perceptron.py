@@ -107,3 +107,53 @@ def acuracia_binaria_perceptron(dados, w, classe_pos, classe_neg,
             corretos += 1
         total += 1
     return corretos / total if total > 0 else 0.0
+
+
+# ---------------------------------------------------------------------------
+# Perceptron multiclasse — Um-Contra-Todos (One-vs-All)
+# ---------------------------------------------------------------------------
+def treinar_perceptron_ova(dados_treino, indices_atributos,
+                           taxa_aprendizado=0.03, max_epocas=100):
+    """
+    Treina um Perceptron por classe, no esquema Um-Contra-Todos.
+
+    Para cada classe c monta-se o problema binario
+        d = +1  se a amostra pertence a c
+        d = -1  caso contrario
+    e reaproveita-se `treinar_perceptron` — o algoritmo de Rosenblatt e
+    exatamente o mesmo, muda so a rotulagem. A decisao multiclasse e o argmax
+    dos nets, como na Regra Delta OvA.
+
+    Retorna
+    -------
+    pesos     : dict {classe: w}                — 1 vetor de pesos por classe
+    historico : dict {classe: [erros/epoca]}    — 1 historico por classe
+    epocas    : dict {classe: n_epocas}         — quando cada um convergiu
+    """
+    classes = sorted(set(d['classe'] for d in dados_treino))
+    pesos, historico, epocas = {}, {}, {}
+
+    for c in classes:
+        # Rerotulagem: 'pos' para a classe em foco, 'neg' para todo o resto.
+        binario = [{'atributos': d['atributos'],
+                    'classe': 'pos' if d['classe'] == c else 'neg'}
+                   for d in dados_treino]
+        w, hist, n = treinar_perceptron(binario, 'pos', 'neg',
+                                        indices_atributos, taxa_aprendizado,
+                                        max_epocas)
+        pesos[c], historico[c], epocas[c] = w, hist, n
+
+    return pesos, historico, epocas
+
+
+def predizer_perceptron_ova(x_atributos, pesos):
+    """
+    Predicao multiclasse via argmax dos nets dos perceptrons OvA.
+
+    `x_atributos` ja vem com as features selecionadas (sem o bias).
+    Retorna: (classe_vencedora, dict {classe: net})
+    """
+    x_aug = [1.0] + list(x_atributos)
+    nets = {c: sum(wi * xi for wi, xi in zip(w, x_aug))
+            for c, w in pesos.items()}
+    return max(nets, key=nets.get), nets
