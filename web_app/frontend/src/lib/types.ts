@@ -70,6 +70,20 @@ export interface AnaliseArquivo {
   nomes: string[]
 }
 
+/** Um .txt de exemplo que acompanha o projeto (pasta data/exemplos/). */
+export interface ExemploTxt {
+  arquivo: string
+  nome: string
+  descricao: string
+  n_linhas: number
+  /** Primeiras linhas CRUAS do arquivo — mostram o formato de entrada. */
+  amostra: string
+  /** Quantas linhas a `amostra` traz. */
+  n_amostra: number
+  /** O exemplo que a tela carrega sozinha ao abrir. */
+  padrao: boolean
+}
+
 export interface OpcoesLeitura {
   delimitadores: { id: string; nome: string }[]
   max_linhas: number

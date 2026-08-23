@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from .. import datasets_usuario, modelos
-from ..core import (DATASET_PADRAO, carregar, classes_de,
+from ..core import (BASE_DIR, DATASET_PADRAO, carregar, classes_de,
                     config_atributos_de, config_de, features_de, indices_plot,
                     invalidar_cache, jitter_de, obter_split, pares_de,
                     serializar_amostras, todos)
@@ -175,6 +175,100 @@ def opcoes_leitura():
         'max_linhas': MAX_LINHAS,
         'max_caracteres': MAX_CARACTERES,
     }
+
+
+# ===========================================================================
+# Exemplos prontos de .txt
+# ===========================================================================
+# A tela de importacao precisa mostrar COMO E um arquivo aceito antes de o
+# usuario procurar o dele. Estes sao os .txt que acompanham o projeto: a
+# interface carrega um deles com um clique e a pre-visualizacao aparece igual
+# a de um arquivo enviado de verdade — nada e importado ate o usuario mandar.
+PASTA_EXEMPLOS = os.path.join(BASE_DIR, 'data', 'exemplos')
+
+# Descricoes escritas a mao. Um .txt novo largado na pasta continua aparecendo,
+# so que sem a explicacao — a lista vem da pasta, nao daqui.
+EXEMPLOS = {
+    'iris.txt': {
+        'nome': 'Iris',
+        'descricao': 'Sem cabeçalho, separado por vírgula: quatro medidas '
+                     'numéricas e a espécie na última coluna.',
+    },
+    'fim_de_semana.txt': {
+        'nome': 'Fim de semana',
+        'descricao': 'Com cabeçalho, separado por ponto e vírgula: todos os '
+                     'atributos são texto — é a base categórica do seminário.',
+    },
+}
+
+# Quantas linhas cruas a lista devolve como amostra do formato.
+LINHAS_AMOSTRA = 4
+
+
+def _exemplos_no_disco():
+    """Nomes dos .txt da pasta de exemplos, os conhecidos primeiro."""
+    if not os.path.isdir(PASTA_EXEMPLOS):
+        return []
+    achados = sorted(n for n in os.listdir(PASTA_EXEMPLOS)
+                     if n.lower().endswith(('.txt', '.csv', '.tsv', '.data'))
+                     and os.path.isfile(os.path.join(PASTA_EXEMPLOS, n)))
+    conhecidos = [n for n in EXEMPLOS if n in achados]
+    return conhecidos + [n for n in achados if n not in EXEMPLOS]
+
+
+def _ler_exemplo(arquivo):
+    """Le um exemplo pelo nome, barrando qualquer caminho fora da pasta."""
+    if arquivo not in _exemplos_no_disco():
+        raise HTTPException(status_code=404,
+                            detail=f'Exemplo não encontrado: {arquivo}')
+    caminho = os.path.join(PASTA_EXEMPLOS, arquivo)
+    try:
+        with open(caminho, encoding='utf-8') as f:
+            return f.read()
+    except OSError as e:
+        raise HTTPException(status_code=500,
+                            detail=f'Falha ao ler o exemplo: {e}')
+
+
+@router.get('/exemplos')
+def listar_exemplos():
+    """
+    Exemplos disponiveis, com as primeiras linhas de cada um.
+
+    A `amostra` e o texto CRU do arquivo, sem nenhum tratamento: e ela que
+    mostra na tela o formato esperado de entrada.
+    """
+    itens = []
+    for i, arquivo in enumerate(_exemplos_no_disco()):
+        caminho = os.path.join(PASTA_EXEMPLOS, arquivo)
+        try:
+            with open(caminho, encoding='utf-8') as f:
+                conteudo = f.read()
+        except OSError:
+            continue
+        linhas = [l for l in conteudo.splitlines() if l.strip()]
+        meta = EXEMPLOS.get(arquivo, {})
+        itens.append({
+            'arquivo': arquivo,
+            'nome': meta.get('nome', arquivo),
+            'descricao': meta.get('descricao',
+                                  'Exemplo adicionado à pasta data/exemplos/.'),
+            'n_linhas': len(linhas),
+            # Quantas linhas a `amostra` traz — a interface usa para
+            # dizer quantas ficaram de fora sem recontar nada.
+            'n_amostra': len(linhas[:LINHAS_AMOSTRA]),
+            'amostra': '\n'.join(linhas[:LINHAS_AMOSTRA]),
+            # A interface carrega o primeiro sozinha, para a tela ja abrir
+            # mostrando um arquivo lido de ponta a ponta.
+            'padrao': i == 0,
+        })
+    return {'exemplos': itens}
+
+
+@router.get('/exemplos/{arquivo}')
+def obter_exemplo(arquivo: str):
+    """Conteudo integral de um exemplo, pronto para cair no fluxo de analise."""
+    return {'arquivo': arquivo, 'conteudo': _ler_exemplo(arquivo)}
 
 
 @router.post('/analisar')
