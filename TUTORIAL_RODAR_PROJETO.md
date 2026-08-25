@@ -7,6 +7,9 @@ Este tutorial é para quem está abrindo o projeto pela primeira vez. São
 **dois cliques**: um para instalar, outro para abrir. Nada precisa ser digitado
 no terminal.
 
+> Existe também a versão em **PDF**, pronta para imprimir e com o mapa da
+> documentação: [`GUIA_DO_PROFESSOR.pdf`](GUIA_DO_PROFESSOR.pdf).
+
 ---
 
 ## Resumo em uma linha

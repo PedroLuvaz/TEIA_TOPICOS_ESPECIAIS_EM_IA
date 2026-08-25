@@ -6,3 +6,7 @@ web_app/frontend/dist/** -text
 # Arquivos de lote precisam de CRLF para o cmd.exe antigo nao se perder.
 *.bat text eol=crlf
 *.sh text eol=lf
+
+# PDFs sao binarios: sem isso o git tentaria converter fim de linha e
+# corromperia o arquivo.
+*.pdf binary

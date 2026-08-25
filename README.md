@@ -16,8 +16,10 @@ para instalá-lo caso falte. Node.js não é necessário: a interface já vem
 compilada em `web_app/frontend/dist`. No macOS/Linux, `./dependencias.sh` e
 `./iniciar.sh`.
 
-Passo a passo com telas e solução de problemas:
-**[`TUTORIAL_RODAR_PROJETO.md`](TUTORIAL_RODAR_PROJETO.md)**.
+Passo a passo com solução de problemas:
+**[`TUTORIAL_RODAR_PROJETO.md`](TUTORIAL_RODAR_PROJETO.md)** — ou, em PDF para
+imprimir e entregar, **[`GUIA_DO_PROFESSOR.pdf`](GUIA_DO_PROFESSOR.pdf)**, que
+traz também o mapa de onde está cada documento.
 
 ---
 

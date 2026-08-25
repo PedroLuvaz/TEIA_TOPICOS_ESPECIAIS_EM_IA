@@ -14,6 +14,7 @@ código implementa aquilo e em que tela do aplicativo o assunto aparece.
 | Documento | Para quê |
 |---|---|
 | [`defesa_projeto.md`](defesa_projeto.md) | **O guia único da defesa.** Costura tudo: requisitos da entrega, teoria dos sete modelos, métricas, testes de significância, arquitetura, resultados medidos e banco de perguntas |
+| [`../GUIA_DO_PROFESSOR.pdf`](../GUIA_DO_PROFESSOR.pdf) | O mesmo guia em PDF, pronto para imprimir, com o mapa da documentação |
 | [`../TUTORIAL_RODAR_PROJETO.md`](../TUTORIAL_RODAR_PROJETO.md) | Como instalar e abrir o projeto em dois cliques, sem terminal |
 | [`../README.md`](../README.md) | Visão geral do repositório e estrutura de pastas |
 | [`interface_web.md`](interface_web.md) | Arquitetura da interface web e todas as rotas da API |
