@@ -75,7 +75,7 @@ Interface em `http://localhost:5173`; documentação automática da API em
 | 1:00 | Trocar para **Floresta Aleatória** e mexer em *nº de árvores* e *profundidade* | "Os controles vêm do esquema que o próprio modelo publica." |
 | 2:30 | Apontar *acerto no treino* vs *acerto no teste* com profundidade sem limite | "Aqui o sobreajuste fica visível: 94% no treino, 73% no teste." |
 | 3:30 | Clicar no gráfico para classificar um ponto | "A predição mostra a pontuação que o modelo dá a cada classe." |
-| 4:30 | **Importar .txt** com `data/exemplos/iris.txt` | "A base é do usuário; o delimitador e a classe são detectados." |
+| 4:30 | **Importar .txt** — a tela já abre com `data/exemplos/iris.txt` lido; basta apontar a prévia (ou clicar no botão do outro exemplo) | "A base é do usuário; o delimitador e a classe são detectados." |
 | 6:00 | Rodar um modelo sobre a base importada | "Tudo o que existe no app passa a valer para essa base." |
 | 7:00 | Aba **Métricas Avançadas → Significância** | "Comparar dois números não basta: aqui está o teste pareado." |
 | 8:30 | Matriz de todos os pares + validação cruzada | "E aqui os sete modelos comparados de uma vez." |

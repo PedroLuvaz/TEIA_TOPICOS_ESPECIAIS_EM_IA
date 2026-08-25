@@ -25,6 +25,27 @@ Fluxo em três passos:
 3. **Importar** — a base é gravada em `data/enviados/` e selecionada
    automaticamente.
 
+### Exemplos prontos, direto na tela
+
+Ao lado de *Escolher arquivo* há um botão para cada `.txt` de exemplo do
+projeto. Um clique carrega o arquivo pelo **mesmo caminho** de um arquivo
+enviado de verdade: a prévia, o delimitador detectado e o palpite da coluna de
+classe saem idênticos ao fluxo real — nada é importado até você confirmar.
+
+A tela **já abre com o primeiro exemplo carregado**. Quem chega nela vê de
+imediato o formato de entrada esperado, sem precisar procurar um arquivo. O
+carregamento automático acontece uma vez só: depois de *Cancelar* ou de
+escolher um arquivo seu, a tela não volta a preenchê-la sozinha.
+
+Abaixo dos botões ficam as **primeiras linhas cruas** do exemplo em foco, em
+monoespaçado, com a descrição do formato e o caminho do arquivo. É o trecho que
+responde "como precisa ser o meu .txt?".
+
+A lista vem de varrer `data/exemplos/`: um `.txt` novo largado na pasta aparece
+como botão sozinho, sem mexer em código. Os arquivos conhecidos têm nome e
+descrição escritos à mão em `EXEMPLOS`, no router; os demais entram com uma
+descrição genérica.
+
 ---
 
 ## 2. Formato aceito
@@ -48,7 +69,8 @@ Uma amostra por linha; colunas separadas por um delimitador constante:
 | Comentários | linhas começando com `#`, `%` ou `//` são ignoradas |
 | Ausentes | `?`, `NA`, `N/A`, `null`, `-`, `.` ou vazio → a linha é descartada |
 
-**Dois exemplos prontos** acompanham o projeto:
+**Dois exemplos prontos** acompanham o projeto — e são carregáveis por um
+botão na própria tela de importação (veja a seção 1):
 
 - `data/exemplos/iris.txt` — 150 linhas, vírgula, sem cabeçalho, atributos
   numéricos;
@@ -141,6 +163,8 @@ que a heurística de detecção mude.
 | Método | Rota | Descrição |
 |---|---|---|
 | GET | `/api/dataset/opcoes-leitura` | Delimitadores aceitos e limites |
+| GET | `/api/dataset/exemplos` | Exemplos prontos, com as primeiras linhas de cada um |
+| GET | `/api/dataset/exemplos/{arquivo}` | Conteúdo integral de um exemplo |
 | POST | `/api/dataset/analisar` | Pré-visualiza o arquivo sem importar |
 | POST | `/api/dataset/importar` | Importa e registra a base |
 | GET | `/api/dataset/enviados` | Lista as bases importadas |

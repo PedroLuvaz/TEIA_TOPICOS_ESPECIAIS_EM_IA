@@ -12,10 +12,10 @@
  * proprio backend local do aplicativo.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, FileUp, Trash2, TriangleAlert } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { Check, FileText, FileUp, Trash2, TriangleAlert } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { api, ErroApi } from '@/lib/api'
-import type { AnaliseArquivo } from '@/lib/types'
+import type { AnaliseArquivo, ExemploTxt } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { Badge, Botao, Carregando, Nota, Select } from './ui'
 
@@ -38,6 +38,9 @@ export function ImportarDados({ aoImportar }: Props) {
   const [colunaClasse, setColunaClasse] = useState<number | null>(null)
   const [ignoradas, setIgnoradas] = useState<number[]>([])
   const [erroArquivo, setErroArquivo] = useState('')
+  // Nome do arquivo de exemplo em uso — vazio quando o arquivo veio do
+  // computador do usuario. So serve para destacar o botao correspondente.
+  const [exemploAtivo, setExemploAtivo] = useState('')
 
   const { data: opcoes } = useQuery({
     queryKey: ['opcoes-leitura'],
@@ -48,6 +51,12 @@ export function ImportarDados({ aoImportar }: Props) {
   const { data: enviados } = useQuery({
     queryKey: ['datasets-enviados'],
     queryFn: api.dataset.enviados,
+  })
+
+  const { data: exemplos } = useQuery({
+    queryKey: ['exemplos-txt'],
+    queryFn: api.dataset.exemplos,
+    staleTime: Infinity,
   })
 
   /** Analise: roda ao escolher o arquivo e a cada troca de delimitador/cabecalho. */
@@ -103,9 +112,49 @@ export function ImportarDados({ aoImportar }: Props) {
     setColunaClasse(null)
     setIgnoradas([])
     setErroArquivo('')
+    setExemploAtivo('')
     analise.reset()
     if (inputArquivo.current) inputArquivo.current.value = ''
   }
+
+  /**
+   * Ponto unico por onde todo texto entra na tela — venha do computador do
+   * usuario ou de um exemplo. Manter os dois no mesmo caminho garante que a
+   * previa do exemplo seja exatamente a de um arquivo importado de verdade.
+   */
+  function usarConteudo(texto: string, arquivo: string, doExemplo: string) {
+    setConteudo(texto)
+    setNomeArquivo(arquivo)
+    setNome(arquivo.replace(/\.[^.]+$/, '') + (doExemplo ? ' (exemplo)' : ''))
+    setExemploAtivo(doExemplo)
+    setDelimitador('auto')
+    setCabecalho('auto')
+    setColunaClasse(null)
+    setIgnoradas([])
+    setErroArquivo('')
+    analise.mutate({ conteudo: texto, delimitador: 'auto', cabecalho: 'auto' })
+  }
+
+  const exemplo = useMutation({
+    mutationFn: (arquivo: string) => api.dataset.exemplo(arquivo),
+    onSuccess: (res) => usarConteudo(res.conteudo, res.arquivo, res.arquivo),
+    onError: () =>
+      setErroArquivo('Não foi possível carregar o exemplo. Confira se a pasta '
+        + 'data/exemplos/ continua no lugar.'),
+  })
+
+  // A tela abre ja com um exemplo lido, para quem chega nela ver na hora o
+  // formato de entrada esperado. Roda uma unica vez: depois de "Cancelar" ou
+  // de escolher um arquivo, a decisao passa a ser do usuario.
+  const jaAbriuComExemplo = useRef(false)
+  useEffect(() => {
+    if (jaAbriuComExemplo.current || conteudo) return
+    const padrao = exemplos?.exemplos.find((e) => e.padrao)
+    if (!padrao) return
+    jaAbriuComExemplo.current = true
+    exemplo.mutate(padrao.arquivo)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exemplos])
 
   async function aoEscolherArquivo(arquivo: File | undefined) {
     if (!arquivo) return
@@ -121,12 +170,9 @@ export function ImportarDados({ aoImportar }: Props) {
       setErroArquivo('O arquivo está vazio.')
       return
     }
-    setConteudo(texto)
-    setNomeArquivo(arquivo.name)
-    setNome(arquivo.name.replace(/\.[^.]+$/, ''))
-    setColunaClasse(null)
-    setIgnoradas([])
-    analise.mutate({ conteudo: texto, delimitador: 'auto', cabecalho: 'auto' })
+    // Um arquivo escolhido a mao substitui o exemplo que abriu a tela.
+    jaAbriuComExemplo.current = true
+    usarConteudo(texto, arquivo.name, '')
   }
 
   function reanalisar(novoDelimitador: string, novoCabecalho: string) {
@@ -190,6 +236,19 @@ export function ImportarDados({ aoImportar }: Props) {
           </>
         )}
       </div>
+
+      {/* ------------------------------------------- 1b. exemplos prontos */}
+      {!!exemplos?.exemplos.length && (
+        <Exemplos
+          lista={exemplos.exemplos}
+          ativo={exemploAtivo}
+          carregando={exemplo.isPending ? exemplo.variables ?? '' : ''}
+          aoEscolher={(arquivo) => {
+            jaAbriuComExemplo.current = true
+            exemplo.mutate(arquivo)
+          }}
+        />
+      )}
 
       {erroArquivo && <Nota tom="atencao">{erroArquivo}</Nota>}
       {analise.isPending && <Carregando texto="Analisando o arquivo…" />}
@@ -341,6 +400,69 @@ export function ImportarDados({ aoImportar }: Props) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------- exemplos */
+/**
+ * Exemplos prontos: um clique carrega o arquivo no mesmo fluxo de analise, e
+ * o texto cru das primeiras linhas fica a vista para o formato de entrada
+ * ficar obvio antes de o usuario procurar a base dele.
+ */
+function Exemplos({
+  lista,
+  ativo,
+  carregando,
+  aoEscolher,
+}: {
+  lista: ExemploTxt[]
+  ativo: string
+  carregando: string
+  aoEscolher: (arquivo: string) => void
+}) {
+  const emFoco = lista.find((e) => e.arquivo === ativo) ?? lista[0]
+  const restantes = emFoco ? emFoco.n_linhas - emFoco.n_amostra : 0
+
+  return (
+    <div className="rounded-lg border border-subtle bg-zinc-500/5 p-3">
+      <p className="kicker mb-2 text-muted">
+        Ou carregue um exemplo — para ver o formato de entrada
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {lista.map((e) => (
+          <Botao
+            key={e.arquivo}
+            tamanho="sm"
+            variante={e.arquivo === ativo ? 'secundario' : 'fantasma'}
+            disabled={!!carregando}
+            onClick={() => aoEscolher(e.arquivo)}
+          >
+            <FileText size={14} />
+            {carregando === e.arquivo ? 'Carregando…' : e.nome}
+          </Botao>
+        ))}
+      </div>
+
+      {emFoco && (
+        <div className="mt-3">
+          <p className="text-xs text-secondary">{emFoco.descricao}</p>
+          <div className="mt-2 overflow-x-auto rounded-md border border-subtle bg-surface">
+            <pre className="tabular px-3 py-2 text-xs whitespace-pre text-secondary">
+              {emFoco.amostra}
+            </pre>
+            {restantes > 0 && (
+              <p className="border-t border-subtle px-3 py-1 text-xs text-muted">
+                … e mais {restantes} linha(s)
+              </p>
+            )}
+          </div>
+          <p className="mt-1.5 text-xs text-muted">
+            <code className="tabular">data/exemplos/{emFoco.arquivo}</code> ·{' '}
+            {emFoco.n_linhas} linhas
+          </p>
         </div>
       )}
     </div>

@@ -169,7 +169,10 @@ O seletor **Base de dados**, presente em todas as abas, oferece três opções:
 
 O botão **Importar .txt**, no mesmo painel, carrega a base do usuário: o
 delimitador, o cabeçalho e a coluna de classe são detectados e podem ser
-ajustados, e a base importada passa a valer em todas as telas. Guia completo em
+ajustados, e a base importada passa a valer em todas as telas. A tela abre já
+com um exemplo de `data/exemplos/` carregado — e há um botão para cada exemplo,
+de modo que o formato de entrada esperado fica visível antes de o usuário
+procurar o arquivo dele. Guia completo em
 [`importar_dados_txt.md`](importar_dados_txt.md).
 
 Nada na interface assume as 3 classes do Iris: classes, features, pares de
@@ -261,6 +264,8 @@ dataset declara em `/api/dataset/metadata`) e `proporcao` (fração de treino).
 | GET | `/api/dataset/amostras` | Amostras projetadas em 2D, marcadas treino/teste |
 | GET | `/api/dataset/estatisticas` | Média, desvio, mínimo e máximo por classe |
 | GET | `/api/dataset/opcoes-leitura` | Delimitadores aceitos e limites da importação |
+| GET | `/api/dataset/exemplos` | Exemplos de .txt prontos, com as primeiras linhas |
+| GET | `/api/dataset/exemplos/{arquivo}` | Conteúdo integral de um exemplo |
 | POST | `/api/dataset/analisar` | Pré-visualiza um .txt sem importá-lo |
 | POST | `/api/dataset/importar` | Importa a base do usuário |
 | GET | `/api/dataset/enviados` | Lista as bases importadas |

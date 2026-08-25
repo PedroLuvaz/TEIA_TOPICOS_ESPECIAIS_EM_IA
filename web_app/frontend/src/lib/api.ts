@@ -5,6 +5,7 @@ import type {
   ComparacaoModelos,
   DatasetEnviado,
   Estatisticas,
+  ExemploTxt,
   ModeloCatalogo,
   OpcoesLeitura,
   RespostaClassificacao,
@@ -161,6 +162,13 @@ export const api = {
 
     // --- importacao da base do usuario (.txt) ---
     opcoesLeitura: () => get<OpcoesLeitura>('/dataset/opcoes-leitura'),
+    /** Exemplos prontos, com as primeiras linhas de cada um. */
+    exemplos: () => get<{ exemplos: ExemploTxt[] }>('/dataset/exemplos'),
+    /** Conteudo integral de um exemplo, para cair no mesmo fluxo de analise. */
+    exemplo: (arquivo: string) =>
+      get<{ arquivo: string; conteudo: string }>(
+        `/dataset/exemplos/${encodeURIComponent(arquivo)}`,
+      ),
     /** Pre-visualiza o arquivo sem importa-lo. */
     analisar: (corpo: {
       conteudo: string
