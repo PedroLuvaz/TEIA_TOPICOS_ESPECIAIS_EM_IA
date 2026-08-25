@@ -34,7 +34,12 @@ instalador baixa as bibliotecas.
 
 ## Passo 1 — Instalar (só uma vez)
 
-1. Abra a pasta do projeto.
+> **Recebeu o projeto num arquivo `.zip`?** Antes de tudo, clique com o botão
+> direito nele e escolha **Extrair tudo**. Os programas precisam ser executados
+> a partir da pasta extraída — abertos de dentro do `.zip`, eles não encontram
+> os arquivos do projeto.
+
+1. Abra a pasta do projeto (a que você extraiu).
 2. Dê um **duplo clique** no arquivo **`dependencias.bat`**.
 3. Vai abrir uma janela preta. Aperte qualquer tecla quando ele pedir.
 4. Espere. Na primeira vez leva de 2 a 5 minutos: ele está baixando as
@@ -145,6 +150,7 @@ out-of-bag e a importância de cada atributo.
 | "Porta 8000 ocupada" | Não é problema: o programa procura a próxima porta livre e mostra o endereço certo na janela preta |
 | A página abre em branco | Espere 5 segundos e atualize com **F5** |
 | Antivírus bloqueou | Os arquivos `.bat` são texto puro; abra no Bloco de Notas para conferir e libere a pasta do projeto |
+| "Este arquivo veio de outro computador e pode estar bloqueado" | Clique com o botão direito no `.bat` → *Propriedades* → marque **Desbloquear** → *OK* |
 | Nada funciona | Apague a pasta `venv` e rode o `dependencias.bat` de novo |
 
 ---

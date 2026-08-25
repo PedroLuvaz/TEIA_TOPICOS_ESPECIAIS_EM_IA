@@ -196,6 +196,12 @@ def construir():
 
     # -------------------------------------------------------- 2. instalar
     e.append(p('2. &nbsp;Passo 1 &mdash; Instalar (só uma vez)', SECAO))
+    e.append(caixa(p(
+        '<b>Recebeu o projeto num arquivo .zip?</b> Antes de tudo, clique com '
+        'o botão direito nele e escolha <b>Extrair tudo</b>. Os programas '
+        'precisam ser executados a partir da pasta extraída &mdash; abertos de '
+        'dentro do .zip, eles não encontram os arquivos do projeto.', NOTA)))
+    e.append(Spacer(1, 8))
     e.extend(passos([
         'Abra a pasta do projeto.',
         'Dê um <b>duplo clique</b> no arquivo '
