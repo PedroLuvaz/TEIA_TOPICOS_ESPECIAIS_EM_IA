@@ -6,6 +6,21 @@ O projeto é equipado com uma interface web (React + FastAPI), uma interface gr�
 
 ---
 
+## ▶️ Rodando o projeto em dois cliques
+
+1. duplo clique em **`dependencias.bat`** — instala tudo (só na primeira vez);
+2. duplo clique em **`Iniciar Projeto.bat`** — abre o navegador na aplicação.
+
+Só o **Python 3.10+** precisa estar instalado, e o próprio instalador se oferece
+para instalá-lo caso falte. Node.js não é necessário: a interface já vem
+compilada em `web_app/frontend/dist`. No macOS/Linux, `./dependencias.sh` e
+`./iniciar.sh`.
+
+Passo a passo com telas e solução de problemas:
+**[`TUTORIAL_RODAR_PROJETO.md`](TUTORIAL_RODAR_PROJETO.md)**.
+
+---
+
 ## ✅ Requisitos da entrega e onde cada um está
 
 | Requisito | Onde está | Documentação |

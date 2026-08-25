@@ -40,6 +40,12 @@ dist/
 build/
 *.egg-info/
 
+# EXCECAO: a interface compilada e versionada de proposito.
+# E o que permite rodar o projeto com Python apenas, sem instalar o Node.js —
+# ver TUTORIAL_RODAR_PROJETO.md. Depois de mexer no frontend, recompile com
+# `npm --prefix web_app/frontend run build` e comite o dist junto.
+!web_app/frontend/dist/
+
 # Node / frontend
 node_modules/
 .vite/

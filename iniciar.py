@@ -169,7 +169,13 @@ def checar_dependencias(py):
     except subprocess.CalledProcessError:
         erro('Dependências Python ausentes (fastapi / uvicorn).')
         print()
-        print(f'      Instale com:  {_cor(f"{py} -m pip install -r requirements.txt", AZUL)}')
+        # O instalador cuida de tudo — e o caminho recomendado no tutorial.
+        instalador = ('dependencias.bat' if os.name == 'nt' else './dependencias.sh')
+        print(f'      Rode o instalador:  {_cor(instalador, AZUL)}')
+        print(f'      Ou, na mão:         '
+              f'{_cor(f"{py} -m pip install -r requirements.txt", CINZA)}')
+        print()
+        print(_cor('      Passo a passo em TUTORIAL_RODAR_PROJETO.md', CINZA))
         print()
         return False
 

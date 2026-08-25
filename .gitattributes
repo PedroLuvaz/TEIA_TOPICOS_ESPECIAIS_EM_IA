@@ -1,0 +1,8 @@
+# A interface compilada e versionada (ver TUTORIAL_RODAR_PROJETO.md). Guardar
+# esses arquivos byte a byte evita que a conversao de fim de linha do Windows
+# suje o diff a cada build.
+web_app/frontend/dist/** -text
+
+# Arquivos de lote precisam de CRLF para o cmd.exe antigo nao se perder.
+*.bat text eol=crlf
+*.sh text eol=lf
