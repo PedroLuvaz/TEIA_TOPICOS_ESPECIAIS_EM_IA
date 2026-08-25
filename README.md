@@ -32,7 +32,9 @@ Passo a passo com telas e solução de problemas:
 | **Modelo do seminário disponível no aplicativo** | Floresta Aleatória: aba própria e entrada no catálogo de classificação | [`docs/seminario_florestas_aleatorias.md`](docs/seminario_florestas_aleatorias.md) |
 
 O guia único para a defesa — teoria de todos os modelos, métricas, testes e
-arquitetura — está em [`docs/defesa_projeto.md`](docs/defesa_projeto.md).
+arquitetura — está em [`docs/defesa_projeto.md`](docs/defesa_projeto.md), e o
+índice de toda a documentação, laboratório por laboratório, em
+[`docs/README.md`](docs/README.md).
 
 ---
 
@@ -46,11 +48,11 @@ arquitetura — está em [`docs/defesa_projeto.md`](docs/defesa_projeto.md).
 │   ├── exemplos/                   # Arquivos .txt prontos para testar a importacao
 │   └── enviados/                   # Bases .txt importadas pelo usuario (nao versionado)
 ├── docs/
+│   ├── README.md                   # Indice da documentacao, organizado por laboratorio
 │   ├── defesa_projeto.md           # Guia unico da defesa: teoria + projeto, do inicio ao fim
 │   ├── classificar_modelos.md      # Tela de escolha e parametrizacao do modelo
 │   ├── importar_dados_txt.md       # Como alimentar o app com a base do usuario (.txt)
 │   ├── formulario.md               # Formulário resumo de todas as equações do projeto
-│   ├── guia_professor.md           # Roteiro didático e guia de defesa do projeto
 │   ├── teoria_completa.md          # Manual teórico completo sobre os classificadores lineares
 │   ├── lab_03/                     # Documentação específica de métricas avançadas (Lab 3)
 │   │   ├── teoria_lab03.md

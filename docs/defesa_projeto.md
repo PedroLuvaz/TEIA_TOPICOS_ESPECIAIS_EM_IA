@@ -778,5 +778,4 @@ o modelo vai bem em todas as classes.
 | [`lab_05/teoria_lab05.md`](lab_05/teoria_lab05.md) | MLP, backpropagation, XOR |
 | [`seminario_florestas_aleatorias.md`](seminario_florestas_aleatorias.md) | Teoria completa do seminário |
 | [`seminario_dataset_fim_de_semana.md`](seminario_dataset_fim_de_semana.md) | A base categórica do seminário |
-| [`guia_professor.md`](guia_professor.md) | Roteiro didático original de apresentação |
-| [`perguntas_prova.md`](perguntas_prova.md) | Banco de perguntas e respostas para estudo |
+| [`README.md`](README.md) | Índice de toda a documentação, organizado por laboratório |

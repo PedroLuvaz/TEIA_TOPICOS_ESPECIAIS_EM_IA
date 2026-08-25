@@ -132,19 +132,19 @@ As superfícies de decisão foram mapeadas avaliando a fronteira em que $d_i(x) 
 *   **Resultado de Teste:** $100\%$ de acurácia (ambos os modelos).
 *   **Comentário:** As duas classes são amplamente separáveis, a Setosa está num cluster muito isolado.
 *   **Gráficos salvos em:**
-    *   [Bayes Ótimo](file:///C:/Users/Pedro%20Andrade/Desktop/TEIA_TOPICOS_ESPECIAIS_EM_IA/outputs/bayes_otimo_superficie_virginica_setosa.png)
-    *   [Naive Bayes](file:///C:/Users/Pedro%20Andrade/Desktop/TEIA_TOPICOS_ESPECIAIS_EM_IA/outputs/naive_bayes_superficie_virginica_setosa.png)
+    *   [Bayes Ótimo](../../outputs/bayes_otimo_superficie_virginica_setosa.png)
+    *   [Naive Bayes](../../outputs/naive_bayes_superficie_virginica_setosa.png)
 
 ### ii) Versicolor vs Virginica
 *   **Resultado de Teste:** $100\%$ de acurácia (ambos os modelos) quando o subset do par é avaliado de forma binária e local (embora na multiclasse ocorra 1 erro de sobreposição).
 *   **Comentário:** A fronteira de decisão quadrática do Bayes Ótimo adapta-se muito melhor à curvatura entre as duas distribuições, enquanto a do Naive Bayes (fronteira elipsoidal ortogonal) é forçada a ser paralela aos eixos devido à nulidade da covariância.
 *   **Gráficos salvos em:**
-    *   [Bayes Ótimo](file:///C:/Users/Pedro%20Andrade/Desktop/TEIA_TOPICOS_ESPECIAIS_EM_IA/outputs/bayes_otimo_superficie_versicolor_virginica.png)
-    *   [Naive Bayes](file:///C:/Users/Pedro%20Andrade/Desktop/TEIA_TOPICOS_ESPECIAIS_EM_IA/outputs/naive_bayes_superficie_versicolor_virginica.png)
+    *   [Bayes Ótimo](../../outputs/bayes_otimo_superficie_versicolor_virginica.png)
+    *   [Naive Bayes](../../outputs/naive_bayes_superficie_versicolor_virginica.png)
 
 ### iii) Setosa vs Versicolor
 *   **Resultado de Teste:** $100\%$ de acurácia (ambos os modelos).
 *   **Comentário:** Separação perfeita, a Setosa é linearmente e quadraticamente separável com folga de Versicolor.
 *   **Gráficos salvos em:**
-    *   [Bayes Ótimo](file:///C:/Users/Pedro%20Andrade/Desktop/TEIA_TOPICOS_ESPECIAIS_EM_IA/outputs/bayes_otimo_superficie_setosa_versicolor.png)
-    *   [Naive Bayes](file:///C:/Users/Pedro%20Andrade/Desktop/TEIA_TOPICOS_ESPECIAIS_EM_IA/outputs/naive_bayes_superficie_setosa_versicolor.png)
+    *   [Bayes Ótimo](../../outputs/bayes_otimo_superficie_setosa_versicolor.png)
+    *   [Naive Bayes](../../outputs/naive_bayes_superficie_setosa_versicolor.png)
