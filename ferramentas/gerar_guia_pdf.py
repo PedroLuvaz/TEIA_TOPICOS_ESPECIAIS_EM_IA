@@ -350,9 +350,11 @@ def construir():
     e.append(tabela(
         ['Laboratório', 'Documentos'],
         [['Lab 1 &mdash; Distância Mínima',
-          'docs/teoria_completa.md (§1 a §10)<br/>docs/formulario.md'],
+          'docs/lab_01/teoria_lab01.md<br/>'
+          'docs/lab_01/relatorio_experimentos.md'],
          ['Lab 2 &mdash; Perceptron e Regra Delta',
-          'docs/teoria_completa.md (§11 a §16)<br/>docs/formulario.md'],
+          'docs/lab_02/teoria_lab02.md<br/>'
+          'docs/lab_02/relatorio_experimentos.md'],
          ['Lab 3 &mdash; Métricas e significância',
           'docs/lab_03/teoria_lab03.md<br/>'
           'docs/lab_03/testes_significancia.md<br/>'

@@ -31,7 +31,9 @@ decisão entre cada par de classes.
 
 | Documento | O que tem dentro |
 |---|---|
-| [`teoria_completa.md`](teoria_completa.md) | §1 a §10: reconhecimento de padrões, base Iris, split estratificado, protótipos, discriminante, superfícies de decisão, separabilidade e métricas |
+| [`lab_01/teoria_lab01.md`](lab_01/teoria_lab01.md) | Enunciado da aula PR3, split estratificado, protótipos, a equivalência entre distância mínima e classificador de máximo, e a dedução da superfície de decisão |
+| [`lab_01/relatorio_experimentos.md`](lab_01/relatorio_experimentos.md) | Protótipos calculados, acurácias, matrizes de confusão e as equações das três fronteiras, item por item do enunciado |
+| [`teoria_completa.md`](teoria_completa.md) | §1 a §10: material de estudo mais extenso, com o pipeline completo |
 | [`formulario.md`](formulario.md) | Folha de fórmulas: protótipo, distância euclidiana, discriminante, coeficientes da fronteira |
 
 **Código:** `iris_classifier/models/classifier.py` · `iris_classifier/core/math_utils.py`
@@ -46,7 +48,9 @@ Aprendizado por correção de erro (Rosenblatt) e por gradiente descendente
 
 | Documento | O que tem dentro |
 |---|---|
-| [`teoria_completa.md`](teoria_completa.md) | §11 a §16: Perceptron, Regra Delta, o problema XOR e a comparação entre os três classificadores lineares |
+| [`lab_02/teoria_lab02.md`](lab_02/teoria_lab02.md) | Enunciados da aula PR4, neurônio linear, regra do Perceptron e o teorema da convergência, Regra Delta e o MSE por época, Um-Contra-Todos e a prova de que o XOR não tem solução linear |
+| [`lab_02/relatorio_experimentos.md`](lab_02/relatorio_experimentos.md) | Vetores de pesos, épocas até convergir, curvas de MSE e o XOR estagnado em 0,26 — item por item do enunciado |
+| [`teoria_completa.md`](teoria_completa.md) | §11 a §16: material de estudo mais extenso |
 | [`formulario.md`](formulario.md) | Regras de atualização de pesos, MSE, comparação Perceptron × Delta |
 
 **Código:** `iris_classifier/models/perceptron.py` · `iris_classifier/models/delta_rule.py`

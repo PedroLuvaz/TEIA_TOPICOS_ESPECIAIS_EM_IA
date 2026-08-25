@@ -770,7 +770,9 @@ o modelo vai bem em todas as classes.
 | [`classificar_modelos.md`](classificar_modelos.md) | Tela de escolha do modelo e o que cada hiperparâmetro faz |
 | [`importar_dados_txt.md`](importar_dados_txt.md) | Formato do `.txt`, heurísticas de leitura, limites, problemas comuns |
 | [`interface_web.md`](interface_web.md) | Arquitetura da interface web, todas as rotas da API |
-| [`teoria_completa.md`](teoria_completa.md) | Teoria dos classificadores lineares (Labs 1 e 2) |
+| [`lab_01/teoria_lab01.md`](lab_01/teoria_lab01.md) · [`lab_01/relatorio_experimentos.md`](lab_01/relatorio_experimentos.md) | Lab 1: distância mínima, classificador de máximo e superfícies de decisão |
+| [`lab_02/teoria_lab02.md`](lab_02/teoria_lab02.md) · [`lab_02/relatorio_experimentos.md`](lab_02/relatorio_experimentos.md) | Lab 2: Perceptron, Regra Delta, Um-Contra-Todos e XOR |
+| [`teoria_completa.md`](teoria_completa.md) | Teoria dos classificadores lineares (Labs 1 e 2), material de estudo |
 | [`formulario.md`](formulario.md) | Folha de fórmulas para consulta rápida |
 | [`lab_03/teoria_lab03.md`](lab_03/teoria_lab03.md) | Métricas avançadas: Kappa, Tau, variâncias, teste Z |
 | [`lab_03/testes_significancia.md`](lab_03/testes_significancia.md) | McNemar, bootstrap pareado, permutação, MCC multiclasse |
