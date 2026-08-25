@@ -1,6 +1,0 @@
-import{c as n,j as t,i as o}from"./index-Dcudz8jK.js";import{k as l}from"./latex-Dc8nsIP1.js";import{b as c}from"./graficos-7_M51LHk.js";/**
- * @license lucide-react v0.468.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */const i=n("FileText",[["path",{d:"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z",key:"1rqfz7"}],["path",{d:"M14 2v4a2 2 0 0 0 2 2h4",key:"tnqrlb"}],["path",{d:"M10 9H8",key:"b1mrlr"}],["path",{d:"M16 13H8",key:"t4e002"}],["path",{d:"M16 17H8",key:"z1uh3a"}]]);function d({children:e,display:r=!1,className:a}){const s=c.useMemo(()=>{try{return l.renderToString(e,{displayMode:r,throwOnError:!1,strict:!1,trust:!1})}catch{return`<code>${e}</code>`}},[e,r]);return t.jsx("span",{className:o(r&&"block overflow-x-auto",a),dangerouslySetInnerHTML:{__html:s}})}function h({titulo:e,latex:r,explicacao:a,className:s}){return t.jsxs("div",{className:o("rounded-lg border border-subtle bg-sunken px-4 py-3",s),children:[e&&t.jsx("div",{className:"kicker mb-2",children:e}),t.jsx(d,{display:!0,children:r}),a&&t.jsx("p",{className:"mt-2 text-xs leading-relaxed text-muted",children:a})]})}export{h as B,i as F,d as a};
